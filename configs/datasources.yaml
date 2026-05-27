@@ -1,0 +1,14 @@
+datasources:
+  sbdb_object:
+    name: SBDB Object API
+    base_url: https://ssd-api.jpl.nasa.gov/sbdb.api
+  sbdb_query:
+    name: SBDB Query API
+    base_url: https://ssd-api.jpl.nasa.gov/sbdb_query.api
+  cad:
+    name: Close Approach Data API
+    base_url: https://ssd-api.jpl.nasa.gov/cad.api
+  sentry:
+    name: Sentry API
+    base_url: https://ssd-api.jpl.nasa.gov/sentry.api
+

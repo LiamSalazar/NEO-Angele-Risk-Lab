@@ -1,0 +1,16 @@
+project:
+  name: Neo Angele Risk Lab
+  package: neo_ange
+  version: 0.1.0
+
+runtime:
+  environment: development
+  log_level: INFO
+  data_dir: data
+  request_timeout_seconds: 30
+
+storage:
+  bronze_dir: data/bronze
+  silver_dir: data/silver
+  gold_dir: data/gold
+

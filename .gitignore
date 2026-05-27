@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Logs
+*.log
+logs/
+
+# Data outputs
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/gold/*
+!data/gold/.gitkeep
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+

@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    working_dir: /app
+    environment:
+      NEO_ANGE_ENV: development
+      NEO_ANGE_LOG_LEVEL: INFO
+      NEO_ANGE_DATA_DIR: data
+      NEO_ANGE_REQUEST_TIMEOUT: 30
+    volumes:
+      - .:/app
+    command: python -m neo_ange.cli info
+
