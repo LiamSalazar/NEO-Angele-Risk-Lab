@@ -5,13 +5,16 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "neo-ange-risk-lab"
 version = "0.1.0"
-description = "Open-source NASA/JPL near-Earth object data ingestion foundation."
+description = "Open-source risk intelligence lab for Near-Earth Objects using NASA/JPL data, Spark ETL, feature engineering and baseline machine learning."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Neo Angele Risk Lab Contributors" }]
 keywords = ["nasa", "jpl", "near-earth-objects", "data-engineering", "risk"]
 dependencies = [
+    "joblib>=1.4",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
     "pandas>=2.2",
     "pydantic>=2.7",
     "pydantic-settings>=2.2",
@@ -21,6 +24,7 @@ dependencies = [
     "PyYAML>=6.0",
     "requests>=2.31",
     "rich>=13.7",
+    "scikit-learn>=1.4",
     "typer>=0.12",
 ]
 

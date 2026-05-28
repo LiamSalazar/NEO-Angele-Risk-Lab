@@ -12,8 +12,13 @@ from rich.table import Table
 
 from neo_ange import __version__
 from neo_ange.clients.base import JPLClientError
+from neo_ange.expansion.discovery import ObjectDiscoveryService
+from neo_ange.manifests.run_manifest import list_manifests, load_latest_manifest
+from neo_ange.ml.dataset import MLDatasetLoader
+from neo_ange.ml.feature_sets import FeatureSetRegistry
 from neo_ange.pipelines.etl import ETLPipeline
 from neo_ange.pipelines.ingestion import IngestionPipeline
+from neo_ange.pipelines.ml import MLPipeline
 from neo_ange.services.gold_storage import GoldStorage
 from neo_ange.services.silver_storage import SilverStorage
 from neo_ange.spark.session import create_spark_session, stop_spark_session
@@ -26,8 +31,12 @@ console = Console()
 app = typer.Typer(help="Neo Angele Risk Lab command-line interface.")
 ingest_app = typer.Typer(help="Ingest public NASA/JPL API data into bronze storage.")
 etl_app = typer.Typer(help="Run Spark ETL from bronze to silver and gold features.")
+expand_app = typer.Typer(help="Discover and ingest additional SBDB Object payloads.")
+ml_app = typer.Typer(help="Run baseline ML experiments and leakage audits.")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(etl_app, name="etl")
+app.add_typer(expand_app, name="expand")
+app.add_typer(ml_app, name="ml")
 
 
 def build_pipeline() -> IngestionPipeline:
@@ -42,6 +51,19 @@ def build_etl_pipeline(spark) -> ETLPipeline:
         silver_root=settings.silver_dir,
         gold_root=settings.gold_dir,
     )
+
+
+def build_discovery_service() -> ObjectDiscoveryService:
+    settings = get_settings()
+    return ObjectDiscoveryService(
+        silver_root=settings.silver_dir,
+        bronze_root=Path(settings.data_dir) / "bronze",
+    )
+
+
+def build_ml_pipeline() -> MLPipeline:
+    settings = get_settings()
+    return MLPipeline(gold_root=settings.gold_dir)
 
 
 def _print_saved_paths(paths: list[Path]) -> None:
@@ -94,6 +116,20 @@ def _run_etl(operation: str, callback: typer.CallbackParam) -> None:
         raise typer.Exit(code=1)
 
 
+def _run_ml(operation: str, callback: typer.CallbackParam) -> None:
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    try:
+        result = callback()
+    except Exception as exc:
+        console.print(f"[red]{operation} failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(json.dumps(result, indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def info() -> None:
     """Show project and runtime configuration."""
@@ -109,7 +145,12 @@ def info() -> None:
     table.add_row("Data directory", str(settings.data_dir))
     table.add_row("Request timeout", f"{settings.request_timeout}s")
 
-    console.print(Panel.fit("Public NASA/JPL ingestion foundation", title=PROJECT_NAME))
+    console.print(
+        Panel.fit(
+            "NASA/JPL ingestion, Spark ETL, feature engineering, and baseline ML",
+            title=PROJECT_NAME,
+        )
+    )
     console.print(table)
 
     endpoint_table = Table(title="Configured endpoints")
@@ -268,6 +309,166 @@ def ingest_sample() -> None:
     _run_ingestion("Sample bundle ingestion", callback)
 
 
+@expand_app.command("discover")
+def expand_discover(
+    strategy: str = typer.Option("all", "--strategy"),
+    limit: int = typer.Option(100, "--limit", min=1),
+) -> None:
+    """Discover local SBDB designations without calling the internet."""
+    discovery = build_discovery_service()
+    designations = _discover_designations(discovery, strategy=strategy, limit=limit)
+
+    table = Table(title=f"Discovered designations ({len(designations)})")
+    table.add_column("Designation", overflow="fold")
+    for designation in designations:
+        table.add_row(designation)
+    console.print(table)
+    if discovery.warnings:
+        _print_list_table("Discovery warnings", discovery.warnings)
+
+
+@expand_app.command("ingest-objects")
+def expand_ingest_objects(
+    strategy: str = typer.Option("all", "--strategy"),
+    limit: int = typer.Option(100, "--limit", min=1),
+    rich: bool = typer.Option(True, "--rich/--basic"),
+    skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
+) -> None:
+    """Discover designations and ingest SBDB Object payloads into bronze."""
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    try:
+        result = build_pipeline().ingest_discovered_objects(
+            strategy=strategy,
+            limit=limit,
+            rich=rich,
+            skip_existing=skip_existing,
+        )
+    except JPLClientError as exc:
+        console.print(f"[red]Bulk SBDB Object ingestion failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        console.print(f"[red]Bulk SBDB Object ingestion failed unexpectedly:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(json.dumps(result, indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@ml_app.command("status")
+def ml_status() -> None:
+    """Show gold dataset and latest ML artifact status."""
+    settings = get_settings()
+    loader = MLDatasetLoader(settings.gold_dir)
+    df = loader.load_gold_features()
+    validation = loader.validate_target(df, target="pha")
+    reports_dir = Path("reports/ml")
+
+    console.print(Panel.fit("Baseline ML status", title=PROJECT_NAME))
+    table = Table(title="Gold dataset")
+    table.add_column("Item")
+    table.add_column("Value", overflow="fold")
+    table.add_row("Path", str(loader.features_path))
+    table.add_row("Rows", str(len(df)))
+    table.add_row("Columns", str(len(df.columns)))
+    table.add_row("Target status", validation["status"])
+    table.add_row("PHA positives", str(validation["n_positive"]))
+    table.add_row("PHA negatives", str(validation["n_negative"]))
+    table.add_row("PHA positive rate", str(validation["positive_rate"]))
+    console.print(table)
+
+    latest_reports = _latest_paths(reports_dir, patterns=["*.json", "*.csv", "*.md"])
+    _print_list_table("Latest ML reports", [str(path) for path in latest_reports])
+    latest_ml_manifest = load_latest_manifest("ml")
+    latest_manifests = list_manifests("ml")[-5:]
+    _print_list_table("Latest ML manifests", [str(path) for path in latest_manifests])
+    if latest_ml_manifest:
+        console.print(f"[bold]Latest ML manifest status:[/bold] {latest_ml_manifest.get('status')}")
+
+
+@ml_app.command("train-baselines")
+def ml_train_baselines(
+    target: str = typer.Option("pha", "--target"),
+    min_rows: int = typer.Option(100, "--min-rows", min=1),
+    min_positive: int = typer.Option(5, "--min-positive", min=1),
+) -> None:
+    """Run baseline ML experiments when the gold dataset is large enough."""
+
+    def callback() -> dict:
+        return build_ml_pipeline().run_baselines(
+            target=target,
+            min_rows=min_rows,
+            min_positive=min_positive,
+        )
+
+    _run_ml("Baseline ML training", callback)
+
+
+@ml_app.command("leakage-audit")
+def ml_leakage_audit(target: str = typer.Option("pha", "--target")) -> None:
+    """Generate leakage audit reports from the latest baseline results."""
+
+    def callback() -> dict:
+        return build_ml_pipeline().run_leakage_audit(target=target)
+
+    _run_ml("PHA leakage audit", callback)
+
+
+@ml_app.command("run-all")
+def ml_run_all(
+    target: str = typer.Option("pha", "--target"),
+    min_rows: int = typer.Option(100, "--min-rows", min=1),
+    min_positive: int = typer.Option(5, "--min-positive", min=1),
+) -> None:
+    """Run baseline ML and leakage audit reports."""
+
+    def callback() -> dict:
+        pipeline = build_ml_pipeline()
+        baseline_result = pipeline.run_baselines(
+            target=target,
+            min_rows=min_rows,
+            min_positive=min_positive,
+        )
+        leakage_result = pipeline.run_leakage_audit(target=target)
+        return {
+            "status": baseline_result["status"],
+            "target": target,
+            "outputs": {
+                **baseline_result.get("outputs", {}),
+                **leakage_result.get("outputs", {}),
+            },
+            "metrics_summary": baseline_result.get("metrics_summary", {}),
+            "warnings": [
+                *baseline_result.get("warnings", []),
+                *leakage_result.get("warnings", []),
+            ],
+            "errors": [
+                *baseline_result.get("errors", []),
+                *leakage_result.get("errors", []),
+            ],
+        }
+
+    _run_ml("Full ML pipeline", callback)
+
+
+@ml_app.command("feature-sets")
+def ml_feature_sets() -> None:
+    """List registered ML feature sets."""
+    registry = FeatureSetRegistry()
+    table = Table(title="ML feature sets")
+    table.add_column("Name")
+    table.add_column("Feature count", justify="right")
+    table.add_column("Description", overflow="fold")
+    for definition in registry.list_feature_sets():
+        table.add_row(
+            definition.name,
+            str(len(definition.features)),
+            definition.description,
+        )
+    console.print(table)
+
+
 def _list_bronze_sources(bronze_root: Path) -> list[str]:
     if not bronze_root.exists():
         return []
@@ -276,6 +477,36 @@ def _list_bronze_sources(bronze_root: Path) -> list[str]:
         for child in bronze_root.iterdir()
         if child.is_dir() and any(child.rglob("*.json"))
     )
+
+
+def _discover_designations(
+    discovery: ObjectDiscoveryService,
+    strategy: str,
+    limit: int,
+) -> list[str]:
+    if strategy == "all":
+        return discovery.discover_all(limit=limit)
+    if strategy == "silver-cad":
+        return discovery.discover_from_silver_cad(limit=limit)
+    if strategy == "silver-sentry":
+        return discovery.discover_from_silver_sentry(limit=limit)
+    if strategy == "bronze-cad":
+        return discovery.discover_from_bronze_cad(limit=limit)
+    if strategy == "bronze-sentry":
+        return discovery.discover_from_bronze_sentry(limit=limit)
+    if strategy == "curated":
+        return discovery.curated_seed_objects(limit=limit)
+    allowed = "all, silver-cad, silver-sentry, bronze-cad, bronze-sentry, curated"
+    raise typer.BadParameter(f"Unsupported strategy '{strategy}'. Expected one of: {allowed}.")
+
+
+def _latest_paths(root: Path, patterns: list[str], limit: int = 5) -> list[Path]:
+    if not root.exists():
+        return []
+    paths: list[Path] = []
+    for pattern in patterns:
+        paths.extend(path for path in root.glob(pattern) if path.is_file())
+    return sorted(paths, key=lambda path: path.stat().st_mtime, reverse=True)[:limit]
 
 
 def _print_list_table(title: str, values: list[str]) -> None:

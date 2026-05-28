@@ -29,6 +29,21 @@ data/silver/*
 data/gold/*
 !data/gold/.gitkeep
 
+# Generated reports and ML artifacts
+reports/manifests/*
+!reports/manifests/.gitkeep
+reports/ml/*
+!reports/ml/.gitkeep
+reports/data_quality/*
+!reports/data_quality/.gitkeep
+artifacts/models/*
+!artifacts/models/.gitkeep
+artifacts/figures/*
+!artifacts/figures/.gitkeep
+*.joblib
+*.pkl
+*.pickle
+
 # Notebooks
 .ipynb_checkpoints/
 
@@ -37,4 +52,3 @@ data/gold/*
 Thumbs.db
 .idea/
 .vscode/
-

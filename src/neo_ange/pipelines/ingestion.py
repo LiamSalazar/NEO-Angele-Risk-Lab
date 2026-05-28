@@ -11,6 +11,8 @@ from neo_ange.clients.close_approach import CloseApproachClient
 from neo_ange.clients.sbdb_object import SBDBObjectClient
 from neo_ange.clients.sbdb_query import SBDBQueryClient
 from neo_ange.clients.sentry import SentryClient
+from neo_ange.expansion.bulk_ingestion import BulkObjectIngestionService
+from neo_ange.expansion.discovery import ObjectDiscoveryService
 from neo_ange.services.bronze_storage import BronzeStorage
 from neo_ange.utils.config import get_settings
 
@@ -140,6 +142,32 @@ class IngestionPipeline:
                 len(failures),
             )
         return successes
+
+    def ingest_discovered_objects(
+        self,
+        strategy: str = "all",
+        limit: int = 100,
+        rich: bool = True,
+        skip_existing: bool = True,
+        request_delay_seconds: float = 0.2,
+    ) -> dict[str, Any]:
+        """Discover object designations from local data and ingest SBDB Object payloads."""
+        settings = get_settings()
+        service = BulkObjectIngestionService(
+            object_client=self.sbdb_object_client,
+            bronze_storage=self.bronze_storage,
+            discovery_service=ObjectDiscoveryService(
+                silver_root=settings.silver_dir,
+                bronze_root=Path(settings.data_dir) / "bronze",
+            ),
+            request_delay_seconds=request_delay_seconds,
+        )
+        return service.ingest_from_discovery(
+            strategy=strategy,
+            limit=limit,
+            rich=rich,
+            skip_existing=skip_existing,
+        )
 
     @staticmethod
     def _client_params(client: Any, fallback: dict[str, Any]) -> dict[str, Any]:

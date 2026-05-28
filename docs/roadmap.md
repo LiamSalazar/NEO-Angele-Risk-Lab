@@ -20,9 +20,13 @@ Implemented. Normalize bronze payloads into silver Parquet tables using Spark, i
 
 Implemented. Build the initial `neo_risk_features` gold dataset with orbital, physical, close approach, Sentry, proxy-score, and feature-completeness fields.
 
+## Phase 4.5: Data Expansion and ETL Hardening
+
+Implemented. Discover object designations from local CAD/Sentry data, bulk-ingest additional SBDB Object payloads, write run manifests, and report gold ML-readiness warnings without blocking ETL.
+
 ## Phase 5: Baseline ML and Leakage Audit
 
-Train initial transparent models and audit features for temporal or target leakage.
+Implemented. Train transparent baseline models when data volume is sufficient, skip honestly when it is not, compare leakage-aware feature sets, and generate JSON, CSV, and Markdown reports.
 
 ## Phase 6: Risk Priority Score
 

@@ -58,6 +58,35 @@ class BronzeStorage:
             return None
         return max(files, key=lambda path: str(path))
 
+    def object_exists(self, source: str, object_id: str) -> bool:
+        """Return whether a bronze wrapper already exists for an object id."""
+        safe_target = self._slugify(object_id)
+        return safe_target in self.list_object_ids(source)
+
+    def list_object_ids(self, source: str) -> set[str]:
+        """List normalized object ids found under a source, across date partitions."""
+        object_ids: set[str] = set()
+        for path in self.list_files(source):
+            object_id = self._object_id_from_file(path)
+            if object_id:
+                object_ids.add(self._slugify(object_id))
+        return object_ids
+
+    def _object_id_from_file(self, path: Path) -> str | None:
+        try:
+            wrapper = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        metadata = wrapper.get("metadata")
+        if isinstance(metadata, dict):
+            object_id = metadata.get("object_id")
+            if object_id:
+                return str(object_id)
+        stem_parts = path.stem.split("_", maxsplit=1)
+        if len(stem_parts) == 2:
+            return stem_parts[1]
+        return path.stem
+
     @staticmethod
     def _slugify(value: str) -> str:
         slug = re.sub(r"[^A-Za-z0-9_.-]+", "_", value.strip().lower())

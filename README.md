@@ -4,11 +4,11 @@ Neo Angele Risk Lab is an open-source data engineering and probabilistic risk in
 
 ## What This Project Does
 
-The project builds a reproducible Python data platform around NASA/JPL Small-Body and CNEOS APIs. It supports raw JSON ingestion into a bronze layer, Spark-based normalization into silver Parquet tables, and an initial gold feature dataset for future ML, ranking, and simulation work.
+The project builds a reproducible Python data platform around NASA/JPL Small-Body and CNEOS APIs. It supports raw JSON ingestion into a bronze layer, Spark-based normalization into silver Parquet tables, an initial gold feature dataset, data expansion workflows, and leakage-aware baseline ML reports.
 
 ## Current Phase Support
 
-This release implements phases 0 through 4:
+This release implements phases 0 through 5:
 
 - Project documentation and operating design.
 - Installable Python package using a `src/` layout.
@@ -19,6 +19,10 @@ This release implements phases 0 through 4:
 - Silver Parquet tables for SBDB Object, CAD, Sentry, and ingestion events.
 - Initial gold analytical dataset named `neo_risk_features`.
 - JSON quality reports for the gold dataset.
+- Data expansion from local CAD/Sentry designations into additional SBDB Object payloads.
+- Run manifests for ingestion, ETL, and ML workflows.
+- Baseline scikit-learn models and leakage-aware feature-set experiments.
+- PHA leakage audit reports that separate definition-related variables from contextual signals.
 - Unit tests with mocked clients and responses.
 - Docker and Docker Compose entry points for CLI execution.
 
@@ -42,8 +46,11 @@ No API keys or private credentials are required.
 The current architecture is intentionally small and modular:
 
 - `clients/`: typed NASA/JPL API clients with explicit error handling.
-- `pipelines/`: ingestion orchestration with injectable dependencies.
+- `pipelines/`: ingestion, ETL, and ML orchestration with injectable dependencies.
 - `services/`: bronze storage and file layout.
+- `expansion/`: local object discovery and bulk SBDB Object ingestion.
+- `manifests/`: JSON run manifest models and persistence.
+- `ml/`: dataset loading, feature sets, preprocessing, baselines, metrics, leakage audit, and reporting.
 - `domain/`: lightweight metadata models.
 - `utils/`: configuration, logging, and UTC time helpers.
 - `spark/`: local Spark session factory.
@@ -51,8 +58,10 @@ The current architecture is intentionally small and modular:
 - `data/bronze/`: raw JSON landing zone for source responses.
 - `data/silver/`: normalized Parquet tables.
 - `data/gold/`: analytical feature datasets and quality reports.
+- `reports/`: manifests, ML reports, and data-quality outputs.
+- `artifacts/`: generated models and figures, ignored by git except placeholders.
 
-Future phases will add baseline machine learning, leakage audits, calibrated risk scoring, dashboarding, FastAPI access, Monte Carlo simulation, and graph neural network research.
+Future phases will add calibrated risk scoring, dashboarding, FastAPI access, Monte Carlo simulation, and graph neural network research.
 
 ## Setup
 
@@ -157,6 +166,70 @@ Outputs are written under:
 
 The gold features are initial, explainable engineering signals. They are not a final calibrated Risk Priority Score.
 
+## Data Expansion
+
+Discover candidate object designations from local silver/bronze CAD and Sentry data, falling back to a curated seed list when needed:
+
+```bash
+python -m neo_ange.cli expand discover --strategy all --limit 100
+```
+
+Ingest a small curated SBDB Object set:
+
+```bash
+python -m neo_ange.cli expand ingest-objects --strategy curated --limit 10
+```
+
+Ingest discovered objects while skipping bronze files that already exist:
+
+```bash
+python -m neo_ange.cli expand ingest-objects --strategy all --limit 100 --skip-existing
+```
+
+Bulk ingestion is tolerant of per-object API failures. It writes an ingestion manifest under `reports/manifests/`.
+
+## Baseline ML
+
+Inspect current ML readiness:
+
+```bash
+python -m neo_ange.cli ml status
+```
+
+Train baseline models when volume and class balance are sufficient:
+
+```bash
+python -m neo_ange.cli ml train-baselines --target pha
+```
+
+Run the leakage audit:
+
+```bash
+python -m neo_ange.cli ml leakage-audit --target pha
+```
+
+Run the full ML flow:
+
+```bash
+python -m neo_ange.cli ml run-all --target pha
+```
+
+Reports are written under `reports/ml/`. Lightweight serialized models are written under `artifacts/models/` and ignored by git.
+
+## Recommended Workflow
+
+```bash
+python -m neo_ange.cli ingest sample
+python -m neo_ange.cli etl run-all
+python -m neo_ange.cli expand ingest-objects --strategy all --limit 100 --skip-existing
+python -m neo_ange.cli etl run-all
+python -m neo_ange.cli ml run-all --target pha
+```
+
+## Honest Limitation
+
+Baseline ML may return `insufficient_data` if `neo_risk_features` does not have enough rows or enough positive PHA examples. That is expected behavior. The project should expand ingestion and rebuild ETL before training rather than fabricate metrics from a tiny or single-class dataset.
+
 ## Testing and Quality
 
 Run tests:
@@ -183,6 +256,11 @@ make ingest-sample
 make etl-status
 make build-gold
 make etl
+make expand-curated
+make expand-all
+make ml-status
+make ml
+make leakage-audit
 ```
 
 ## Docker
@@ -205,11 +283,18 @@ Run ETL status from Docker Compose:
 docker compose run --rm app python -m neo_ange.cli etl status
 ```
 
+Run ML status from Docker Compose:
+
+```bash
+docker compose run --rm app python -m neo_ange.cli ml status
+```
+
 ## Roadmap Summary
 
 - Phase 3: Spark ETL from bronze to silver and gold. Implemented.
 - Phase 4: feature engineering for orbital and close approach risk analysis. Implemented.
-- Phase 5: baseline ML and leakage audit.
+- Phase 4.5: data expansion and ETL hardening. Implemented.
+- Phase 5: baseline ML and leakage audit. Implemented.
 - Phase 6: Risk Priority Score design and calibration.
 - Phase 7: dashboard and FastAPI service.
 - Phase 8: Monte Carlo simulation research.
