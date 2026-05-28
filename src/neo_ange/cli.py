@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -11,7 +12,11 @@ from rich.table import Table
 
 from neo_ange import __version__
 from neo_ange.clients.base import JPLClientError
+from neo_ange.pipelines.etl import ETLPipeline
 from neo_ange.pipelines.ingestion import IngestionPipeline
+from neo_ange.services.gold_storage import GoldStorage
+from neo_ange.services.silver_storage import SilverStorage
+from neo_ange.spark.session import create_spark_session, stop_spark_session
 from neo_ange.utils.config import get_settings, load_yaml_file
 from neo_ange.utils.logging import setup_logging
 
@@ -20,11 +25,23 @@ PROJECT_NAME = "Neo Angele Risk Lab"
 console = Console()
 app = typer.Typer(help="Neo Angele Risk Lab command-line interface.")
 ingest_app = typer.Typer(help="Ingest public NASA/JPL API data into bronze storage.")
+etl_app = typer.Typer(help="Run Spark ETL from bronze to silver and gold features.")
 app.add_typer(ingest_app, name="ingest")
+app.add_typer(etl_app, name="etl")
 
 
 def build_pipeline() -> IngestionPipeline:
     return IngestionPipeline()
+
+
+def build_etl_pipeline(spark) -> ETLPipeline:
+    settings = get_settings()
+    return ETLPipeline(
+        spark=spark,
+        bronze_root=Path(settings.data_dir) / "bronze",
+        silver_root=settings.silver_dir,
+        gold_root=settings.gold_dir,
+    )
 
 
 def _print_saved_paths(paths: list[Path]) -> None:
@@ -54,6 +71,29 @@ def _run_ingestion(operation: str, callback: typer.CallbackParam) -> None:
     _print_saved_paths(paths)
 
 
+def _run_etl(operation: str, callback: typer.CallbackParam) -> None:
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    spark = None
+    try:
+        spark = create_spark_session(
+            app_name=settings.spark_app_name,
+            master=settings.spark_master,
+            log_level=settings.spark_log_level,
+        )
+        result = callback(build_etl_pipeline(spark))
+    except Exception as exc:
+        console.print(f"[red]{operation} failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    finally:
+        if spark is not None:
+            stop_spark_session(spark)
+
+    console.print(json.dumps(result, indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def info() -> None:
     """Show project and runtime configuration."""
@@ -78,6 +118,71 @@ def info() -> None:
     for key, value in datasources.items():
         endpoint_table.add_row(key, str(value.get("base_url", "")))
     console.print(endpoint_table)
+
+
+@etl_app.command("bronze-to-silver")
+def etl_bronze_to_silver(
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Optional source to process: sbdb_object, cad, sentry, or sbdb_query.",
+    ),
+) -> None:
+    """Transform bronze JSON wrappers into silver Parquet tables."""
+
+    def callback(pipeline: ETLPipeline) -> dict:
+        return pipeline.run_bronze_to_silver(source=source)
+
+    _run_etl("Bronze-to-silver ETL", callback)
+
+
+@etl_app.command("build-gold")
+def etl_build_gold() -> None:
+    """Build the gold neo_risk_features dataset and quality report."""
+
+    def callback(pipeline: ETLPipeline) -> dict:
+        return pipeline.run_gold()
+
+    _run_etl("Gold feature build", callback)
+
+
+@etl_app.command("run-all")
+def etl_run_all() -> None:
+    """Run bronze-to-silver ETL, gold feature build, and quality checks."""
+
+    def callback(pipeline: ETLPipeline) -> dict:
+        return pipeline.run_all()
+
+    _run_etl("Full ETL", callback)
+
+
+@etl_app.command("status")
+def etl_status() -> None:
+    """Show bronze, silver, gold, and quality-report availability."""
+    settings = get_settings()
+    bronze_root = Path(settings.data_dir) / "bronze"
+    silver_storage = SilverStorage(settings.silver_dir)
+    gold_storage = GoldStorage(settings.gold_dir)
+
+    console.print(Panel.fit("Spark ETL status", title=PROJECT_NAME))
+
+    paths_table = Table(title="Data root paths")
+    paths_table.add_column("Layer")
+    paths_table.add_column("Path", overflow="fold")
+    paths_table.add_row("bronze", str(bronze_root))
+    paths_table.add_row("silver", str(settings.silver_dir))
+    paths_table.add_row("gold", str(settings.gold_dir))
+    console.print(paths_table)
+
+    bronze_sources = _list_bronze_sources(bronze_root)
+    silver_tables = silver_storage.list_tables()
+    gold_tables = gold_storage.list_tables()
+    quality_reports = gold_storage.latest_quality_reports()
+
+    _print_list_table("Bronze sources available", bronze_sources)
+    _print_list_table("Silver tables available", silver_tables)
+    _print_list_table("Gold tables available", gold_tables)
+    _print_list_table("Latest quality reports", [str(path) for path in quality_reports])
 
 
 @ingest_app.command("sbdb-query")
@@ -161,6 +266,28 @@ def ingest_sample() -> None:
         return paths
 
     _run_ingestion("Sample bundle ingestion", callback)
+
+
+def _list_bronze_sources(bronze_root: Path) -> list[str]:
+    if not bronze_root.exists():
+        return []
+    return sorted(
+        child.name
+        for child in bronze_root.iterdir()
+        if child.is_dir() and any(child.rglob("*.json"))
+    )
+
+
+def _print_list_table(title: str, values: list[str]) -> None:
+    console.print(f"[bold]{title}[/bold]")
+    table = Table()
+    table.add_column("Name", overflow="fold")
+    if values:
+        for value in values:
+            table.add_row(value)
+    else:
+        table.add_row("[yellow]None found[/yellow]")
+    console.print(table)
 
 
 if __name__ == "__main__":

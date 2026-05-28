@@ -14,3 +14,12 @@ storage:
   silver_dir: data/silver
   gold_dir: data/gold
 
+spark:
+  master: local[*]
+  app_name: neo-ange-risk-lab
+  log_level: WARN
+
+paths:
+  bronze_dir: data/bronze
+  silver_dir: data/silver
+  gold_dir: data/gold

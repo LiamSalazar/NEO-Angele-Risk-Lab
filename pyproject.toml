@@ -12,8 +12,11 @@ license = { text = "MIT" }
 authors = [{ name = "Neo Angele Risk Lab Contributors" }]
 keywords = ["nasa", "jpl", "near-earth-objects", "data-engineering", "risk"]
 dependencies = [
+    "pandas>=2.2",
     "pydantic>=2.7",
     "pydantic-settings>=2.2",
+    "pyarrow>=15.0",
+    "pyspark>=3.5",
     "python-dotenv>=1.0",
     "PyYAML>=6.0",
     "requests>=2.31",
@@ -49,4 +52,3 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-

@@ -39,3 +39,8 @@ The current sample defaults to near-term Earth approaches and supports explicit 
 
 The Sentry client keeps these modes separate and avoids combining incompatible selectors.
 
+## Downstream Normalization Notes
+
+The Spark ETL layer reads all source responses through the bronze wrapper format. SBDB Object payloads are normalized by extracting object metadata, physical parameters, and orbital elements. CAD payloads are normalized from the API `fields` plus `data` tabular shape. Sentry summary and virtual impactor payloads are processed defensively because their modes expose different fields.
+
+Missing optional fields are kept as nulls in silver and gold outputs rather than failing the pipeline.

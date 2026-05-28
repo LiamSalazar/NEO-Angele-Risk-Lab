@@ -7,7 +7,11 @@ services:
       NEO_ANGE_LOG_LEVEL: INFO
       NEO_ANGE_DATA_DIR: data
       NEO_ANGE_REQUEST_TIMEOUT: 30
+      NEO_ANGE_SPARK_MASTER: local[*]
+      NEO_ANGE_SPARK_APP_NAME: neo-ange-risk-lab
+      NEO_ANGE_SPARK_LOG_LEVEL: WARN
+      NEO_ANGE_SILVER_DIR: data/silver
+      NEO_ANGE_GOLD_DIR: data/gold
     volumes:
       - .:/app
     command: python -m neo_ange.cli info
-

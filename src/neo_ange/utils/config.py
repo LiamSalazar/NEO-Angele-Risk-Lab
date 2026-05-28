@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     data_dir: Path = Field(default=Path("data"))
     request_timeout: int = Field(default=30)
+    spark_master: str = Field(default="local[*]")
+    spark_app_name: str = Field(default="neo-ange-risk-lab")
+    spark_log_level: str = Field(default="WARN")
+    silver_dir: Path = Field(default=Path("data/silver"))
+    gold_dir: Path = Field(default=Path("data/gold"))
 
     model_config = SettingsConfigDict(
         env_prefix="NEO_ANGE_",

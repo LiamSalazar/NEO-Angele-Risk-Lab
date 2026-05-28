@@ -14,11 +14,11 @@ Ingest raw JSON from SBDB Object, SBDB Query, Close Approach Data, and Sentry AP
 
 ## Phase 3: Spark ETL
 
-Normalize bronze payloads into silver tables and analytical gold datasets using Spark.
+Implemented. Normalize bronze payloads into silver Parquet tables using Spark, including SBDB Object, CAD, Sentry, virtual impactor, and ingestion event outputs.
 
 ## Phase 4: Feature Engineering
 
-Build reusable transformations for orbital, physical, close approach, and impact-risk features.
+Implemented. Build the initial `neo_risk_features` gold dataset with orbital, physical, close approach, Sentry, proxy-score, and feature-completeness fields.
 
 ## Phase 5: Baseline ML and Leakage Audit
 
@@ -39,4 +39,3 @@ Add uncertainty-aware simulation experiments for probabilistic risk analysis.
 ## Phase 9: Graph Research
 
 Explore graph neural network methods over object, orbit, approach, and temporal relationships.
-
