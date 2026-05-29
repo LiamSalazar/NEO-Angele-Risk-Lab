@@ -28,6 +28,12 @@ data/silver/*
 !data/silver/.gitkeep
 data/gold/*
 !data/gold/.gitkeep
+!data/gold/risk_scores/
+data/gold/risk_scores/*
+!data/gold/risk_scores/.gitkeep
+!data/gold/simulation_results/
+data/gold/simulation_results/*
+!data/gold/simulation_results/.gitkeep
 
 # Generated reports and ML artifacts
 reports/manifests/*
@@ -36,6 +42,10 @@ reports/ml/*
 !reports/ml/.gitkeep
 reports/data_quality/*
 !reports/data_quality/.gitkeep
+reports/risk/*
+!reports/risk/.gitkeep
+reports/simulation/*
+!reports/simulation/.gitkeep
 artifacts/models/*
 !artifacts/models/.gitkeep
 artifacts/figures/*

@@ -19,11 +19,15 @@ from neo_ange.ml.feature_sets import FeatureSetRegistry
 from neo_ange.pipelines.etl import ETLPipeline
 from neo_ange.pipelines.ingestion import IngestionPipeline
 from neo_ange.pipelines.ml import MLPipeline
+from neo_ange.pipelines.risk import RiskPipeline
+from neo_ange.pipelines.simulation import SimulationPipeline
+from neo_ange.risk.categories import RiskCategoryAssigner
 from neo_ange.services.gold_storage import GoldStorage
 from neo_ange.services.silver_storage import SilverStorage
 from neo_ange.spark.session import create_spark_session, stop_spark_session
 from neo_ange.utils.config import get_settings, load_yaml_file
 from neo_ange.utils.logging import setup_logging
+from neo_ange.utils.serialization import to_jsonable
 
 PROJECT_NAME = "Neo Angele Risk Lab"
 
@@ -33,10 +37,16 @@ ingest_app = typer.Typer(help="Ingest public NASA/JPL API data into bronze stora
 etl_app = typer.Typer(help="Run Spark ETL from bronze to silver and gold features.")
 expand_app = typer.Typer(help="Discover and ingest additional SBDB Object payloads.")
 ml_app = typer.Typer(help="Run baseline ML experiments and leakage audits.")
+risk_app = typer.Typer(help="Build and inspect experimental risk-priority scores.")
+api_app = typer.Typer(help="Inspect or run the FastAPI backend.")
+simulate_app = typer.Typer(help="Run approximate Monte Carlo score simulations.")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(etl_app, name="etl")
 app.add_typer(expand_app, name="expand")
 app.add_typer(ml_app, name="ml")
+app.add_typer(risk_app, name="risk")
+app.add_typer(api_app, name="api")
+app.add_typer(simulate_app, name="simulate")
 
 
 def build_pipeline() -> IngestionPipeline:
@@ -64,6 +74,16 @@ def build_discovery_service() -> ObjectDiscoveryService:
 def build_ml_pipeline() -> MLPipeline:
     settings = get_settings()
     return MLPipeline(gold_root=settings.gold_dir)
+
+
+def build_risk_pipeline() -> RiskPipeline:
+    settings = get_settings()
+    return RiskPipeline(gold_root=settings.gold_dir)
+
+
+def build_simulation_pipeline() -> SimulationPipeline:
+    settings = get_settings()
+    return SimulationPipeline(gold_root=settings.gold_dir)
 
 
 def _print_saved_paths(paths: list[Path]) -> None:
@@ -469,6 +489,159 @@ def ml_feature_sets() -> None:
     console.print(table)
 
 
+@risk_app.command("status")
+def risk_status() -> None:
+    """Show experimental risk-score availability."""
+    status_payload = build_risk_pipeline().status()
+    console.print(Panel.fit("Risk score status", title=PROJECT_NAME))
+    _print_key_value_table("Risk pipeline", status_payload)
+    if not status_payload["gold_features_available"]:
+        console.print("[yellow]Gold features not found. Run: python -m neo_ange.cli etl run-all[/yellow]")
+    if not status_payload["risk_scores_available"]:
+        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+
+
+@risk_app.command("build")
+def risk_build() -> None:
+    """Build experimental risk-priority scores and reports."""
+    result = build_risk_pipeline().build_scores()
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@risk_app.command("top")
+def risk_top(limit: int = typer.Option(20, "--limit", min=1)) -> None:
+    """Show top objects by experimental risk-priority score."""
+    pipeline = build_risk_pipeline()
+    rows = pipeline.top(limit=limit)
+    if not rows:
+        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+        return
+    table = Table(title=f"Top {len(rows)} risk-priority objects")
+    for column in ["object_key", "des", "risk_score_0_100", "risk_category"]:
+        table.add_column(column, overflow="fold")
+    for row in rows:
+        table.add_row(
+            str(row.get("object_key", "")),
+            str(row.get("des", "")),
+            f"{float(row.get('risk_score_0_100') or 0):.2f}",
+            str(row.get("risk_category", "")),
+        )
+    console.print(table)
+
+
+@risk_app.command("explain")
+def risk_explain(object_key: str = typer.Option(..., "--object-key")) -> None:
+    """Explain one object's experimental risk-priority score."""
+    explanation = build_risk_pipeline().explain(object_key)
+    console.print(json.dumps(to_jsonable(explanation), indent=2, sort_keys=True))
+    if explanation.get("status") in {"missing_data", "not_found"}:
+        raise typer.Exit(code=1)
+
+
+@risk_app.command("categories")
+def risk_categories() -> None:
+    """List configured risk-priority categories."""
+    categories = RiskCategoryAssigner().all_categories()
+    table = Table(title="Risk-priority categories")
+    table.add_column("Category")
+    table.add_column("Range")
+    table.add_column("Description", overflow="fold")
+    for name, metadata in categories.items():
+        table.add_row(
+            name,
+            f"{metadata['min']} <= score < {metadata['max']}",
+            str(metadata["description"]),
+        )
+    console.print(table)
+
+
+@api_app.command("info")
+def api_info() -> None:
+    """Show FastAPI import path and route groups."""
+    table = Table(title="FastAPI backend")
+    table.add_column("Item")
+    table.add_column("Value", overflow="fold")
+    table.add_row("App import path", "neo_ange.api.main:app")
+    table.add_row("Run command", "uvicorn neo_ange.api.main:app --reload")
+    table.add_row("Route groups", "health, objects, rankings, risk, simulations")
+    table.add_row("Local docs", "http://127.0.0.1:8000/docs")
+    console.print(table)
+
+
+@api_app.command("run")
+def api_run(
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8000, "--port", min=1, max=65535),
+    reload: bool = typer.Option(True, "--reload/--no-reload"),
+) -> None:
+    """Run the FastAPI backend with uvicorn."""
+    import uvicorn
+
+    uvicorn.run("neo_ange.api.main:app", host=host, port=port, reload=reload)
+
+
+@simulate_app.command("status")
+def simulate_status() -> None:
+    """Show Monte Carlo simulation output availability."""
+    status_payload = build_simulation_pipeline().status()
+    console.print(Panel.fit("Monte Carlo simulation status", title=PROJECT_NAME))
+    _print_key_value_table("Simulation pipeline", status_payload)
+    if not status_payload["risk_scores_available"]:
+        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+    if not status_payload["simulation_results_available"]:
+        console.print(
+            "[yellow]Simulation results not found. Run: python -m neo_ange.cli simulate batch[/yellow]"
+        )
+
+
+@simulate_app.command("object")
+def simulate_object(
+    object_key: str = typer.Option(..., "--object-key"),
+    n_simulations: int = typer.Option(1000, "--n-simulations", min=1),
+    random_state: int = typer.Option(42, "--random-state"),
+) -> None:
+    """Run approximate Monte Carlo simulation for one object."""
+    result = build_simulation_pipeline().simulate_object(
+        object_key=object_key,
+        n_simulations=n_simulations,
+        random_state=random_state,
+    )
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") in {"failed", "not_found"}:
+        raise typer.Exit(code=1)
+
+
+@simulate_app.command("batch")
+def simulate_batch(
+    limit: int = typer.Option(50, "--limit", min=1),
+    n_simulations: int = typer.Option(500, "--n-simulations", min=1),
+    random_state: int = typer.Option(42, "--random-state"),
+) -> None:
+    """Run approximate Monte Carlo simulation for top ranked objects."""
+    result = build_simulation_pipeline().simulate_batch(
+        limit=limit,
+        n_simulations=n_simulations,
+        random_state=random_state,
+    )
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@simulate_app.command("latest")
+def simulate_latest(object_key: str = typer.Option(..., "--object-key")) -> None:
+    """Show latest saved simulation result for one object."""
+    result = build_simulation_pipeline().latest_for_object(object_key)
+    if result is None:
+        console.print(
+            "[yellow]Simulation results not found. Run: python -m neo_ange.cli simulate batch[/yellow]"
+        )
+        raise typer.Exit(code=1)
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+
+
 def _list_bronze_sources(bronze_root: Path) -> list[str]:
     if not bronze_root.exists():
         return []
@@ -518,6 +691,15 @@ def _print_list_table(title: str, values: list[str]) -> None:
             table.add_row(value)
     else:
         table.add_row("[yellow]None found[/yellow]")
+    console.print(table)
+
+
+def _print_key_value_table(title: str, payload: dict) -> None:
+    table = Table(title=title)
+    table.add_column("Key")
+    table.add_column("Value", overflow="fold")
+    for key, value in payload.items():
+        table.add_row(str(key), json.dumps(to_jsonable(value), sort_keys=True))
     console.print(table)
 
 
