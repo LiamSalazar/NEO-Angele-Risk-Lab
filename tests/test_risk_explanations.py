@@ -21,7 +21,9 @@ def test_explain_row_returns_main_drivers() -> None:
 
     assert explanation["main_drivers"]
     assert explanation["main_drivers"][0]["component"] == "orbital_risk_component"
-    assert "higher" not in explanation["technical_explanation"].lower() or explanation["risk_category"]
+    assert (
+        "higher" not in explanation["technical_explanation"].lower() or explanation["risk_category"]
+    )
 
 
 def test_explanation_detects_limitations_and_avoids_official_alert_language() -> None:

@@ -36,7 +36,9 @@ def list_objects(
 
     filtered = df.copy()
     if category and "risk_category" in filtered.columns:
-        filtered = filtered[filtered["risk_category"].astype("string").str.lower() == category.lower()]
+        filtered = filtered[
+            filtered["risk_category"].astype("string").str.lower() == category.lower()
+        ]
     if sentry_flag is not None and "sentry_flag" in filtered.columns:
         filtered = filtered[_bool_series(filtered["sentry_flag"]) == sentry_flag]
     if "risk_score_0_100" in filtered.columns:

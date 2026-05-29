@@ -496,9 +496,13 @@ def risk_status() -> None:
     console.print(Panel.fit("Risk score status", title=PROJECT_NAME))
     _print_key_value_table("Risk pipeline", status_payload)
     if not status_payload["gold_features_available"]:
-        console.print("[yellow]Gold features not found. Run: python -m neo_ange.cli etl run-all[/yellow]")
+        console.print(
+            "[yellow]Gold features not found. Run: python -m neo_ange.cli etl run-all[/yellow]"
+        )
     if not status_payload["risk_scores_available"]:
-        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+        console.print(
+            "[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]"
+        )
 
 
 @risk_app.command("build")
@@ -516,7 +520,9 @@ def risk_top(limit: int = typer.Option(20, "--limit", min=1)) -> None:
     pipeline = build_risk_pipeline()
     rows = pipeline.top(limit=limit)
     if not rows:
-        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+        console.print(
+            "[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]"
+        )
         return
     table = Table(title=f"Top {len(rows)} risk-priority objects")
     for column in ["object_key", "des", "risk_score_0_100", "risk_category"]:
@@ -589,10 +595,13 @@ def simulate_status() -> None:
     console.print(Panel.fit("Monte Carlo simulation status", title=PROJECT_NAME))
     _print_key_value_table("Simulation pipeline", status_payload)
     if not status_payload["risk_scores_available"]:
-        console.print("[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]")
+        console.print(
+            "[yellow]Risk scores not found. Run: python -m neo_ange.cli risk build[/yellow]"
+        )
     if not status_payload["simulation_results_available"]:
         console.print(
-            "[yellow]Simulation results not found. Run: python -m neo_ange.cli simulate batch[/yellow]"
+            "[yellow]Simulation results not found. Run: "
+            "python -m neo_ange.cli simulate batch[/yellow]"
         )
 
 
@@ -636,7 +645,8 @@ def simulate_latest(object_key: str = typer.Option(..., "--object-key")) -> None
     result = build_simulation_pipeline().latest_for_object(object_key)
     if result is None:
         console.print(
-            "[yellow]Simulation results not found. Run: python -m neo_ange.cli simulate batch[/yellow]"
+            "[yellow]Simulation results not found. Run: "
+            "python -m neo_ange.cli simulate batch[/yellow]"
         )
         raise typer.Exit(code=1)
     console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))

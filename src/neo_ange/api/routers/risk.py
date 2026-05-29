@@ -40,7 +40,9 @@ def explain_object(
     explanation = risk_pipeline.explain(object_key)
     status = explanation.get("status", "success")
     if status != "success":
-        return ExplanationResponse(status=status, explanation=None, message=explanation.get("message"))
+        return ExplanationResponse(
+            status=status, explanation=None, message=explanation.get("message")
+        )
     return ExplanationResponse(status="success", explanation=explanation)
 
 

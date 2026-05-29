@@ -94,17 +94,17 @@ class PerturbationEngine:
             if column in bounded.columns:
                 bounded[column] = pd.to_numeric(bounded[column], errors="coerce").clip(lower=0)
         if "sentry_ip" in bounded.columns:
-            bounded["sentry_ip"] = pd.to_numeric(
-                bounded["sentry_ip"], errors="coerce"
-            ).clip(0.0, 1.0)
+            bounded["sentry_ip"] = pd.to_numeric(bounded["sentry_ip"], errors="coerce").clip(
+                0.0, 1.0
+            )
         if "condition_code" in bounded.columns:
-            bounded["condition_code"] = pd.to_numeric(
-                bounded["condition_code"], errors="coerce"
-            ).round().clip(0, 9)
+            bounded["condition_code"] = (
+                pd.to_numeric(bounded["condition_code"], errors="coerce").round().clip(0, 9)
+            )
         if "n_obs_used" in bounded.columns:
-            bounded["n_obs_used"] = pd.to_numeric(
-                bounded["n_obs_used"], errors="coerce"
-            ).round().clip(lower=0)
+            bounded["n_obs_used"] = (
+                pd.to_numeric(bounded["n_obs_used"], errors="coerce").round().clip(lower=0)
+            )
         return _refresh_derived_features(bounded)
 
     def _perturb_values(

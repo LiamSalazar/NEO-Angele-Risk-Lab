@@ -60,7 +60,11 @@ class MonteCarloEngine:
                 "summary": {"n_objects": 0},
                 "warnings": ["Risk scores are not available for batch simulation."],
             }
-        source = self.ranking.rank(df, limit=limit) if "risk_score_0_100" in df.columns else df.head(limit)
+        source = (
+            self.ranking.rank(df, limit=limit)
+            if "risk_score_0_100" in df.columns
+            else df.head(limit)
+        )
         results = []
         for index, (_, row) in enumerate(source.iterrows()):
             seed = None if random_state is None else int(random_state) + index
@@ -97,11 +101,11 @@ class MonteCarloEngine:
         if "risk_score_0_100" not in base_scored or pd.isna(base_scored.get("risk_score_0_100")):
             base_scored.update(self.risk_scorer.score_row(base_row))
         base_score = float(base_scored.get("risk_score_0_100", 0.0) or 0.0)
-        base_category = str(
-            base_scored.get("risk_category") or self.categories.assign(base_score)
-        )
+        base_category = str(base_scored.get("risk_category") or self.categories.assign(base_score))
         categories = simulated_df["risk_category"].fillna("low").astype(str)
-        category_shift_probability = float((categories != base_category).mean()) if len(categories) else 0.0
+        category_shift_probability = (
+            float((categories != base_category).mean()) if len(categories) else 0.0
+        )
         p95_score = float(scores.quantile(0.95)) if len(scores) else 0.0
         return {
             "object_key": _object_key(base_row),

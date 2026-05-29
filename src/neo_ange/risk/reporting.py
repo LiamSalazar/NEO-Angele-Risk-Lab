@@ -70,11 +70,16 @@ class RiskReportWriter:
             "## Components",
             "",
             "- Physical risk component: estimated diameter, absolute magnitude, and size proxies.",
-            "- Orbital risk component: MOID, lunar-distance MOID, perihelion, eccentricity, and inclination.",
-            "- Approach risk component: close-approach distance, relative velocity, and approach count.",
-            "- Sentry risk component: Sentry presence, impact probability fields, Palermo/Torino fields, and virtual-impact count when available.",
-            "- Uncertainty risk component: orbit condition code, RMS, observation arc, and observation count.",
-            "- Data quality component: missingness and weaker observation coverage as a small moderator.",
+            "- Orbital risk component: MOID, lunar-distance MOID, perihelion, "
+            "eccentricity, and inclination.",
+            "- Approach risk component: close-approach distance, relative velocity, "
+            "and approach count.",
+            "- Sentry risk component: Sentry presence, impact probability fields, "
+            "Palermo/Torino fields, and virtual-impact count when available.",
+            "- Uncertainty risk component: orbit condition code, RMS, observation arc, "
+            "and observation count.",
+            "- Data quality component: missingness and weaker observation coverage as a "
+            "small moderator.",
             "",
             "## Weights",
             "",
@@ -90,10 +95,12 @@ class RiskReportWriter:
             "",
             "## Limitations",
             "",
-            "- The score is feature-based and educational; it is not a professional orbital propagation.",
+            "- The score is feature-based and educational; it is not a professional "
+            "orbital propagation.",
             "- Sparse rows can still be scored, but explanations flag limited data coverage.",
             "- Sentry absence is treated as a low component, not proof of no risk.",
-            "- Future Monte Carlo reports perturb score inputs to estimate score stability, not impact probability.",
+            "- Future Monte Carlo reports perturb score inputs to estimate score stability, "
+            "not impact probability.",
             "",
             f"Score version: `{RISK_SCORE_VERSION}`",
             "",

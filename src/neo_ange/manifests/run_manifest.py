@@ -11,7 +11,14 @@ from typing import Any, Literal
 from neo_ange.utils.serialization import to_jsonable, write_json
 
 RunType = Literal["ingestion", "etl", "ml", "risk", "simulation"]
-RunStatus = Literal["success", "partial_success", "failed", "skipped", "insufficient_data"]
+RunStatus = Literal[
+    "success",
+    "partial_success",
+    "failed",
+    "skipped",
+    "insufficient_data",
+    "not_found",
+]
 
 
 def create_run_id(run_type: str) -> str:

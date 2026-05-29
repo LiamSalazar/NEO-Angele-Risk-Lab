@@ -174,7 +174,9 @@ class RiskExplanationService:
         ]
         missing = [field for field in important_fields if _is_missing(values.get(field))]
         if len(missing) >= 4:
-            limitations.append(f"limited data coverage; missing fields include {', '.join(missing[:5])}")
+            limitations.append(
+                f"limited data coverage; missing fields include {', '.join(missing[:5])}"
+            )
 
         completeness = _clean_float(values.get("feature_completeness_ratio"), default=None)
         if completeness is not None and completeness < 0.60:

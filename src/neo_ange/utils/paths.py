@@ -19,7 +19,9 @@ def to_spark_path(path: Path | str) -> str:
 
 def contains_files(path: Path | str, pattern: str = "*") -> bool:
     root = Path(path)
-    return root.exists() and any(child.is_file() for child in root.rglob(pattern))
+    return root.exists() and any(
+        child.is_file() and child.name != ".gitkeep" for child in root.rglob(pattern)
+    )
 
 
 def list_data_tables(root: Path | str) -> list[str]:

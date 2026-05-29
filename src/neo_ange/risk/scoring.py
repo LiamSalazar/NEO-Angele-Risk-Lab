@@ -119,13 +119,9 @@ class RiskScorer:
         eccentricity = _to_float(row.get("e"))
         inclination = _to_float(row.get("i"))
 
-        moid_score = (
-            _bounded(1.0 / (1.0 + max(moid, 0.0) * 20.0)) if moid is not None else None
-        )
+        moid_score = _bounded(1.0 / (1.0 + max(moid, 0.0) * 20.0)) if moid is not None else None
         moid_ld_score = (
-            _bounded(1.0 / (1.0 + max(moid_ld, 0.0) / 10.0))
-            if moid_ld is not None
-            else None
+            _bounded(1.0 / (1.0 + max(moid_ld, 0.0) / 10.0)) if moid_ld is not None else None
         )
         inverse_moid_score = _bounded(inverse_moid) if inverse_moid is not None else None
         q_score = _bounded((1.3 - q_value) / 1.3) if q_value is not None else None
@@ -153,16 +149,16 @@ class RiskScorer:
         velocity_score = _to_float(row.get("relative_velocity_score"))
 
         distance_score = (
-            _bounded(1.0 / (1.0 + max(distance, 0.0) * 25.0))
-            if distance is not None
-            else None
+            _bounded(1.0 / (1.0 + max(distance, 0.0) * 25.0)) if distance is not None else None
         )
         min_distance_score = (
             _bounded(1.0 / (1.0 + max(distance_min, 0.0) * 25.0))
             if distance_min is not None
             else None
         )
-        inverse_distance_score = _bounded(inverse_distance) if inverse_distance is not None else None
+        inverse_distance_score = (
+            _bounded(inverse_distance) if inverse_distance is not None else None
+        )
         direct_velocity_score = _bounded(velocity / 50.0) if velocity is not None else None
         stored_velocity_score = _bounded(velocity_score) if velocity_score is not None else None
         count_score = (
@@ -197,9 +193,7 @@ class RiskScorer:
         ps_max_score = _palermo_signal(ps_max) if ps_max is not None else None
         ts_score = _bounded(ts_max / 10.0) if ts_max is not None else None
         impact_count_score = (
-            _bounded(math.log1p(max(n_imp, 0.0)) / math.log1p(100.0))
-            if n_imp is not None
-            else None
+            _bounded(math.log1p(max(n_imp, 0.0)) / math.log1p(100.0)) if n_imp is not None else None
         )
 
         return _weighted_available(
@@ -252,9 +246,7 @@ class RiskScorer:
         arc_length = _to_float(row.get("arc_length"))
         n_obs = _to_float(row.get("n_obs_used"))
 
-        incompleteness_score = (
-            1.0 - _bounded(completeness) if completeness is not None else None
-        )
+        incompleteness_score = 1.0 - _bounded(completeness) if completeness is not None else None
         short_arc_score = (
             1.0 - _bounded(math.log1p(max(arc_length, 0.0)) / math.log1p(3650.0))
             if arc_length is not None

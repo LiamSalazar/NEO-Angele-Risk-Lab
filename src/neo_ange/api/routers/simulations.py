@@ -73,9 +73,6 @@ def latest_for_object(
         return SimulationResponse(
             status="not_found",
             result=None,
-            message=(
-                "Simulation results not found. Run: "
-                "python -m neo_ange.cli simulate batch"
-            ),
+            message=("Simulation results not found. Run: " "python -m neo_ange.cli simulate batch"),
         )
     return SimulationResponse(status="success", result=result)

@@ -39,7 +39,9 @@ class RiskPipeline:
     ) -> None:
         self.gold_root = Path(gold_root)
         self.features_path = self.gold_root / "neo_risk_features"
-        self.risk_output_dir = Path(risk_output_dir) if risk_output_dir else self.gold_root / "risk_scores"
+        self.risk_output_dir = (
+            Path(risk_output_dir) if risk_output_dir else self.gold_root / "risk_scores"
+        )
         self.report_dir = Path(report_dir)
         self.manifest_dir = Path(manifest_dir)
         self.scorer = scorer or RiskScorer()
@@ -83,9 +85,7 @@ class RiskPipeline:
             return result
 
         if len(df) < 100:
-            warnings.append(
-                f"Risk ranking is exploratory: only {len(df)} object(s) are available."
-            )
+            warnings.append(f"Risk ranking is exploratory: only {len(df)} object(s) are available.")
 
         scored_df = self.scorer.score_dataframe(df)
         summary = self.ranking.summarize_ranking(scored_df)
