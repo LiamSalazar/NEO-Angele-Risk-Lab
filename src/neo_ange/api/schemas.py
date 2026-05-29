@@ -62,3 +62,20 @@ class SimulationResponse(BaseModel):
     results: list[dict[str, Any]] = Field(default_factory=list)
     summary: dict[str, Any] | None = None
     message: str | None = None
+
+
+class GNNBuildGraphRequest(BaseModel):
+    k: int = Field(default=10, ge=1, le=100)
+    min_nodes: int = Field(default=100, ge=1)
+
+
+class GNNRunRequest(BaseModel):
+    target: str = "pha"
+    k: int = Field(default=10, ge=1, le=100)
+    min_nodes: int = Field(default=100, ge=1)
+
+
+class GNNResponse(BaseModel):
+    status: str
+    result: dict[str, Any] | None = None
+    message: str | None = None

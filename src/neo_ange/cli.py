@@ -13,6 +13,9 @@ from rich.table import Table
 from neo_ange import __version__
 from neo_ange.clients.base import JPLClientError
 from neo_ange.expansion.discovery import ObjectDiscoveryService
+from neo_ange.expansion.readiness import DatasetReadinessReporter
+from neo_ange.gnn.datasets import torch_geometric_available
+from neo_ange.gnn.experiments import GNNExperimentRunner
 from neo_ange.manifests.run_manifest import list_manifests, load_latest_manifest
 from neo_ange.ml.dataset import MLDatasetLoader
 from neo_ange.ml.feature_sets import FeatureSetRegistry
@@ -40,6 +43,7 @@ ml_app = typer.Typer(help="Run baseline ML experiments and leakage audits.")
 risk_app = typer.Typer(help="Build and inspect experimental risk-priority scores.")
 api_app = typer.Typer(help="Inspect or run the FastAPI backend.")
 simulate_app = typer.Typer(help="Run approximate Monte Carlo score simulations.")
+gnn_app = typer.Typer(help="Build orbital graphs and run experimental GNN comparisons.")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(etl_app, name="etl")
 app.add_typer(expand_app, name="expand")
@@ -47,6 +51,7 @@ app.add_typer(ml_app, name="ml")
 app.add_typer(risk_app, name="risk")
 app.add_typer(api_app, name="api")
 app.add_typer(simulate_app, name="simulate")
+app.add_typer(gnn_app, name="gnn")
 
 
 def build_pipeline() -> IngestionPipeline:
@@ -71,6 +76,15 @@ def build_discovery_service() -> ObjectDiscoveryService:
     )
 
 
+def build_readiness_reporter() -> DatasetReadinessReporter:
+    settings = get_settings()
+    return DatasetReadinessReporter(
+        data_dir=settings.data_dir,
+        silver_root=settings.silver_dir,
+        gold_root=settings.gold_dir,
+    )
+
+
 def build_ml_pipeline() -> MLPipeline:
     settings = get_settings()
     return MLPipeline(gold_root=settings.gold_dir)
@@ -84,6 +98,11 @@ def build_risk_pipeline() -> RiskPipeline:
 def build_simulation_pipeline() -> SimulationPipeline:
     settings = get_settings()
     return SimulationPipeline(gold_root=settings.gold_dir)
+
+
+def build_gnn_runner() -> GNNExperimentRunner:
+    settings = get_settings()
+    return GNNExperimentRunner(gold_root=settings.gold_dir)
 
 
 def _print_saved_paths(paths: list[Path]) -> None:
@@ -376,6 +395,96 @@ def expand_ingest_objects(
         raise typer.Exit(code=1)
 
 
+@expand_app.command("max")
+def expand_max(
+    target: int = typer.Option(1000, "--target", min=1),
+    rich: bool = typer.Option(True, "--rich/--basic"),
+    skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
+    resume: bool = typer.Option(True, "--resume/--no-resume"),
+    batch_size: int = typer.Option(100, "--batch-size", min=1),
+    request_delay_seconds: float = typer.Option(0.15, "--request-delay-seconds", min=0.0),
+) -> None:
+    """Discover and ingest as many SBDB Object payloads as safely available."""
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    try:
+        result = build_pipeline().ingest_max_available_objects(
+            target=target,
+            rich=rich,
+            skip_existing=skip_existing,
+            resume=resume,
+            batch_size=batch_size,
+            request_delay_seconds=request_delay_seconds,
+        )
+    except JPLClientError as exc:
+        console.print(f"[red]Max expansion failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        console.print(f"[red]Max expansion failed unexpectedly:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@expand_app.command("coverage")
+def expand_coverage() -> None:
+    """Generate and print dataset coverage/readiness diagnostics."""
+    report = build_readiness_reporter().build_report(write=True)
+    console.print(Panel.fit("Dataset expansion coverage", title=PROJECT_NAME))
+    _print_key_value_table("Counts", report["counts"])
+    _print_key_value_table("PHA distribution", report["pha_distribution"])
+    _print_key_value_table("Readiness", report["readiness"])
+    console.print(f"[bold]Recommended next command:[/bold] {report['recommended_next_command']}")
+    console.print(json.dumps(to_jsonable(report), indent=2, sort_keys=True))
+
+
+@expand_app.command("rebuild-all")
+def expand_rebuild_all(
+    target: int = typer.Option(1000, "--target", min=1),
+    skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
+    resume: bool = typer.Option(True, "--resume/--no-resume"),
+) -> None:
+    """Run expansion, ETL, risk scoring, and readiness reporting."""
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    expansion_result = build_pipeline().ingest_max_available_objects(
+        target=target,
+        rich=True,
+        skip_existing=skip_existing,
+        resume=resume,
+        batch_size=100,
+        request_delay_seconds=0.15,
+    )
+    spark = None
+    try:
+        spark = create_spark_session(
+            app_name=settings.spark_app_name,
+            master=settings.spark_master,
+            log_level=settings.spark_log_level,
+        )
+        etl_result = build_etl_pipeline(spark).run_all()
+    finally:
+        if spark is not None:
+            stop_spark_session(spark)
+    risk_result = build_risk_pipeline().build_scores()
+    coverage_report = build_readiness_reporter().build_report(write=True)
+    result = {
+        "status": risk_result.get("status", etl_result.get("status")),
+        "expansion": expansion_result,
+        "etl": etl_result,
+        "risk": risk_result,
+        "coverage": coverage_report,
+        "ml_note": (
+            "ML was not run automatically. " "Use python -m neo_ange.cli ml run-all --target pha."
+        ),
+    }
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if etl_result.get("status") == "failed" or risk_result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
 @ml_app.command("status")
 def ml_status() -> None:
     """Show gold dataset and latest ML artifact status."""
@@ -571,7 +680,7 @@ def api_info() -> None:
     table.add_column("Value", overflow="fold")
     table.add_row("App import path", "neo_ange.api.main:app")
     table.add_row("Run command", "uvicorn neo_ange.api.main:app --reload")
-    table.add_row("Route groups", "health, objects, rankings, risk, simulations")
+    table.add_row("Route groups", "health, domain, objects, rankings, risk, simulations, gnn")
     table.add_row("Local docs", "http://127.0.0.1:8000/docs")
     console.print(table)
 
@@ -652,6 +761,101 @@ def simulate_latest(object_key: str = typer.Option(..., "--object-key")) -> None
     console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
 
 
+@gnn_app.command("status")
+def gnn_status() -> None:
+    """Show graph research readiness and artifact availability."""
+    settings = get_settings()
+    report = DatasetReadinessReporter(
+        data_dir=settings.data_dir,
+        silver_root=settings.silver_dir,
+        gold_root=settings.gold_dir,
+    ).build_report(write=True)
+    graph_dir = Path(settings.gold_dir) / "gnn_graph"
+    nodes_path = graph_dir / "nodes.parquet"
+    edges_path = graph_dir / "edges.parquet"
+    node_count = _parquet_row_count(nodes_path)
+    edge_count = _parquet_row_count(edges_path)
+    payload = {
+        "status": "ok",
+        "dataset_readiness": report["readiness"],
+        "risk_scores_count": report["counts"]["risk_scores_count"],
+        "graph_exists": nodes_path.exists(),
+        "node_count": node_count,
+        "edge_count": edge_count,
+        "latest_gnn_reports": [str(path) for path in _latest_paths(Path("reports/gnn"), ["*"])],
+        "torch_geometric_available": torch_geometric_available(),
+    }
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
+
+
+@gnn_app.command("build-graph")
+def gnn_build_graph(
+    k: int = typer.Option(10, "--k", min=1),
+    min_nodes: int = typer.Option(100, "--min-nodes", min=1),
+) -> None:
+    """Build and export an orbital similarity graph."""
+    result = build_gnn_runner().run_graph_experiment(k=k, min_nodes=min_nodes)
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@gnn_app.command("run")
+def gnn_run(
+    target: str = typer.Option("pha", "--target"),
+    k: int = typer.Option(10, "--k", min=1),
+    min_nodes: int = typer.Option(100, "--min-nodes", min=1),
+) -> None:
+    """Run baseline comparison and optional GNN training."""
+    result = build_gnn_runner().run_all(target=target, k=k, min_nodes=min_nodes)
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@gnn_app.command("compare")
+def gnn_compare() -> None:
+    """Print latest model comparison metrics if they exist."""
+    metrics_path = Path("reports/gnn/gnn_metrics.csv")
+    if not metrics_path.exists():
+        console.print("[yellow]GNN metrics not found. Run: python -m neo_ange.cli gnn run[/yellow]")
+        return
+    import pandas as pd
+
+    df = pd.read_csv(metrics_path)
+    table = Table(title="GNN vs baseline comparison")
+    columns = ["family", "model_name", "feature_set", "status", "f1", "roc_auc", "pr_auc"]
+    for column in columns:
+        table.add_column(column, overflow="fold")
+    for _, row in df.iterrows():
+        table.add_row(*(str(row.get(column, "")) for column in columns))
+    console.print(table)
+
+
+@gnn_app.command("explain-graph")
+def gnn_explain_graph() -> None:
+    """Print an interpretive summary of the latest graph."""
+    summary_path = Path("reports/gnn/graph_summary.json")
+    if not summary_path.exists():
+        console.print(
+            "[yellow]Graph summary not found. Run: python -m neo_ange.cli gnn build-graph[/yellow]"
+        )
+        return
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    console.print(Panel.fit("Orbital similarity graph", title=PROJECT_NAME))
+    _print_key_value_table("Graph summary", summary)
+    if summary.get("status") == "insufficient_data":
+        console.print(
+            "[yellow]The graph was not built because the dataset is below the configured "
+            "minimum node count.[/yellow]"
+        )
+    else:
+        console.print(
+            "This graph links asteroids with similar scaled orbital and risk-context "
+            "features. It is experimental and should be compared against tabular baselines."
+        )
+
+
 def _list_bronze_sources(bronze_root: Path) -> list[str]:
     if not bronze_root.exists():
         return []
@@ -690,6 +894,14 @@ def _latest_paths(root: Path, patterns: list[str], limit: int = 5) -> list[Path]
     for pattern in patterns:
         paths.extend(path for path in root.glob(pattern) if path.is_file())
     return sorted(paths, key=lambda path: path.stat().st_mtime, reverse=True)[:limit]
+
+
+def _parquet_row_count(path: Path) -> int:
+    if not path.exists():
+        return 0
+    import pandas as pd
+
+    return int(len(pd.read_parquet(path)))
 
 
 def _print_list_table(title: str, values: list[str]) -> None:

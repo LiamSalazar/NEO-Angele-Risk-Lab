@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from neo_ange.clients.sbdb_query import SBDBQueryClient
 from neo_ange.utils.paths import contains_files
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,91 @@ class ObjectDiscoveryService:
         self,
         silver_root: str | Path = "data/silver",
         bronze_root: str | Path = "data/bronze",
+        sbdb_query_client: SBDBQueryClient | None = None,
     ) -> None:
         self.silver_root = Path(silver_root)
         self.bronze_root = Path(bronze_root)
+        self.sbdb_query_client = sbdb_query_client
         self.warnings: list[str] = []
+        self.source_counts: dict[str, int] = {}
+
+    def discover_from_sbdb_query(self, limit: int = 1000) -> list[str]:
+        """Discover NEO identifiers from the public SBDB Query API."""
+        if limit <= 0:
+            return []
+        client = self.sbdb_query_client or SBDBQueryClient()
+        designations: list[str] = []
+        batch_size = min(max(limit, 1), 100)
+        offset = 0
+        while len(designations) < limit:
+            try:
+                payload = client.query_neos(limit=batch_size, limit_from=offset)
+            except Exception as exc:
+                self._warn(f"SBDB Query discovery failed at offset {offset}: {exc}")
+                break
+            batch = _extract_sbdb_query_designations(payload)
+            if not batch:
+                break
+            designations.extend(batch)
+            designations = _stable_unique(designations)
+            if len(batch) < batch_size:
+                break
+            offset += batch_size
+        result = self._limit(designations, limit)
+        self.source_counts["sbdb_query"] = len(result)
+        return result
+
+    def discover_from_cad_extended(self, limit: int = 1000) -> list[str]:
+        """Discover designations from all available CAD silver and bronze data."""
+        candidates = [
+            *self.discover_from_silver_cad(limit=None),
+            *self.discover_from_bronze_cad(limit=None),
+        ]
+        result = self._limit(_stable_unique(candidates), limit)
+        self.source_counts["cad_extended"] = len(result)
+        return result
+
+    def discover_from_sentry_extended(self, limit: int = 1000) -> list[str]:
+        """Discover designations from all available Sentry silver and bronze data."""
+        candidates = [
+            *self.discover_from_silver_sentry(limit=None),
+            *self.discover_from_bronze_sentry(limit=None),
+        ]
+        result = self._limit(_stable_unique(candidates), limit)
+        self.source_counts["sentry_extended"] = len(result)
+        return result
+
+    def discover_max_available(
+        self,
+        target: int = 1000,
+        include_curated: bool = True,
+    ) -> list[str]:
+        """Discover as many candidate identifiers as possible from prioritized sources."""
+        target = max(int(target), 0)
+        candidates: list[str] = []
+        sources = [
+            ("sbdb_query", lambda: self.discover_from_sbdb_query(limit=target)),
+            ("silver_cad", lambda: self.discover_from_silver_cad(limit=None)),
+            ("silver_sentry", lambda: self.discover_from_silver_sentry(limit=None)),
+            ("bronze_cad", lambda: self.discover_from_bronze_cad(limit=None)),
+            ("bronze_sentry", lambda: self.discover_from_bronze_sentry(limit=None)),
+        ]
+        if include_curated:
+            sources.append(("curated", lambda: self.curated_seed_objects(limit=None)))
+
+        for source_name, discover in sources:
+            before = len(candidates)
+            try:
+                candidates.extend(discover())
+            except Exception as exc:
+                self._warn(f"Discovery source '{source_name}' failed: {exc}")
+                self.source_counts[source_name] = 0
+                continue
+            candidates = _stable_unique(candidates)
+            self.source_counts[source_name] = max(len(candidates) - before, 0)
+            if len(candidates) >= target:
+                break
+        return candidates[:target]
 
     def discover_from_silver_cad(self, limit: int | None = None) -> list[str]:
         """Discover designations from ``silver/close_approaches``."""
@@ -159,6 +241,33 @@ def _extract_table_field(fields: list[Any], rows: list[Any], field_name: str) ->
         if isinstance(row, list) and index < len(row):
             values.append(_clean_designation(row[index]))
     return values
+
+
+def _extract_sbdb_query_designations(payload: dict[str, Any]) -> list[str]:
+    fields = payload.get("fields")
+    rows = payload.get("data")
+    if not isinstance(fields, list) or not isinstance(rows, list):
+        return []
+    normalized = [str(field).strip().lower() for field in fields]
+    preferred = [
+        name
+        for name in ("spkid", "pdes", "des", "full_name", "full_name", "name")
+        if name in normalized
+    ]
+    if not preferred:
+        return []
+    indices = [normalized.index(name) for name in preferred]
+    designations: list[str] = []
+    for row in rows:
+        if not isinstance(row, list):
+            continue
+        for index in indices:
+            if index < len(row):
+                cleaned = _clean_designation(row[index])
+                if cleaned:
+                    designations.append(cleaned)
+                    break
+    return _stable_unique(designations)
 
 
 def _clean_designation(value: Any) -> str:

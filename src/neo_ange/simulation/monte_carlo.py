@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from neo_ange.domain.asteroid import Asteroid
 from neo_ange.risk.categories import RiskCategoryAssigner
 from neo_ange.risk.ranking import RiskRankingService
 from neo_ange.risk.scoring import RiskScorer
@@ -27,7 +28,7 @@ class MonteCarloEngine:
 
     def simulate_object(
         self,
-        row: dict[str, Any] | pd.Series,
+        row: dict[str, Any] | pd.Series | Asteroid,
         n_simulations: int = 1000,
         random_state: int | None = 42,
     ) -> dict[str, Any]:
@@ -133,7 +134,9 @@ class MonteCarloEngine:
         return MONTE_CARLO_VERSION
 
 
-def _row_to_dict(row: dict[str, Any] | pd.Series) -> dict[str, Any]:
+def _row_to_dict(row: dict[str, Any] | pd.Series | Asteroid) -> dict[str, Any]:
+    if isinstance(row, Asteroid):
+        return row.to_feature_dict()
     if isinstance(row, pd.Series):
         return row.to_dict()
     return dict(row)

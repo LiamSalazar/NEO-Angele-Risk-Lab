@@ -7,6 +7,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+from neo_ange.clients.base import (
+    JPLConnectionError,
+    JPLHTTPError,
+    JPLInvalidResponseError,
+    JPLTimeoutError,
+)
 from neo_ange.expansion.discovery import ObjectDiscoveryService
 from neo_ange.manifests.run_manifest import (
     RunManifest,
@@ -15,6 +21,7 @@ from neo_ange.manifests.run_manifest import (
     utc_now_manifest,
 )
 from neo_ange.services.bronze_storage import BronzeStorage
+from neo_ange.utils.serialization import write_json
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +151,195 @@ class BulkObjectIngestionService:
             ]
         return result
 
+    def ingest_max_available(
+        self,
+        target: int = 1000,
+        rich: bool = True,
+        skip_existing: bool = True,
+        resume: bool = True,
+        batch_size: int = 100,
+        request_delay_seconds: float = 0.15,
+    ) -> dict[str, Any]:
+        """Discover and ingest the largest safe set of available SBDB objects."""
+        started_clock = time.monotonic()
+        started_at = utc_now_manifest()
+        run_id = create_run_id("expansion")
+        target = max(int(target), 0)
+        batch_size = max(int(batch_size), 1)
+        self.request_delay_seconds = max(float(request_delay_seconds), 0.0)
+        warnings: list[str] = []
+        failed_items: list[dict[str, str]] = []
+        output_paths: list[str] = []
+        checkpoint_paths: list[str] = []
+        batch_manifest_paths: list[str] = []
+        failure_classification_counts: dict[str, int] = {}
+
+        designations = self.discovery_service.discover_max_available(target=target)
+        if self.discovery_service.warnings:
+            warnings.extend(self.discovery_service.warnings)
+        resumed_successes = self._load_resume_successes() if resume else set()
+
+        attempted = 0
+        succeeded = 0
+        skipped_existing = 0
+        successful_objects: list[str] = []
+        batch_records: list[dict[str, Any]] = []
+
+        for index, designation in enumerate(designations, start=1):
+            if resume and designation.lower() in resumed_successes:
+                skipped_existing += 1
+                batch_records.append(
+                    {
+                        "object_id": designation,
+                        "status": "skipped_existing",
+                        "reason": "resume_checkpoint",
+                    }
+                )
+                continue
+            if skip_existing and self._object_exists(designation):
+                skipped_existing += 1
+                batch_records.append(
+                    {
+                        "object_id": designation,
+                        "status": "skipped_existing",
+                        "reason": "bronze_exists",
+                    }
+                )
+                continue
+
+            attempted += 1
+            try:
+                payload = self._fetch_object(designation, rich=rich)
+                path = self.bronze_storage.save_json(
+                    source="sbdb_object",
+                    payload=payload,
+                    query_params=self._client_params({"sstr": designation, "rich": rich}),
+                    object_id=designation,
+                )
+                output_paths.append(str(path))
+                successful_objects.append(designation)
+                batch_records.append(
+                    {"object_id": designation, "status": "success", "path": str(path)}
+                )
+                succeeded += 1
+            except Exception as exc:
+                classification = _classify_failure(exc)
+                failure_classification_counts[classification] = (
+                    failure_classification_counts.get(classification, 0) + 1
+                )
+                error = str(exc)
+                failed_items.append(
+                    {
+                        "object_id": designation,
+                        "error": error,
+                        "classification": classification,
+                    }
+                )
+                batch_records.append(
+                    {
+                        "object_id": designation,
+                        "status": "failed",
+                        "error": error,
+                        "classification": classification,
+                    }
+                )
+                logger.warning("SBDB object ingestion failed for %s: %s", designation, error)
+            finally:
+                should_sleep = (
+                    self.request_delay_seconds > 0
+                    and index < len(designations)
+                    and attempted + skipped_existing < len(designations)
+                )
+                if should_sleep:
+                    time.sleep(self.request_delay_seconds)
+
+            if attempted and attempted % 50 == 0:
+                checkpoint_paths.append(
+                    str(
+                        self._save_checkpoint(
+                            run_id=run_id,
+                            target=target,
+                            successful_objects=successful_objects,
+                            failed_items=failed_items,
+                            skipped_existing=skipped_existing,
+                        )
+                    )
+                )
+            if len(batch_records) >= batch_size:
+                batch_manifest_paths.append(
+                    str(
+                        self._save_batch_manifest(
+                            run_id=run_id,
+                            batch_index=len(batch_manifest_paths) + 1,
+                            records=batch_records,
+                        )
+                    )
+                )
+                batch_records = []
+
+        if batch_records:
+            batch_manifest_paths.append(
+                str(
+                    self._save_batch_manifest(
+                        run_id=run_id,
+                        batch_index=len(batch_manifest_paths) + 1,
+                        records=batch_records,
+                    )
+                )
+            )
+        checkpoint_paths.append(
+            str(
+                self._save_checkpoint(
+                    run_id=run_id,
+                    target=target,
+                    successful_objects=successful_objects,
+                    failed_items=failed_items,
+                    skipped_existing=skipped_existing,
+                )
+            )
+        )
+
+        failed = len(failed_items)
+        status = _status_from_counts(succeeded=succeeded, failed=failed, attempted=attempted)
+        if not designations:
+            status = "failed"
+            warnings.append("No objects were discovered for max expansion.")
+        elapsed_seconds = time.monotonic() - started_clock
+        estimated_coverage = (succeeded + skipped_existing) / target if target else 0.0
+        result: dict[str, Any] = {
+            "status": status,
+            "target": target,
+            "discovered": len(designations),
+            "attempted": attempted,
+            "succeeded": succeeded,
+            "failed": failed,
+            "skipped_existing": skipped_existing,
+            "elapsed_seconds": round(elapsed_seconds, 6),
+            "estimated_coverage": round(estimated_coverage, 6),
+            "source_counts": dict(self.discovery_service.source_counts),
+            "output_paths": output_paths,
+            "failed_items": failed_items,
+            "failure_classification_counts": failure_classification_counts,
+            "warnings": warnings,
+            "checkpoint_paths": checkpoint_paths,
+            "batch_manifest_paths": batch_manifest_paths,
+        }
+        manifest_path = self._save_manifest(
+            run_id=run_id,
+            started_at=started_at,
+            result=result,
+            inputs={
+                "target": target,
+                "rich": rich,
+                "skip_existing": skip_existing,
+                "resume": resume,
+                "batch_size": batch_size,
+                "request_delay_seconds": request_delay_seconds,
+            },
+        )
+        result["manifest_path"] = str(manifest_path)
+        return result
+
     def _discover(self, strategy: str, limit: int) -> list[str]:
         if strategy not in self.VALID_STRATEGIES:
             allowed = ", ".join(sorted(self.VALID_STRATEGIES))
@@ -193,16 +389,76 @@ class BulkObjectIngestionService:
             inputs=inputs,
             outputs={"output_paths": result["output_paths"]},
             metrics={
-                "requested": result["requested"],
+                "requested": result.get("requested", result.get("target")),
+                "discovered": result.get("discovered"),
                 "attempted": result["attempted"],
                 "succeeded": result["succeeded"],
                 "failed": result["failed"],
                 "skipped_existing": result["skipped_existing"],
+                "estimated_coverage": result.get("estimated_coverage"),
             },
             warnings=result["warnings"],
             errors=[item["error"] for item in result["failed_items"]],
         )
         return save_manifest(manifest)
+
+    def _save_checkpoint(
+        self,
+        run_id: str,
+        target: int,
+        successful_objects: list[str],
+        failed_items: list[dict[str, str]],
+        skipped_existing: int,
+    ) -> Path:
+        timestamp = run_id.rsplit("_", 1)[-1]
+        path = Path("reports/manifests") / f"expansion_checkpoint_{timestamp}.json"
+        return write_json(
+            {
+                "run_id": run_id,
+                "target": target,
+                "successful_objects": successful_objects,
+                "failed_items": failed_items,
+                "skipped_existing": skipped_existing,
+                "updated_at_utc": utc_now_manifest(),
+            },
+            path,
+        )
+
+    def _save_batch_manifest(
+        self,
+        run_id: str,
+        batch_index: int,
+        records: list[dict[str, Any]],
+    ) -> Path:
+        timestamp = run_id.rsplit("_", 1)[-1]
+        path = Path("reports/manifests") / f"expansion_batch_{timestamp}_{batch_index:04d}.json"
+        return write_json(
+            {
+                "run_id": run_id,
+                "batch_index": batch_index,
+                "records": records,
+                "created_at_utc": utc_now_manifest(),
+            },
+            path,
+        )
+
+    def _load_resume_successes(self) -> set[str]:
+        successes: set[str] = set()
+        manifest_dir = Path("reports/manifests")
+        if not manifest_dir.exists():
+            return successes
+        for path in sorted(manifest_dir.glob("expansion_checkpoint_*.json")):
+            try:
+                import json
+
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for value in payload.get("successful_objects", []):
+                cleaned = str(value).strip().lower()
+                if cleaned:
+                    successes.add(cleaned)
+        return successes
 
 
 def _stable_unique(values: list[str]) -> list[str]:
@@ -228,3 +484,15 @@ def _status_from_counts(succeeded: int, failed: int, attempted: int) -> str:
     if attempted == 0:
         return "success"
     return "success"
+
+
+def _classify_failure(exc: Exception) -> str:
+    if isinstance(exc, JPLHTTPError):
+        return "http_error"
+    if isinstance(exc, JPLTimeoutError):
+        return "timeout"
+    if isinstance(exc, JPLConnectionError):
+        return "connection_error"
+    if isinstance(exc, JPLInvalidResponseError):
+        return "invalid_response"
+    return "unknown_error"

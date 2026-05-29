@@ -34,6 +34,12 @@ data/gold/risk_scores/*
 !data/gold/simulation_results/
 data/gold/simulation_results/*
 !data/gold/simulation_results/.gitkeep
+!data/gold/gnn_graph/
+data/gold/gnn_graph/*
+!data/gold/gnn_graph/.gitkeep
+!data/gold/gnn_datasets/
+data/gold/gnn_datasets/*
+!data/gold/gnn_datasets/.gitkeep
 
 # Generated reports and ML artifacts
 reports/manifests/*
@@ -46,10 +52,18 @@ reports/risk/*
 !reports/risk/.gitkeep
 reports/simulation/*
 !reports/simulation/.gitkeep
+reports/gnn/*
+!reports/gnn/.gitkeep
+reports/domain/*
+!reports/domain/.gitkeep
 artifacts/models/*
 !artifacts/models/.gitkeep
 artifacts/figures/*
 !artifacts/figures/.gitkeep
+artifacts/gnn_models/*
+!artifacts/gnn_models/.gitkeep
+artifacts/graph_exports/*
+!artifacts/graph_exports/.gitkeep
 *.joblib
 *.pkl
 *.pickle

@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from neo_ange.domain.asteroid import Asteroid
 from neo_ange.risk.categories import RiskCategoryAssigner
 from neo_ange.risk.explanations import RiskExplanationService
 from neo_ange.risk.schemas import (
@@ -49,7 +50,7 @@ class RiskScorer:
             result[column] = scored[column]
         return result
 
-    def score_row(self, row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+    def score_row(self, row: pd.Series | dict[str, Any] | Asteroid) -> dict[str, Any]:
         """Score one object row and return only the derived scoring fields."""
         values = _row_to_dict(row)
         components = {
@@ -285,7 +286,9 @@ class RiskScorer:
         return cleaned
 
 
-def _row_to_dict(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+def _row_to_dict(row: pd.Series | dict[str, Any] | Asteroid) -> dict[str, Any]:
+    if isinstance(row, Asteroid):
+        return row.to_feature_dict()
     if isinstance(row, pd.Series):
         return row.to_dict()
     return dict(row)

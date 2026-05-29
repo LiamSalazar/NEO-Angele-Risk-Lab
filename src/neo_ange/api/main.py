@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from neo_ange import __version__
-from neo_ange.api.routers import health, objects, rankings, risk, simulations
+from neo_ange.api.routers import domain, gnn, health, objects, rankings, risk, simulations
 
 app = FastAPI(
     title="Neo Angele Risk Lab API",
@@ -26,7 +26,9 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(domain.router)
 app.include_router(objects.router)
 app.include_router(rankings.router)
 app.include_router(risk.router)
 app.include_router(simulations.router)
+app.include_router(gnn.router)

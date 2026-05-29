@@ -159,6 +159,7 @@ class IngestionPipeline:
             discovery_service=ObjectDiscoveryService(
                 silver_root=settings.silver_dir,
                 bronze_root=Path(settings.data_dir) / "bronze",
+                sbdb_query_client=self.sbdb_query_client,
             ),
             request_delay_seconds=request_delay_seconds,
         )
@@ -167,6 +168,36 @@ class IngestionPipeline:
             limit=limit,
             rich=rich,
             skip_existing=skip_existing,
+        )
+
+    def ingest_max_available_objects(
+        self,
+        target: int = 1000,
+        rich: bool = True,
+        skip_existing: bool = True,
+        resume: bool = True,
+        batch_size: int = 100,
+        request_delay_seconds: float = 0.15,
+    ) -> dict[str, Any]:
+        """Discover and ingest the maximum safe set of SBDB Object payloads."""
+        settings = get_settings()
+        service = BulkObjectIngestionService(
+            object_client=self.sbdb_object_client,
+            bronze_storage=self.bronze_storage,
+            discovery_service=ObjectDiscoveryService(
+                silver_root=settings.silver_dir,
+                bronze_root=Path(settings.data_dir) / "bronze",
+                sbdb_query_client=self.sbdb_query_client,
+            ),
+            request_delay_seconds=request_delay_seconds,
+        )
+        return service.ingest_max_available(
+            target=target,
+            rich=rich,
+            skip_existing=skip_existing,
+            resume=resume,
+            batch_size=batch_size,
+            request_delay_seconds=request_delay_seconds,
         )
 
     @staticmethod

@@ -7,6 +7,9 @@ from typing import Any
 
 import pandas as pd
 
+from neo_ange.domain.asteroid import Asteroid
+from neo_ange.domain.risk import RiskScore
+
 
 class RiskExplanationService:
     """Explain score drivers without presenting the score as an official alert."""
@@ -38,7 +41,7 @@ class RiskExplanationService:
         ),
     }
 
-    def explain_row(self, row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+    def explain_row(self, row: pd.Series | dict[str, Any] | Asteroid | RiskScore) -> dict[str, Any]:
         """Return structured explanatory text and factor lists for one scored object."""
         values = _row_to_dict(row)
         object_key = _object_key(values)
@@ -80,7 +83,9 @@ class RiskExplanationService:
             "technical_explanation": technical,
         }
 
-    def identify_main_drivers(self, row: pd.Series | dict[str, Any]) -> list[dict[str, Any]]:
+    def identify_main_drivers(
+        self, row: pd.Series | dict[str, Any] | Asteroid | RiskScore
+    ) -> list[dict[str, Any]]:
         """Identify high component values that drove the score upward."""
         values = _row_to_dict(row)
         drivers = []
@@ -112,7 +117,9 @@ class RiskExplanationService:
                 )
         return drivers[:4]
 
-    def identify_protective_factors(self, row: pd.Series | dict[str, Any]) -> list[dict[str, Any]]:
+    def identify_protective_factors(
+        self, row: pd.Series | dict[str, Any] | Asteroid | RiskScore
+    ) -> list[dict[str, Any]]:
         """Identify low component values or stronger observation context."""
         values = _row_to_dict(row)
         protective: list[dict[str, Any]] = []
@@ -157,7 +164,9 @@ class RiskExplanationService:
             )
         return protective[:4]
 
-    def identify_data_limitations(self, row: pd.Series | dict[str, Any]) -> list[str]:
+    def identify_data_limitations(
+        self, row: pd.Series | dict[str, Any] | Asteroid | RiskScore
+    ) -> list[str]:
         """Return concise data limitations detected from missing or weak fields."""
         values = _row_to_dict(row)
         limitations: list[str] = []
@@ -206,7 +215,11 @@ class RiskExplanationService:
         return max(candidates, key=lambda item: item[1])
 
 
-def _row_to_dict(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+def _row_to_dict(row: pd.Series | dict[str, Any] | Asteroid | RiskScore) -> dict[str, Any]:
+    if isinstance(row, Asteroid):
+        return row.to_feature_dict()
+    if isinstance(row, RiskScore):
+        return row.to_dict()
     if isinstance(row, pd.Series):
         return row.to_dict()
     return dict(row)
