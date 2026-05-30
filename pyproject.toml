@@ -28,11 +28,16 @@ dependencies = [
     "requests>=2.31",
     "rich>=13.7",
     "scikit-learn>=1.4",
+    "scipy>=1.12",
     "typer>=0.12",
     "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
+gnn = [
+    "torch>=2.3",
+    "torch-geometric>=2.5",
+]
 dev = [
     "black>=24.4",
     "pytest>=8.2",
@@ -49,6 +54,12 @@ where = ["src"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
+extend-exclude = '''
+/(
+  frontend/node_modules
+  | frontend/dist
+)/
+'''
 
 [tool.ruff]
 line-length = 100

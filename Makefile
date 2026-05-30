@@ -1,4 +1,4 @@
-.PHONY: install test lint format ingest-sample etl etl-status build-gold expand-curated expand-all expand-max coverage rebuild-all ml-status ml leakage-audit risk risk-status risk-top api-info api simulate simulate-status gnn-status gnn-graph gnn gnn-compare clean
+.PHONY: install test lint format ingest-sample etl etl-status build-gold expand-curated expand-all expand-max coverage rebuild-all ml-status ml leakage-audit risk risk-status risk-top api-info api app-dev simulate simulate-status gnn-status gnn-graph gnn gnn-compare frontend-install frontend-dev frontend-build frontend-test frontend-lint clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -65,6 +65,9 @@ api-info:
 api:
 	python -m neo_ange.cli api run
 
+app-dev:
+	python -m neo_ange.cli api run --host 127.0.0.1 --port 8000 --reload
+
 simulate:
 	python -m neo_ange.cli simulate batch --limit 50 --n-simulations 500
 
@@ -82,6 +85,21 @@ gnn:
 
 gnn-compare:
 	python -m neo_ange.cli gnn compare
+
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
+
+frontend-test:
+	cd frontend && npm run test
+
+frontend-lint:
+	cd frontend && npm run lint
 
 clean:
 	python -c "import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; [p.unlink() for p in pathlib.Path('.').rglob('*.pyc')]; shutil.rmtree('.pytest_cache', ignore_errors=True); shutil.rmtree('.ruff_cache', ignore_errors=True); shutil.rmtree('htmlcov', ignore_errors=True); pathlib.Path('.coverage').unlink(missing_ok=True)"

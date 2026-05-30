@@ -26,6 +26,10 @@ This release implements phases 0 through 5:
 - Unit tests with mocked clients and responses.
 - Docker and Docker Compose entry points for CLI execution.
 
+## Frontend Observatory
+
+A React/TypeScript frontend now lives in `frontend/`. It provides the Neo Angele Risk Lab mission-control observatory for system status, rankings, object profiles, Monte Carlo, ML/leakage, GNN, domain objects, pipeline readiness, and methodology. See `frontend/README.md` and `docs/frontend_observatory.md`.
+
 ## What It Does Not Claim
 
 Neo Angele Risk Lab does not replace NASA/JPL systems, does not produce official planetary defense alerts, and should not be used as an authoritative warning system. It is an educational and technical risk intelligence platform built on public NASA/JPL data. The current gold features are not the final Risk Priority Score.
