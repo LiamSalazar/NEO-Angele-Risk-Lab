@@ -14,8 +14,13 @@ READINESS_THRESHOLDS = {
     "not_ready": 0,
     "minimal": 100,
     "usable": 300,
-    "strong": 1000,
+    "strong": 4000,
 }
+
+OFFICIAL_TARGET_OBJECTS = 4000
+MINIMUM_RECOMMENDED_OBJECTS = 1000
+MAXIMUM_SAFE_DEFAULT_OBJECTS = 4000
+EXTENDED_TARGET_OPTIONAL = 10000
 
 
 class DatasetReadinessReporter:
@@ -87,6 +92,14 @@ class DatasetReadinessReporter:
             "cad_coverage": cad_coverage,
             "missingness_summary": missingness,
             "readiness": readiness,
+            "targets": {
+                "official_target_objects": OFFICIAL_TARGET_OBJECTS,
+                "minimum_recommended_objects": MINIMUM_RECOMMENDED_OBJECTS,
+                "strong_readiness_objects": READINESS_THRESHOLDS["strong"],
+                "maximum_safe_default_objects": MAXIMUM_SAFE_DEFAULT_OBJECTS,
+                "extended_target_optional": EXTENDED_TARGET_OPTIONAL,
+                "all_dataset_mode": "experimental",
+            },
             "recommended_next_command": _recommended_next_command(gold_count, risk_count),
             "outputs": {
                 "json": str(self.report_dir / "dataset_readiness.json"),
@@ -207,11 +220,11 @@ def _gnn_readiness(
 
 def _recommended_next_command(gold_count: int, risk_count: int) -> str:
     if gold_count == 0:
-        return "python -m neo_ange.cli expand max --target 1000 --skip-existing --resume"
+        return "python -m neo_ange.cli expand max --target 4000 --skip-existing --resume"
     if risk_count == 0:
         return "python -m neo_ange.cli risk build"
-    if gold_count < 300:
-        return "python -m neo_ange.cli expand max --target 1000 --skip-existing --resume"
+    if gold_count < OFFICIAL_TARGET_OBJECTS:
+        return "python -m neo_ange.cli expand max --target 4000 --skip-existing --resume"
     return "python -m neo_ange.cli gnn status"
 
 

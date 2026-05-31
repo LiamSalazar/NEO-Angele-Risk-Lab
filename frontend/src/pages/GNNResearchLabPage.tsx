@@ -33,7 +33,9 @@ export function GNNResearchLabPage() {
   const graph = useGNNGraphQuery(220);
   const metrics = useGNNMetricsQuery();
   const summary = useGNNSummaryQuery();
-  const neighbors = useGNNNeighborsQuery(selectedObjectKey);
+  const firstKey = objects.data?.objects?.[0] ? objectKey(objects.data.objects[0]) : "";
+  const activeObjectKey = selectedObjectKey || firstKey;
+  const neighbors = useGNNNeighborsQuery(activeObjectKey);
   const buildGraph = useBuildGNNGraphMutation();
   const runGNN = useRunGNNMutation();
 
@@ -44,9 +46,9 @@ export function GNNResearchLabPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="GNN research lab"
+        eyebrow="Orbital graph"
         title="Orbital Similarity Graph"
-        description="Experimental graph view for orbital-neighborhood analysis. GraphSAGE/GCN runs are skipped cleanly when torch-geometric is not installed."
+        description="Graph evidence for orbital-neighborhood analysis. Nodes are objects, edges link similar orbital contexts and ML/GNN results are supporting evidence."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="primary" disabled={buildGraph.isPending} onClick={() => buildGraph.mutate({ k: 10, min_nodes: 100 })}>
@@ -72,6 +74,29 @@ export function GNNResearchLabPage() {
       <Card>
         <CardHeader>
           <div>
+            <CardTitle>What This Graph Suggests</CardTitle>
+            <CardDescription>Interpretation of graph structure and evidence role.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <Interpretation
+            title="Nodes"
+            text="Each node is one scored NEO object from the active dataset."
+          />
+          <Interpretation
+            title="Edges"
+            text="Edges connect objects with similar scaled orbital and risk-context features."
+          />
+          <Interpretation
+            title="Evidence"
+            text="Graph baselines and GNNs contrast orbital neighborhoods with tabular patterns."
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div>
             <CardTitle>Graph Preview</CardTitle>
             <CardDescription>Limited node preview for browser performance, colored by risk category.</CardDescription>
           </div>
@@ -85,8 +110,8 @@ export function GNNResearchLabPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Experiment Results</CardTitle>
-              <CardDescription>Baselines and optional real GNN metrics.</CardDescription>
+              <CardTitle>Model Evidence</CardTitle>
+              <CardDescription>Graph baselines and optional GraphSAGE/GCN metrics as secondary evidence.</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -106,7 +131,7 @@ export function GNNResearchLabPage() {
               list="gnn-objects"
               value={selectedObjectKey}
               onChange={(event) => setSelectedObjectKey(event.target.value)}
-              placeholder="object_key"
+              placeholder={activeObjectKey || "object_key"}
             />
             <datalist id="gnn-objects">
               {objects.data?.objects?.map((object) => (
@@ -120,6 +145,15 @@ export function GNNResearchLabPage() {
           </CardContent>
         </Card>
       </section>
+    </div>
+  );
+}
+
+function Interpretation({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-md border border-cyan-300/12 bg-slate-950/45 p-4">
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
     </div>
   );
 }

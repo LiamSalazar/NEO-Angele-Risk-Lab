@@ -1,0 +1,99 @@
+{
+  "artifact_count": 106,
+  "commands_measured": [
+    "expand max",
+    "etl run-all",
+    "risk build",
+    "simulate batch",
+    "orbital-sim batch",
+    "ml run-all",
+    "gnn build-graph",
+    "gnn run",
+    "findings build"
+  ],
+  "largest_artifacts": [
+    {
+      "bytes": 8223885,
+      "path": "data\\silver\\sbdb_objects\\part-649a414437d04d6486cf55006818b409.parquet"
+    },
+    {
+      "bytes": 533057,
+      "path": "data\\silver\\sentry_virtual_impactors\\part-7fd09b665a8a4eb0925c869af73b162c.parquet"
+    },
+    {
+      "bytes": 436841,
+      "path": "data\\silver\\sentry_objects\\part-bb96d6637b544419bf83c3f2649adef8.parquet"
+    },
+    {
+      "bytes": 315912,
+      "path": "data\\gold\\risk_scores\\risk_scores.parquet"
+    },
+    {
+      "bytes": 244492,
+      "path": "data\\gold\\neo_risk_features\\part-c447a76d096c40e597dbbf6f3802754d.parquet"
+    },
+    {
+      "bytes": 195008,
+      "path": "reports\\model_evidence\\model_predictions.csv"
+    },
+    {
+      "bytes": 161121,
+      "path": "data\\gold\\gnn_graph\\edges.parquet"
+    },
+    {
+      "bytes": 161034,
+      "path": "data\\gold\\gnn_graph\\nodes.parquet"
+    },
+    {
+      "bytes": 121151,
+      "path": "reports\\manifests\\expansion_batch_20260529T115703485024Z_0001.json"
+    },
+    {
+      "bytes": 115843,
+      "path": "reports\\model_evidence\\high_confidence_predictions.csv"
+    },
+    {
+      "bytes": 64258,
+      "path": "data\\silver\\ingestion_events\\part-47b9637f9235453181884d4de21f7826.parquet"
+    },
+    {
+      "bytes": 46555,
+      "path": "data\\silver\\close_approaches\\part-4d19357c8bdc40e4b2f28ce114b8bf41.parquet"
+    },
+    {
+      "bytes": 41824,
+      "path": "reports\\risk\\top_risk_objects.csv"
+    },
+    {
+      "bytes": 36296,
+      "path": "reports\\model_evidence\\low_confidence_predictions.csv"
+    },
+    {
+      "bytes": 23846,
+      "path": "reports\\model_evidence\\model_cards.json"
+    },
+    {
+      "bytes": 22504,
+      "path": "data\\gold\\orbital_simulation\\orbital_monte_carlo_results.parquet"
+    },
+    {
+      "bytes": 20973,
+      "path": "reports\\gnn\\gnn_experiment_results.json"
+    },
+    {
+      "bytes": 18152,
+      "path": "reports\\manifests\\expansion_batch_20260529T114808207502Z_0010.json"
+    },
+    {
+      "bytes": 18151,
+      "path": "reports\\manifests\\expansion_batch_20260529T114808207502Z_0001.json"
+    },
+    {
+      "bytes": 18151,
+      "path": "reports\\manifests\\expansion_batch_20260529T114808207502Z_0002.json"
+    }
+  ],
+  "note": "This benchmark records current artifact sizes; detailed wall-clock timings are captured when run inside final build-all.",
+  "status": "success",
+  "total_artifact_bytes": 11189755
+}

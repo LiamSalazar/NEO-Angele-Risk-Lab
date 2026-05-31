@@ -1,4 +1,4 @@
-import { Database, GitBranch, Orbit } from "lucide-react";
+import { GitBranch, Orbit } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { MonteCarloHistogram } from "@/components/charts/MonteCarloHistogram";
@@ -17,9 +17,10 @@ import { RiskDriverList } from "@/components/risk/RiskDriverList";
 import { RiskScoreGauge } from "@/components/risk/RiskScoreGauge";
 import { SimulationSummary } from "@/components/simulation/SimulationSummary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useModelEvidenceObjectQuery } from "@/hooks/useFindings";
+import { useLatestOrbitalSimulationQuery } from "@/hooks/useOrbitalSimulation";
 import { useObjectsQuery } from "@/hooks/useRiskRanking";
 import {
-  useDomainObjectQuery,
   useGNNNeighborsQuery,
   useLatestSimulationQuery,
   useObjectQuery,
@@ -33,10 +34,11 @@ export function AsteroidProfilePage() {
   const selectedKey = params.objectKey;
   const objects = useObjectsQuery({ limit: 250 });
   const object = useObjectQuery(selectedKey);
-  const domain = useDomainObjectQuery(selectedKey);
   const explanation = useRiskExplanationQuery(selectedKey);
   const simulation = useLatestSimulationQuery(selectedKey);
+  const orbitalSimulation = useLatestOrbitalSimulationQuery(selectedKey);
   const neighbors = useGNNNeighborsQuery(selectedKey);
+  const modelEvidence = useModelEvidenceObjectQuery(selectedKey);
   const currentObject = object.data?.object;
   const explanationData = explanation.data?.explanation;
 
@@ -48,7 +50,7 @@ export function AsteroidProfilePage() {
         <PageHeader
           eyebrow="Asteroid profile"
           title="Acquire Object Telemetry"
-          description="Search a scored object to open its technical risk profile, domain aggregate and graph neighborhood."
+          description="Search a scored object to open its risk profile, simulations, model evidence and graph neighborhood."
         />
         <ObjectSearch objects={objects.data?.objects} onSelect={openObject} />
         <EmptyState
@@ -68,7 +70,7 @@ export function AsteroidProfilePage() {
       <PageHeader
         eyebrow="Asteroid profile"
         title={objectDisplayName(currentObject)}
-        description={`Mission dossier for ${selectedKey}: risk score, explanation, domain model, latest simulation and graph neighbors.`}
+        description={`Object dossier for ${selectedKey}: risk score, explanations, score/orbital simulations, model evidence and graph neighbors.`}
         actions={<ObjectSearch objects={objects.data?.objects} onSelect={openObject} />}
       />
 
@@ -133,34 +135,20 @@ export function AsteroidProfilePage() {
           </Card>
 
           <section className="grid gap-6 xl:grid-cols-3">
-            <div className="space-y-6 xl:col-span-2">
+            <div className="space-y-6 xl:col-span-3">
               <div className="grid gap-6 lg:grid-cols-2">
                 <OrbitalElementsPanel object={currentObject} />
                 <PhysicalPropertiesPanel object={currentObject} />
               </div>
               <SentrySignalPanel object={currentObject} />
             </div>
-            <Card>
-              <CardHeader>
-                <div>
-                  <CardTitle>Domain Object</CardTitle>
-                  <CardDescription>Nested aggregate from `/domain/objects/{selectedKey}`.</CardDescription>
-                </div>
-                <Database className="h-5 w-5 text-cyan-100" />
-              </CardHeader>
-              <CardContent>
-                <pre className="max-h-[420px] overflow-auto rounded-md border border-cyan-300/12 bg-black/35 p-3 font-mono text-xs leading-5 text-slate-300">
-                  {JSON.stringify(domain.data?.object ?? { status: domain.data?.status, message: domain.data?.message }, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-2">
+          <section className="grid gap-6 xl:grid-cols-3">
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>Latest Monte Carlo</CardTitle>
+                  <CardTitle>Latest Score Simulation</CardTitle>
                   <CardDescription>Saved score-stability simulation if available.</CardDescription>
                 </div>
                 <Orbit className="h-5 w-5 text-cyan-100" />
@@ -173,7 +161,35 @@ export function AsteroidProfilePage() {
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>GNN Neighbors</CardTitle>
+                  <CardTitle>Latest Orbital Simulation</CardTitle>
+                  <CardDescription>Approximate orbital scenario summary.</CardDescription>
+                </div>
+                <Orbit className="h-5 w-5 text-cyan-100" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ProfileStat label="scenario" value={String(orbitalSimulation.data?.result?.scenario_category ?? "pending")} />
+                <ProfileStat
+                  label="p05 / p50 / p95 AU"
+                  value={[
+                    orbitalSimulation.data?.result?.simulated_min_distance_p05_au,
+                    orbitalSimulation.data?.result?.simulated_min_distance_p50_au,
+                    orbitalSimulation.data?.result?.simulated_min_distance_p95_au
+                  ]
+                    .map((value) => formatScore(value as number))
+                    .join(" / ")}
+                />
+                <p className="text-sm leading-6 text-slate-300">
+                  {String(
+                    orbitalSimulation.data?.result?.interpretation ??
+                      "No saved orbital scenario result for this object yet."
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Orbital Graph Neighbors</CardTitle>
                   <CardDescription>Orbital graph neighbors with similarity score.</CardDescription>
                 </div>
                 <GitBranch className="h-5 w-5 text-cyan-100" />
@@ -183,8 +199,42 @@ export function AsteroidProfilePage() {
               </CardContent>
             </Card>
           </section>
+
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>Model Evidence</CardTitle>
+                <CardDescription>Predictions and disagreements for this object when available.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-2">
+              {((modelEvidence.data?.details?.predictions ?? []) as Array<Record<string, unknown>>).length ? (
+                ((modelEvidence.data?.details?.predictions ?? []) as Array<Record<string, unknown>>)
+                  .slice(0, 6)
+                  .map((row, index) => (
+                    <div key={`${row.model_name}-${index}`} className="rounded-md border border-cyan-300/12 bg-slate-950/45 p-3">
+                      <p className="font-mono text-sm text-white">{String(row.model_name)} / {String(row.feature_set)}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        probability {formatScore(Number(row.predicted_probability) * 100)} · {String(row.confidence_bucket)}
+                      </p>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-sm text-slate-500">No saved model-evidence predictions for this object.</p>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
+    </div>
+  );
+}
+
+function ProfileStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-cyan-300/12 bg-slate-950/45 p-3">
+      <p className="technical-label text-[10px] text-slate-500">{label}</p>
+      <p className="mt-1 font-mono text-sm text-white">{value}</p>
     </div>
   );
 }

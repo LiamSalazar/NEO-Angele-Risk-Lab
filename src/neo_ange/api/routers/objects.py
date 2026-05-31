@@ -41,6 +41,7 @@ def list_objects(
         ]
     if sentry_flag is not None and "sentry_flag" in filtered.columns:
         filtered = filtered[_bool_series(filtered["sentry_flag"]) == sentry_flag]
+    filtered = _with_dominant_driver(filtered)
     if "risk_score_0_100" in filtered.columns:
         filtered = RiskRankingService().rank(filtered)
     paged = filtered.iloc[max(offset, 0) : max(offset, 0) + max(limit, 0)]
@@ -70,6 +71,7 @@ def get_object(
             object=None,
             message=f"Object '{object_key}' was not found.",
         )
+    row["dominant_driver"] = _dominant_driver(row)
     return RiskObjectResponse(status="success", object=row, message=message)
 
 
@@ -77,3 +79,23 @@ def _bool_series(series: pd.Series) -> pd.Series:
     if pd.api.types.is_bool_dtype(series):
         return series.fillna(False)
     return series.astype("string").str.lower().isin(["true", "1", "yes", "y"])
+
+
+def _with_dominant_driver(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    result = df.copy()
+    result["dominant_driver"] = result.apply(lambda row: _dominant_driver(row.to_dict()), axis=1)
+    return result
+
+
+def _dominant_driver(row: dict) -> str:
+    components = {
+        "physical": row.get("physical_risk_component") or 0,
+        "orbital": row.get("orbital_risk_component") or 0,
+        "approach": row.get("approach_risk_component") or 0,
+        "sentry": row.get("sentry_risk_component") or 0,
+        "uncertainty": row.get("uncertainty_risk_component") or 0,
+        "data quality": row.get("data_quality_component") or 0,
+    }
+    return max(components, key=lambda key: float(components[key] or 0))

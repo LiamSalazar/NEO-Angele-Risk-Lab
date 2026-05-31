@@ -40,9 +40,9 @@ export function MonteCarloLabPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Monte Carlo lab"
+        eyebrow="Score simulation"
         title="Score Stability Simulation"
-        description="Perturb score inputs to estimate stability bands and category-shift probability. This is not orbital propagation."
+        description="Perturb Risk Priority Score inputs to estimate stability bands, category-shift probability and threshold sensitivity."
         actions={
           <Button
             type="button"
@@ -97,26 +97,40 @@ export function MonteCarloLabPage() {
           <div className="rounded-lg border border-amber-300/20 bg-amber-300/8 p-4 text-sm leading-6 text-amber-100">
             <div className="mb-2 flex items-center gap-2 font-semibold">
               <AlertTriangle className="h-4 w-4" />
-              Simulation scope
+              Score scope
             </div>
-            Monte Carlo perturbs risk-score input features and summarizes resulting score spread.
-            It does not integrate or propagate asteroid trajectories.
+            This simulation estimates Risk Priority Score stability. Orbital perturbation scenarios
+            live in the Orbital Simulation page.
           </div>
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>Simulation Status</CardTitle>
-                <CardDescription>Current persisted result availability.</CardDescription>
+                <CardTitle>Score Simulation Availability</CardTitle>
+                <CardDescription>Saved rows and current status for score-stability results.</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
-              <pre className="max-h-72 overflow-auto rounded-md border border-cyan-300/12 bg-black/35 p-3 font-mono text-xs text-slate-300">
-                {JSON.stringify(simulationStatus.data ?? {}, null, 2)}
-              </pre>
+              <div className="grid gap-3">
+                <StatusLine label="status" value={String((simulationStatus.data as Record<string, unknown> | undefined)?.status ?? "unknown")} />
+                <StatusLine label="saved rows" value={String((simulationStatus.data as Record<string, unknown> | undefined)?.row_count ?? 0)} />
+                <StatusLine
+                  label="interpretation"
+                  value="Stable categories support ranking confidence; high shift probabilities mark objects for review."
+                />
+              </div>
             </CardContent>
           </Card>
         </div>
       </section>
+    </div>
+  );
+}
+
+function StatusLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-cyan-300/12 bg-slate-950/45 p-3">
+      <p className="technical-label text-[10px] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm leading-6 text-slate-300">{value}</p>
     </div>
   );
 }

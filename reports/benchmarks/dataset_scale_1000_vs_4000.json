@@ -1,0 +1,113 @@
+{
+  "baseline_1000": {
+    "available": true,
+    "note": "Current local artifacts are used as the 1000-object baseline when row count is near 1000.",
+    "row_count": 1000
+  },
+  "current_dataset": {
+    "gnn_edges": 6955,
+    "gnn_graph_density": 0.013923923923923925,
+    "gnn_metrics_rows": 14,
+    "gnn_nodes": 1000,
+    "gold_rows": 1000,
+    "missingness": {
+      "top_missing": [
+        {
+          "column": "sentry_ts_max",
+          "missing_count": 1000,
+          "missing_ratio": 1.0
+        },
+        {
+          "column": "sentry_ip",
+          "missing_count": 998,
+          "missing_ratio": 0.998
+        },
+        {
+          "column": "sentry_ps_cum",
+          "missing_count": 998,
+          "missing_ratio": 0.998
+        },
+        {
+          "column": "sentry_ps_max",
+          "missing_count": 998,
+          "missing_ratio": 0.998
+        },
+        {
+          "column": "sentry_n_imp",
+          "missing_count": 998,
+          "missing_ratio": 0.998
+        },
+        {
+          "column": "min_close_approach_dist",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "min_close_approach_dist_min",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "max_close_approach_v_rel",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "next_close_approach_datetime",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "close_approach_count",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "inverse_min_distance",
+          "missing_count": 997,
+          "missing_ratio": 0.997
+        },
+        {
+          "column": "name",
+          "missing_count": 843,
+          "missing_ratio": 0.843
+        },
+        {
+          "column": "albedo",
+          "missing_count": 641,
+          "missing_ratio": 0.641
+        },
+        {
+          "column": "diameter",
+          "missing_count": 615,
+          "missing_ratio": 0.615
+        },
+        {
+          "column": "log_diameter",
+          "missing_count": 615,
+          "missing_ratio": 0.615
+        }
+      ]
+    },
+    "ml_metrics_rows": 0,
+    "pha_distribution": {
+      "false": 720,
+      "true": 280,
+      "unknown": 0
+    },
+    "risk_distribution": {
+      "elevated": 21,
+      "low": 70,
+      "moderate": 909
+    },
+    "risk_rows": 1000
+  },
+  "recommendation": "The 1000-object dataset is usable for the observatory; expanding to 4000 should increase coverage before final presentation if API time allows.",
+  "status": "success",
+  "target_4000": {
+    "available": false,
+    "note": "4000-object benchmark becomes concrete after expansion and rebuild complete.",
+    "row_count": null
+  },
+  "target_objects": 4000
+}

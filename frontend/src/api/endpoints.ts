@@ -48,6 +48,30 @@ export const endpoints = {
     latestForObject: (objectKey: string) =>
       `/simulations/object/${encodeURIComponent(objectKey)}/latest`
   },
+  orbitalSimulation: {
+    object: "/orbital-simulation/object",
+    batch: "/orbital-simulation/batch",
+    status: "/orbital-simulation/status",
+    latestForObject: (objectKey: string) =>
+      `/orbital-simulation/object/${encodeURIComponent(objectKey)}/latest`,
+    findings: "/orbital-simulation/findings"
+  },
+  findings: {
+    summary: "/findings/summary",
+    risk: "/findings/risk",
+    scoreSimulation: "/findings/score-simulation",
+    orbitalSimulation: "/findings/orbital-simulation",
+    orbitalGraph: "/findings/orbital-graph",
+    modelEvidence: "/findings/model-evidence",
+    object: (objectKey: string) => `/findings/object/${encodeURIComponent(objectKey)}`
+  },
+  modelEvidence: {
+    summary: "/model-evidence/summary",
+    cards: "/model-evidence/cards",
+    predictions: "/model-evidence/predictions",
+    disagreements: "/model-evidence/disagreements",
+    object: (objectKey: string) => `/model-evidence/object/${encodeURIComponent(objectKey)}`
+  },
   gnn: {
     status: "/gnn/status",
     buildGraph: "/gnn/build-graph",

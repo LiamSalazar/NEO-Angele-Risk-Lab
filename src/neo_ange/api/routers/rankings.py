@@ -30,6 +30,10 @@ def top_rankings(
             message="Risk scores not found. Run: python -m neo_ange.cli risk build",
         )
     ranked = RiskRankingService().rank(df, limit=limit)
+    if not ranked.empty:
+        ranked["dominant_driver"] = ranked.apply(
+            lambda row: _dominant_driver(row.to_dict()), axis=1
+        )
     return RankingResponse(objects=to_jsonable(ranked.to_dict(orient="records")))
 
 
@@ -62,4 +66,20 @@ def rankings_by_category(
             message="Risk scores not found. Run: python -m neo_ange.cli risk build",
         )
     ranked = RiskRankingService().top_by_category(df, category, limit=limit)
+    if not ranked.empty:
+        ranked["dominant_driver"] = ranked.apply(
+            lambda row: _dominant_driver(row.to_dict()), axis=1
+        )
     return RankingResponse(objects=to_jsonable(ranked.to_dict(orient="records")))
+
+
+def _dominant_driver(row: dict) -> str:
+    components = {
+        "physical": row.get("physical_risk_component") or 0,
+        "orbital": row.get("orbital_risk_component") or 0,
+        "approach": row.get("approach_risk_component") or 0,
+        "sentry": row.get("sentry_risk_component") or 0,
+        "uncertainty": row.get("uncertainty_risk_component") or 0,
+        "data quality": row.get("data_quality_component") or 0,
+    }
+    return max(components, key=lambda key: float(components[key] or 0))

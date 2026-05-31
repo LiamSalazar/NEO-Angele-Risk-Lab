@@ -2,13 +2,12 @@ import { createBrowserRouter } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { AsteroidProfilePage } from "@/pages/AsteroidProfilePage";
-import { DomainExplorerPage } from "@/pages/DomainExplorerPage";
+import { FindingsPage } from "@/pages/FindingsPage";
 import { GNNResearchLabPage } from "@/pages/GNNResearchLabPage";
 import { MethodologyPage } from "@/pages/MethodologyPage";
 import { MissionControlPage } from "@/pages/MissionControlPage";
-import { ModelAndLeakageLabPage } from "@/pages/ModelAndLeakageLabPage";
 import { MonteCarloLabPage } from "@/pages/MonteCarloLabPage";
-import { PipelineMonitorPage } from "@/pages/PipelineMonitorPage";
+import { OrbitalSimulationPage } from "@/pages/OrbitalSimulationPage";
 import { RiskRankingPage } from "@/pages/RiskRankingPage";
 
 export const createAppRouter = () =>
@@ -22,10 +21,9 @@ export const createAppRouter = () =>
         { path: "objects", element: <AsteroidProfilePage /> },
         { path: "objects/:objectKey", element: <AsteroidProfilePage /> },
         { path: "monte-carlo", element: <MonteCarloLabPage /> },
-        { path: "ml-lab", element: <ModelAndLeakageLabPage /> },
+        { path: "orbital-simulation", element: <OrbitalSimulationPage /> },
         { path: "gnn", element: <GNNResearchLabPage /> },
-        { path: "domain", element: <DomainExplorerPage /> },
-        { path: "pipeline", element: <PipelineMonitorPage /> },
+        { path: "findings", element: <FindingsPage /> },
         { path: "methodology", element: <MethodologyPage /> }
       ]
     }

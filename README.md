@@ -8,7 +8,7 @@ The project builds a reproducible Python data platform around NASA/JPL Small-Bod
 
 ## Current Phase Support
 
-This release implements phases 0 through 5:
+This release implements phases 0 through 9 as an analytical observatory:
 
 - Project documentation and operating design.
 - Installable Python package using a `src/` layout.
@@ -24,11 +24,17 @@ This release implements phases 0 through 5:
 - Baseline scikit-learn models and leakage-aware feature-set experiments.
 - PHA leakage audit reports that separate definition-related variables from contextual signals.
 - Unit tests with mocked clients and responses.
-- Docker and Docker Compose entry points for CLI execution.
+- Risk Priority Score tables and explanation endpoints.
+- Score Monte Carlo simulation outputs.
+- Orbital graph artifacts and GNN research endpoints.
+- Approximate orbital scenario simulation.
+- Model evidence cards, prediction rows, and disagreement queues.
+- User-facing findings generated from current artifacts.
+- Docker and Docker Compose entry points for API and frontend execution.
 
 ## Frontend Observatory
 
-A React/TypeScript frontend now lives in `frontend/`. It provides the Neo Angele Risk Lab mission-control observatory for system status, rankings, object profiles, Monte Carlo, ML/leakage, GNN, domain objects, pipeline readiness, and methodology. See `frontend/README.md` and `docs/frontend_observatory.md`.
+A React/TypeScript frontend now lives in `frontend/`. It provides the Neo Angele Risk Lab observatory for Control Panel, Risk Ranking, Object Profile, Score Simulation, Orbital Simulation, Orbital Graph, Findings, and Methodology. See `frontend/README.md`, `docs/frontend_observatory.md`, and `docs/frontend_product_refinement.md`.
 
 ## What It Does Not Claim
 
@@ -293,13 +299,32 @@ Run ML status from Docker Compose:
 docker compose run --rm app python -m neo_ange.cli ml status
 ```
 
+Run the API and frontend together:
+
+```bash
+docker compose up --build
+```
+
+The API is exposed on `http://127.0.0.1:8000`; the frontend is exposed on `http://127.0.0.1:5174`.
+
+Build the advanced analytical artifacts:
+
+```bash
+python -m neo_ange.cli final build-all --target 4000
+python -m neo_ange.cli findings build
+python -m neo_ange.cli model-evidence build
+python -m neo_ange.cli orbital-sim batch --limit 50 --n-clones 300
+python -m neo_ange.cli benchmark run
+```
+
 ## Roadmap Summary
 
 - Phase 3: Spark ETL from bronze to silver and gold. Implemented.
 - Phase 4: feature engineering for orbital and close approach risk analysis. Implemented.
 - Phase 4.5: data expansion and ETL hardening. Implemented.
 - Phase 5: baseline ML and leakage audit. Implemented.
-- Phase 6: Risk Priority Score design and calibration.
-- Phase 7: dashboard and FastAPI service.
-- Phase 8: Monte Carlo simulation research.
-- Phase 9: graph neural network experiments.
+- Phase 6: Risk Priority Score design and calibration. Implemented.
+- Phase 7: dashboard and FastAPI service. Implemented.
+- Phase 8: Monte Carlo simulation research. Implemented.
+- Phase 9: graph neural network experiments. Implemented.
+- Advanced mode: orbital simulation, model evidence, findings, and Docker frontend/API orchestration. Implemented.

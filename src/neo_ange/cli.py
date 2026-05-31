@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -11,14 +12,18 @@ from rich.panel import Panel
 from rich.table import Table
 
 from neo_ange import __version__
+from neo_ange.benchmarks.reporting import BenchmarkRunner
 from neo_ange.clients.base import JPLClientError
+from neo_ange.evidence.reporting import ModelEvidenceBuilder
 from neo_ange.expansion.discovery import ObjectDiscoveryService
 from neo_ange.expansion.readiness import DatasetReadinessReporter
+from neo_ange.findings.reporting import FindingsBuilder
 from neo_ange.gnn.datasets import torch_geometric_available
 from neo_ange.gnn.experiments import GNNExperimentRunner
 from neo_ange.manifests.run_manifest import list_manifests, load_latest_manifest
 from neo_ange.ml.dataset import MLDatasetLoader
 from neo_ange.ml.feature_sets import FeatureSetRegistry
+from neo_ange.orbital_simulation.service import OrbitalSimulationService
 from neo_ange.pipelines.etl import ETLPipeline
 from neo_ange.pipelines.ingestion import IngestionPipeline
 from neo_ange.pipelines.ml import MLPipeline
@@ -44,6 +49,11 @@ risk_app = typer.Typer(help="Build and inspect experimental risk-priority scores
 api_app = typer.Typer(help="Inspect or run the FastAPI backend.")
 simulate_app = typer.Typer(help="Run approximate Monte Carlo score simulations.")
 gnn_app = typer.Typer(help="Build orbital graphs and run experimental GNN comparisons.")
+orbital_sim_app = typer.Typer(help="Run approximate orbital perturbation simulations.")
+findings_app = typer.Typer(help="Build user-facing analytical findings.")
+model_evidence_app = typer.Typer(help="Build model evidence cards and predictions.")
+benchmark_app = typer.Typer(help="Run technical benchmarks.")
+final_app = typer.Typer(help="Run final observatory build workflows.")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(etl_app, name="etl")
 app.add_typer(expand_app, name="expand")
@@ -52,6 +62,11 @@ app.add_typer(risk_app, name="risk")
 app.add_typer(api_app, name="api")
 app.add_typer(simulate_app, name="simulate")
 app.add_typer(gnn_app, name="gnn")
+app.add_typer(orbital_sim_app, name="orbital-sim")
+app.add_typer(findings_app, name="findings")
+app.add_typer(model_evidence_app, name="model-evidence")
+app.add_typer(benchmark_app, name="benchmark")
+app.add_typer(final_app, name="final")
 
 
 def build_pipeline() -> IngestionPipeline:
@@ -103,6 +118,26 @@ def build_simulation_pipeline() -> SimulationPipeline:
 def build_gnn_runner() -> GNNExperimentRunner:
     settings = get_settings()
     return GNNExperimentRunner(gold_root=settings.gold_dir)
+
+
+def build_orbital_simulation_service() -> OrbitalSimulationService:
+    settings = get_settings()
+    return OrbitalSimulationService(gold_root=settings.gold_dir)
+
+
+def build_findings_builder() -> FindingsBuilder:
+    settings = get_settings()
+    return FindingsBuilder(gold_root=settings.gold_dir)
+
+
+def build_model_evidence_builder() -> ModelEvidenceBuilder:
+    settings = get_settings()
+    return ModelEvidenceBuilder(gold_root=settings.gold_dir)
+
+
+def build_benchmark_runner() -> BenchmarkRunner:
+    settings = get_settings()
+    return BenchmarkRunner(gold_root=settings.gold_dir)
 
 
 def _print_saved_paths(paths: list[Path]) -> None:
@@ -397,7 +432,7 @@ def expand_ingest_objects(
 
 @expand_app.command("max")
 def expand_max(
-    target: int = typer.Option(1000, "--target", min=1),
+    target: int = typer.Option(4000, "--target", min=1),
     rich: bool = typer.Option(True, "--rich/--basic"),
     skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
     resume: bool = typer.Option(True, "--resume/--no-resume"),
@@ -442,7 +477,7 @@ def expand_coverage() -> None:
 
 @expand_app.command("rebuild-all")
 def expand_rebuild_all(
-    target: int = typer.Option(1000, "--target", min=1),
+    target: int = typer.Option(4000, "--target", min=1),
     skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
     resume: bool = typer.Option(True, "--resume/--no-resume"),
 ) -> None:
@@ -854,6 +889,179 @@ def gnn_explain_graph() -> None:
             "This graph links asteroids with similar scaled orbital and risk-context "
             "features. It is experimental and should be compared against tabular baselines."
         )
+
+
+@orbital_sim_app.command("status")
+def orbital_sim_status() -> None:
+    """Show approximate orbital simulation output availability."""
+    payload = build_orbital_simulation_service().status()
+    console.print(Panel.fit("Orbital simulation status", title=PROJECT_NAME))
+    _print_key_value_table("Orbital simulation", payload)
+
+
+@orbital_sim_app.command("object")
+def orbital_sim_object(
+    object_key: str = typer.Option(..., "--object-key"),
+    n_clones: int = typer.Option(500, "--n-clones", min=1),
+    horizon_days: int = typer.Option(3650, "--horizon-days", min=1),
+    time_step_days: int = typer.Option(10, "--time-step-days", min=1),
+    random_state: int = typer.Option(42, "--random-state"),
+) -> None:
+    """Run approximate orbital perturbation simulation for one object."""
+    result = build_orbital_simulation_service().simulate_object(
+        object_key=object_key,
+        n_clones=n_clones,
+        horizon_days=horizon_days,
+        time_step_days=time_step_days,
+        random_state=random_state,
+    )
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") in {"failed", "not_found"}:
+        raise typer.Exit(code=1)
+
+
+@orbital_sim_app.command("batch")
+def orbital_sim_batch(
+    limit: int = typer.Option(50, "--limit", min=1),
+    n_clones: int = typer.Option(300, "--n-clones", min=1),
+    horizon_days: int = typer.Option(3650, "--horizon-days", min=1),
+    time_step_days: int = typer.Option(10, "--time-step-days", min=1),
+    random_state: int = typer.Option(42, "--random-state"),
+) -> None:
+    """Run approximate orbital perturbation simulation for top-ranked objects."""
+    result = build_orbital_simulation_service().simulate_batch(
+        limit=limit,
+        n_clones=n_clones,
+        horizon_days=horizon_days,
+        time_step_days=time_step_days,
+        random_state=random_state,
+    )
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@findings_app.command("build")
+def findings_build() -> None:
+    """Build user-facing analytical findings and model evidence."""
+    model_result = build_model_evidence_builder().build(write=True)
+    result = build_findings_builder().build_all(write=True)
+    payload = {
+        "status": result.get("status", "missing_data"),
+        "model_evidence_status": model_result.get("status"),
+        "summary": result.get("summary", {}),
+    }
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
+
+
+@findings_app.command("status")
+def findings_status() -> None:
+    """Show findings report availability."""
+    payload = build_findings_builder().status()
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
+
+
+@model_evidence_app.command("build")
+def model_evidence_build(target: str = typer.Option("pha", "--target")) -> None:
+    """Build model evidence cards, predictions and disagreement reports."""
+    result = build_model_evidence_builder().build(target=target, write=True)
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+    if result.get("status") == "failed":
+        raise typer.Exit(code=1)
+
+
+@model_evidence_app.command("status")
+def model_evidence_status() -> None:
+    """Show model evidence artifact availability."""
+    payload = build_model_evidence_builder().status()
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
+
+
+@benchmark_app.command("run")
+def benchmark_run() -> None:
+    """Run technical benchmarks and persist reports."""
+    result = build_benchmark_runner().run(write=True)
+    console.print(json.dumps(to_jsonable(result), indent=2, sort_keys=True))
+
+
+@benchmark_app.command("status")
+def benchmark_status() -> None:
+    """Show benchmark report availability."""
+    payload = build_benchmark_runner().status()
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
+
+
+@final_app.command("build-all")
+def final_build_all(
+    target: int = typer.Option(4000, "--target", min=1),
+    skip_existing: bool = typer.Option(True, "--skip-existing/--no-skip-existing"),
+    resume: bool = typer.Option(True, "--resume/--no-resume"),
+) -> None:
+    """Run the final analytical build workflow with tolerance to non-critical failures."""
+    steps: list[dict[str, Any]] = []
+
+    def record(name: str, callback: typer.CallbackParam, required: bool = False) -> None:
+        try:
+            result = callback()
+            status = result.get("status", "success") if isinstance(result, dict) else "success"
+            steps.append({"step": name, "status": status, "result": result})
+            if required and status == "failed":
+                raise typer.Exit(code=1)
+        except Exception as exc:
+            steps.append({"step": name, "status": "failed", "error": str(exc)})
+            if required:
+                raise
+
+    settings = get_settings()
+    setup_logging(settings.log_level)
+    record(
+        "expand max",
+        lambda: build_pipeline().ingest_max_available_objects(
+            target=target,
+            rich=True,
+            skip_existing=skip_existing,
+            resume=resume,
+            batch_size=100,
+            request_delay_seconds=0.15,
+        ),
+    )
+
+    def run_etl_step() -> dict[str, Any]:
+        spark = create_spark_session(
+            app_name=settings.spark_app_name,
+            master=settings.spark_master,
+            log_level=settings.spark_log_level,
+        )
+        try:
+            return build_etl_pipeline(spark).run_all()
+        finally:
+            stop_spark_session(spark)
+
+    record("etl run-all", run_etl_step, required=False)
+    record("risk build", lambda: build_risk_pipeline().build_scores(), required=False)
+    record(
+        "score simulation batch",
+        lambda: build_simulation_pipeline().simulate_batch(limit=100, n_simulations=500),
+    )
+    record(
+        "orbital simulation batch",
+        lambda: build_orbital_simulation_service().simulate_batch(
+            limit=50,
+            n_clones=300,
+            horizon_days=3650,
+            time_step_days=10,
+        ),
+    )
+    record("ml run-all", lambda: build_ml_pipeline().run_all(target="pha"))
+    record("gnn build-graph", lambda: build_gnn_runner().run_graph_experiment(k=10, min_nodes=100))
+    record("gnn run", lambda: build_gnn_runner().run_all(target="pha", k=10, min_nodes=100))
+    record("model evidence build", lambda: build_model_evidence_builder().build(write=True))
+    record("findings build", lambda: build_findings_builder().build_all(write=True))
+    record("benchmark run", lambda: build_benchmark_runner().run(write=True))
+
+    final_status = "success" if all(step["status"] != "failed" for step in steps) else "partial"
+    payload = {"status": final_status, "target": target, "steps": steps}
+    console.print(json.dumps(to_jsonable(payload), indent=2, sort_keys=True))
 
 
 def _list_bronze_sources(bronze_root: Path) -> list[str]:

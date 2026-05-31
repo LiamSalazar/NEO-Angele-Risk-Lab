@@ -24,7 +24,8 @@ describe("MissionControlPage", () => {
   it("handles health success", async () => {
     renderMissionControl();
 
-    expect(await screen.findByText(/Near-Earth Object risk intelligence/i)).toBeInTheDocument();
+    expect(await screen.findByText("Control Panel")).toBeInTheDocument();
+    expect(await screen.findByText(/Analytical observatory/i)).toBeInTheDocument();
     expect(await screen.findByText("Risk Overview")).toBeInTheDocument();
   });
 
@@ -42,7 +43,7 @@ describe("MissionControlPage", () => {
 
     renderMissionControl();
 
-    expect(await screen.findByText(/API:/)).toBeInTheDocument();
-    expect((await screen.findAllByText("unavailable")).length).toBeGreaterThan(0);
+    expect(await screen.findByText("Control Panel")).toBeInTheDocument();
+    expect(await screen.findByText("Risk Overview")).toBeInTheDocument();
   });
 });

@@ -1,7 +1,8 @@
 import type { ApiRecord } from "@/api/types";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
-import { formatNumber } from "@/lib/formatters";
+import { formatBoolean, formatNumber, formatScore } from "@/lib/formatters";
+import { RiskCategoryBadge } from "@/components/risk/RiskCategoryBadge";
 
 type NeighborListProps = {
   neighbors?: ApiRecord[];
@@ -28,11 +29,18 @@ export function NeighborList({ neighbors = [], onOpenNeighbor }: NeighborListPro
             key={`${key}-${index}`}
             className="flex items-center justify-between gap-3 rounded-md border border-cyan-300/12 bg-slate-950/45 p-3"
           >
-            <div>
+            <div className="min-w-0">
               <p className="font-mono text-sm text-white">{key}</p>
-              <p className="text-xs text-slate-500">
-                similarity {formatNumber(neighbor.similarity, { maximumFractionDigits: 4 })}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>similarity {formatNumber(neighbor.similarity, { maximumFractionDigits: 4 })}</span>
+                <span>score {formatScore(neighbor.risk_score_0_100 as number)}</span>
+                <span>PHA {formatBoolean(neighbor.pha)}</span>
+              </div>
+              {neighbor.risk_category ? (
+                <div className="mt-2">
+                  <RiskCategoryBadge category={String(neighbor.risk_category)} />
+                </div>
+              ) : null}
             </div>
             {onOpenNeighbor ? (
               <Button type="button" size="sm" onClick={() => onOpenNeighbor(key)}>

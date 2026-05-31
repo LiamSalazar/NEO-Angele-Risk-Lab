@@ -10,6 +10,7 @@ import type {
   GNNStatusResult,
   HealthResponse,
   NeighborResult,
+  OrbitalSimulationResult,
   RankingResponse,
   RiskObjectResponse,
   SimulationResponse,
@@ -30,6 +31,16 @@ export const queryKeys = {
   riskMethodology: ["risk-methodology"] as const,
   simulationStatus: ["simulation-status"] as const,
   simulationLatest: (objectKey?: string) => ["simulation-latest", objectKey] as const,
+  orbitalSimulationStatus: ["orbital-simulation-status"] as const,
+  orbitalSimulationLatest: (objectKey?: string) =>
+    ["orbital-simulation-latest", objectKey] as const,
+  findingsSummary: ["findings-summary"] as const,
+  findingsGroup: (group: string) => ["findings-group", group] as const,
+  modelEvidenceSummary: ["model-evidence-summary"] as const,
+  modelEvidenceCards: ["model-evidence-cards"] as const,
+  modelEvidencePredictions: ["model-evidence-predictions"] as const,
+  modelEvidenceDisagreements: ["model-evidence-disagreements"] as const,
+  modelEvidenceObject: (objectKey?: string) => ["model-evidence-object", objectKey] as const,
   gnnStatus: ["gnn-status"] as const,
   gnnSummary: ["gnn-summary"] as const,
   gnnGraph: (limit: number) => ["gnn-graph", limit] as const,
@@ -175,6 +186,129 @@ export function useSimulateBatchMutation() {
     mutationFn: (body: { limit: number; n_simulations: number; random_state?: number | null }) =>
       apiClient.post<SimulationResponse>(endpoints.simulations.batch, body, { timeoutMs: 120_000 }),
     onSuccess: () => queryClient.invalidateQueries()
+  });
+}
+
+export function useOrbitalSimulationStatusQuery() {
+  return useQuery({
+    queryKey: queryKeys.orbitalSimulationStatus,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.orbitalSimulation.status),
+    ...standardQuery
+  });
+}
+
+export function useLatestOrbitalSimulationQuery(objectKey?: string) {
+  return useQuery({
+    queryKey: queryKeys.orbitalSimulationLatest(objectKey),
+    queryFn: () =>
+      apiClient.get<SimulationResponse & { result?: OrbitalSimulationResult | null }>(
+        endpoints.orbitalSimulation.latestForObject(objectKey ?? "")
+      ),
+    enabled: Boolean(objectKey),
+    ...standardQuery
+  });
+}
+
+export function useRunOrbitalSimulationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      object_key: string;
+      n_clones: number;
+      horizon_days: number;
+      time_step_days: number;
+      random_state?: number | null;
+    }) =>
+      apiClient.post<SimulationResponse>(
+        endpoints.orbitalSimulation.object,
+        body,
+        { timeoutMs: 120_000 }
+      ),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orbitalSimulationStatus });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orbitalSimulationLatest(variables.object_key)
+      });
+    }
+  });
+}
+
+export function useRunOrbitalBatchMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      limit: number;
+      n_clones: number;
+      horizon_days: number;
+      time_step_days: number;
+      random_state?: number | null;
+    }) =>
+      apiClient.post<SimulationResponse>(
+        endpoints.orbitalSimulation.batch,
+        body,
+        { timeoutMs: 180_000 }
+      ),
+    onSuccess: () => queryClient.invalidateQueries()
+  });
+}
+
+export function useFindingsSummaryQuery() {
+  return useQuery({
+    queryKey: queryKeys.findingsSummary,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.findings.summary),
+    ...standardQuery
+  });
+}
+
+export function useFindingsGroupQuery(group: keyof typeof endpoints.findings) {
+  return useQuery({
+    queryKey: queryKeys.findingsGroup(group),
+    queryFn: () => {
+      const endpoint = endpoints.findings[group];
+      return apiClient.get<StatusResponse>(typeof endpoint === "string" ? endpoint : endpoints.findings.summary);
+    },
+    ...standardQuery
+  });
+}
+
+export function useModelEvidenceSummaryQuery() {
+  return useQuery({
+    queryKey: queryKeys.modelEvidenceSummary,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.modelEvidence.summary),
+    ...standardQuery
+  });
+}
+
+export function useModelEvidenceCardsQuery() {
+  return useQuery({
+    queryKey: queryKeys.modelEvidenceCards,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.modelEvidence.cards),
+    ...standardQuery
+  });
+}
+
+export function useModelEvidencePredictionsQuery() {
+  return useQuery({
+    queryKey: queryKeys.modelEvidencePredictions,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.modelEvidence.predictions),
+    ...standardQuery
+  });
+}
+
+export function useModelEvidenceDisagreementsQuery() {
+  return useQuery({
+    queryKey: queryKeys.modelEvidenceDisagreements,
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.modelEvidence.disagreements),
+    ...standardQuery
+  });
+}
+
+export function useModelEvidenceObjectQuery(objectKey?: string) {
+  return useQuery({
+    queryKey: queryKeys.modelEvidenceObject(objectKey),
+    queryFn: () => apiClient.get<StatusResponse>(endpoints.modelEvidence.object(objectKey ?? "")),
+    enabled: Boolean(objectKey),
+    ...standardQuery
   });
 }
 

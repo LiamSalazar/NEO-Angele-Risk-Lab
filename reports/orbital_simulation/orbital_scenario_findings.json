@@ -1,0 +1,34 @@
+{
+  "findings": [
+    {
+      "importance": "medium",
+      "related_objects": [
+        "20020425",
+        "20101869",
+        "20152685",
+        "20163067",
+        "20199801"
+      ],
+      "short_text": "These objects show the widest clone spread in approximate orbital simulations.",
+      "source_module": "orbital_simulation",
+      "technical_basis": "Ranked by dispersion_index.",
+      "title": "Highest orbital-dispersion objects"
+    },
+    {
+      "caveat": "Approximate orbital scenario analysis based on available orbital elements.",
+      "importance": "medium",
+      "related_objects": [
+        "20020425",
+        "20163067",
+        "20101869",
+        "20031669",
+        "20199801"
+      ],
+      "short_text": "These objects have the smallest lower-tail simulated minimum distances.",
+      "source_module": "orbital_simulation",
+      "technical_basis": "Ranked by simulated_min_distance_p05_au.",
+      "title": "Lowest p05 simulated minimum-distance objects"
+    }
+  ],
+  "status": "success"
+}

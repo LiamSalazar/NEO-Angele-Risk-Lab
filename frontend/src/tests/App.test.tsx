@@ -8,6 +8,8 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findAllByText("Neo Angele Risk Lab")).not.toHaveLength(0);
-    expect(await screen.findByText(/Near-Earth Object risk intelligence/i)).toBeInTheDocument();
+    expect(await screen.findByText("Control Panel")).toBeInTheDocument();
+    expect(screen.queryByText("Domain Explorer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pipeline Monitor")).not.toBeInTheDocument();
   });
 });

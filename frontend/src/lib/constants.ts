@@ -1,26 +1,24 @@
 import {
   Activity,
-  Atom,
   BarChart3,
-  BrainCircuit,
   GitBranch,
   Home,
+  Lightbulb,
+  Orbit,
   Radar,
-  ScrollText,
-  ServerCog
+  ScrollText
 } from "lucide-react";
 
 export const APP_NAME = "Neo Angele Risk Lab";
 
 export const NAV_ITEMS = [
-  { label: "Mission Control", path: "/", icon: Home },
+  { label: "Control Panel", path: "/", icon: Home },
   { label: "Risk Ranking", path: "/ranking", icon: BarChart3 },
-  { label: "Asteroid Profile", path: "/objects", icon: Radar },
-  { label: "Monte Carlo Lab", path: "/monte-carlo", icon: Activity },
-  { label: "ML & Leakage Lab", path: "/ml-lab", icon: BrainCircuit },
-  { label: "GNN Research Lab", path: "/gnn", icon: GitBranch },
-  { label: "Domain Explorer", path: "/domain", icon: Atom },
-  { label: "Pipeline Monitor", path: "/pipeline", icon: ServerCog },
+  { label: "Object Profile", path: "/objects", icon: Radar },
+  { label: "Score Simulation", path: "/monte-carlo", icon: Activity },
+  { label: "Orbital Simulation", path: "/orbital-simulation", icon: Orbit },
+  { label: "Orbital Graph", path: "/gnn", icon: GitBranch },
+  { label: "Findings", path: "/findings", icon: Lightbulb },
   { label: "Methodology", path: "/methodology", icon: ScrollText }
 ] as const;
 

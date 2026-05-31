@@ -10,6 +10,7 @@ import { RiskCategoryBadge } from "@/components/risk/RiskCategoryBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBuildRiskMutation, useObjectsQuery, useRankingSummaryQuery } from "@/hooks/useRiskRanking";
+import { useModelEvidencePredictionsQuery } from "@/hooks/useFindings";
 import { RISK_CATEGORIES } from "@/lib/constants";
 import { formatBoolean, formatScore, objectDisplayName, objectKey } from "@/lib/formatters";
 import { normalizeCategory } from "@/lib/risk";
@@ -17,16 +18,35 @@ import { normalizeCategory } from "@/lib/risk";
 export function RiskRankingPage() {
   const [category, setCategory] = useState<string>("all");
   const [sentryOnly, setSentryOnly] = useState(false);
+  const [phaOnly, setPhaOnly] = useState(false);
+  const [minScore, setMinScore] = useState("");
   const [search, setSearch] = useState("");
   const objects = useObjectsQuery({ limit: 500 });
   const summary = useRankingSummaryQuery();
   const buildRisk = useBuildRiskMutation();
+  const modelPredictions = useModelEvidencePredictionsQuery();
+
+  const evidenceByObject = useMemo(() => {
+    const rows = (modelPredictions.data?.details?.predictions ?? []) as Array<Record<string, unknown>>;
+    return rows.reduce<Record<string, string>>((acc, row) => {
+      const key = String(row.object_key ?? "");
+      if (!key || acc[key] === "high") return acc;
+      const bucket = String(row.confidence_bucket ?? "medium");
+      acc[key] = bucket;
+      return acc;
+    }, {});
+  }, [modelPredictions.data?.details?.predictions]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return (objects.data?.objects ?? [])
       .filter((object) => category === "all" || normalizeCategory(object.risk_category) === category)
       .filter((object) => !sentryOnly || formatBoolean(object.sentry_flag) === "yes")
+      .filter((object) => !phaOnly || formatBoolean(object.pha) === "yes")
+      .filter((object) => {
+        const threshold = Number(minScore);
+        return !Number.isFinite(threshold) || minScore === "" || Number(object.risk_score_0_100 ?? 0) >= threshold;
+      })
       .filter((object) =>
         !needle
           ? true
@@ -35,7 +55,7 @@ export function RiskRankingPage() {
               .some((value) => String(value).toLowerCase().includes(needle))
       )
       .sort((a, b) => Number(b.risk_score_0_100 ?? 0) - Number(a.risk_score_0_100 ?? 0));
-  }, [category, objects.data?.objects, search, sentryOnly]);
+  }, [category, minScore, objects.data?.objects, phaOnly, search, sentryOnly]);
 
   if (objects.isLoading) {
     return <LoadingState label="Loading ranking telemetry" />;
@@ -77,13 +97,23 @@ export function RiskRankingPage() {
             <Button size="sm" variant={sentryOnly ? "primary" : "secondary"} onClick={() => setSentryOnly((value) => !value)}>
               Sentry flag
             </Button>
+            <Button size="sm" variant={phaOnly ? "primary" : "secondary"} onClick={() => setPhaOnly((value) => !value)}>
+              PHA
+            </Button>
           </div>
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search object_key, designation or name"
-            className="max-w-xl"
-          />
+          <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)] xl:w-[620px]">
+            <Input
+              type="number"
+              value={minScore}
+              onChange={(event) => setMinScore(event.target.value)}
+              placeholder="Min score"
+            />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search object_key, designation or name"
+            />
+          </div>
         </div>
       </div>
 
@@ -103,7 +133,7 @@ export function RiskRankingPage() {
       ) : (
         <div className="console-panel overflow-hidden rounded-lg p-3">
           <div className="overflow-x-auto">
-            <table className="data-table w-full min-w-[1120px] text-left">
+            <table className="data-table w-full min-w-[1360px] text-left">
               <thead>
                 <tr className="text-slate-500">
                   {[
@@ -116,6 +146,8 @@ export function RiskRankingPage() {
                     "approach",
                     "sentry",
                     "uncertainty",
+                    "dominant driver",
+                    "model evidence",
                     "sentry flag",
                     "profile"
                   ].map((column) => (
@@ -139,6 +171,8 @@ export function RiskRankingPage() {
                       <td className="px-3 py-3 font-mono">{formatScore(Number(object.approach_risk_component ?? 0) * 100)}</td>
                       <td className="px-3 py-3 font-mono">{formatScore(Number(object.sentry_risk_component ?? 0) * 100)}</td>
                       <td className="px-3 py-3 font-mono">{formatScore(Number(object.uncertainty_risk_component ?? 0) * 100)}</td>
+                      <td className="px-3 py-3">{String(object.dominant_driver ?? dominantDriver(object))}</td>
+                      <td className="px-3 py-3">{evidenceByObject[key] ?? "pending"}</td>
                       <td className="px-3 py-3 font-mono">{formatBoolean(object.sentry_flag)}</td>
                       <td className="rounded-r-md px-3 py-3">
                         <Button asChild size="sm">
@@ -157,6 +191,17 @@ export function RiskRankingPage() {
       )}
     </div>
   );
+}
+
+function dominantDriver(object: Record<string, unknown>) {
+  const values = {
+    physical: Number(object.physical_risk_component ?? 0),
+    orbital: Number(object.orbital_risk_component ?? 0),
+    approach: Number(object.approach_risk_component ?? 0),
+    sentry: Number(object.sentry_risk_component ?? 0),
+    uncertainty: Number(object.uncertainty_risk_component ?? 0)
+  };
+  return Object.entries(values).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
 }
 
 function Summary({ label, value, score }: { label: string; value: unknown; score?: boolean }) {

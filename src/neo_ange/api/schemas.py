@@ -79,3 +79,19 @@ class GNNResponse(BaseModel):
     status: str
     result: dict[str, Any] | None = None
     message: str | None = None
+
+
+class OrbitalSimulationRequest(BaseModel):
+    object_key: str
+    n_clones: int = Field(default=500, ge=1, le=20_000)
+    horizon_days: int = Field(default=3650, ge=1, le=50_000)
+    time_step_days: int = Field(default=10, ge=1, le=365)
+    random_state: int | None = 42
+
+
+class BatchOrbitalSimulationRequest(BaseModel):
+    limit: int = Field(default=50, ge=1, le=1000)
+    n_clones: int = Field(default=300, ge=1, le=20_000)
+    horizon_days: int = Field(default=3650, ge=1, le=50_000)
+    time_step_days: int = Field(default=10, ge=1, le=365)
+    random_state: int | None = 42

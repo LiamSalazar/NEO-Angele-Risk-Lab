@@ -121,6 +121,7 @@ def gnn_metrics(paths: Annotated[dict[str, Path], Depends(get_data_paths)]) -> G
     metrics = _read_csv(paths["reports_dir"] / "gnn" / "gnn_metrics.csv")
     if metrics.empty:
         return GNNResponse(status="missing_data", result={"metrics": []})
+    metrics = _normalize_metrics(metrics)
     return GNNResponse(
         status="success", result={"metrics": to_jsonable(metrics.to_dict("records"))}
     )
@@ -160,6 +161,11 @@ def object_neighbors(
     neighbor_table["neighbor_object_key"] = neighbor_table["neighbor_node_id"].map(
         node_lookup["object_key"]
     )
+    for column in ["risk_score_0_100", "risk_category", "pha", "des", "name", "full_name"]:
+        if column in node_lookup.columns:
+            neighbor_table[column] = neighbor_table["neighbor_node_id"].map(node_lookup[column])
+    if "pha" not in neighbor_table.columns and "label" in node_lookup.columns:
+        neighbor_table["pha"] = neighbor_table["neighbor_node_id"].map(node_lookup["label"])
     neighbor_table = neighbor_table.sort_values("similarity", ascending=False)
     return GNNResponse(
         status="success",
@@ -180,6 +186,38 @@ def _read_csv(path: Path) -> pd.DataFrame:
     if path.exists():
         return pd.read_csv(path)
     return pd.DataFrame()
+
+
+def _normalize_metrics(metrics: pd.DataFrame) -> pd.DataFrame:
+    normalized = metrics.copy()
+    if "model_family" not in normalized.columns:
+        normalized["model_family"] = normalized.get("family", "graph")
+    if "target" not in normalized.columns:
+        normalized["target"] = "pha"
+    if "model_name" not in normalized.columns and "model" in normalized.columns:
+        normalized["model_name"] = normalized["model"]
+    normalized["interpretation"] = normalized.apply(
+        lambda row: _metric_interpretation(row.to_dict()),
+        axis=1,
+    )
+    return normalized
+
+
+def _metric_interpretation(row: dict[str, Any]) -> str:
+    if row.get("status") == "skipped_missing_dependency":
+        return "Advanced GNN training was skipped because torch-geometric is unavailable."
+    family = row.get("model_family") or row.get("family")
+    feature_set = row.get("feature_set")
+    if family == "gnn":
+        return (
+            "Graph neural evidence checks whether orbital neighborhoods improve label consistency."
+        )
+    if feature_set in {"full_features", "definition_features_only"}:
+        return (
+            "Leakage-sensitive diagnostic; useful internally but not preferred as "
+            "user-facing evidence."
+        )
+    return "Secondary evidence for consistency between available features and observed labels."
 
 
 def _read_json(path: Path) -> dict[str, Any]:

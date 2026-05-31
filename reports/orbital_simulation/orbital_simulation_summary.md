@@ -1,0 +1,13 @@
+# Orbital Simulation Summary
+
+Approximate orbital scenario analysis based on available orbital elements.
+
+- status: success
+- row_count: 50
+- scenario_category_counts: {'variable': 21, 'stable': 16, 'needs_review': 8, 'uncertain': 5}
+- mean_dispersion_index: 0.6171052908578519
+- max_dispersion_index: 2.51874583991884
+- min_p05_distance_au: 0.020102261677992648
+- n_clones_median: 300.0
+- horizon_days_median: 3650.0
+- top_uncertainty_objects: ['20020425', '20101869', '20152685', '20163067', '20199801', '20005693', '20177049', '20153002', '20101955', '20162825']

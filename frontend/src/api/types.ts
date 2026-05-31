@@ -190,6 +190,60 @@ export interface SimulationResult extends ApiRecord {
   simulated_at_utc?: string;
 }
 
+export interface OrbitalSimulationResult extends ApiRecord {
+  object_key?: string;
+  n_clones?: number;
+  horizon_days?: number;
+  time_step_days?: number;
+  baseline_min_distance_au?: number | null;
+  simulated_min_distance_mean_au?: number | null;
+  simulated_min_distance_p05_au?: number | null;
+  simulated_min_distance_p50_au?: number | null;
+  simulated_min_distance_p95_au?: number | null;
+  closest_approach_day_mean?: number | null;
+  closest_approach_day_p05?: number | null;
+  closest_approach_day_p95?: number | null;
+  dispersion_index?: number | null;
+  orbital_uncertainty_score?: number;
+  scenario_category?: string;
+  interpretation?: string;
+  warnings?: string[];
+  distance_trace?: {
+    day?: number[];
+    p05?: number[];
+    p50?: number[];
+    p95?: number[];
+  };
+}
+
+export interface Finding extends ApiRecord {
+  title?: string;
+  short_text?: string;
+  technical_basis?: string;
+  related_objects?: string[];
+  importance?: string;
+  source_module?: string;
+  values?: ApiRecord;
+  caveat?: string | null;
+}
+
+export interface FindingsDetails extends ApiRecord {
+  findings?: Finding[];
+  summary?: ApiRecord;
+}
+
+export interface ModelCard extends ApiRecord {
+  model_name?: string;
+  model_family?: string;
+  feature_set?: string;
+  target?: string;
+  metrics?: ApiRecord;
+  leakage_risk?: string;
+  recommended_use?: string;
+  interpretation?: string;
+  status?: string;
+}
+
 export interface GNNStatusResult {
   dataset_readiness?: DatasetReadiness;
   risk_scores_count?: number;

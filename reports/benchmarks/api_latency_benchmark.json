@@ -1,0 +1,30 @@
+{
+  "latency_rows": [
+    {
+      "elapsed_ms": 9.104899999783811,
+      "endpoint": "/health",
+      "status_code": 200
+    },
+    {
+      "elapsed_ms": 53.150900000218826,
+      "endpoint": "/status",
+      "status_code": 200
+    },
+    {
+      "elapsed_ms": 16.338899999936984,
+      "endpoint": "/rankings/summary",
+      "status_code": 200
+    },
+    {
+      "elapsed_ms": 590.1988000000529,
+      "endpoint": "/gnn/status",
+      "status_code": 200
+    },
+    {
+      "elapsed_ms": 18.08340000025055,
+      "endpoint": "/orbital-simulation/status",
+      "status_code": 200
+    }
+  ],
+  "status": "success"
+}

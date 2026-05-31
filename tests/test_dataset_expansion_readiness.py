@@ -9,7 +9,8 @@ def test_readiness_status_thresholds() -> None:
     assert readiness_status(0) == "not_ready"
     assert readiness_status(100) == "minimal"
     assert readiness_status(300) == "usable"
-    assert readiness_status(1000) == "strong"
+    assert readiness_status(1000) == "usable"
+    assert readiness_status(4000) == "strong"
 
 
 def test_dataset_readiness_report_handles_counts_and_empty_data(tmp_path) -> None:

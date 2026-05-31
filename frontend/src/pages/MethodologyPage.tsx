@@ -14,8 +14,8 @@ export function MethodologyPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Methodology"
-        title="Scope, Limits and Research Framing"
-        description="Neo Angele Risk Lab is a technical/educational observatory. It does not replace NASA/JPL products or professional orbital risk assessment."
+        title="Analytical Methodology"
+        description="How the observatory turns persisted NASA/JPL-derived NEO data into rankings, findings, simulations, graph neighborhoods and supporting model evidence."
       />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -23,26 +23,26 @@ export function MethodologyPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Official Context</CardTitle>
-              <CardDescription>What this lab is and is not.</CardDescription>
+            <CardTitle>Scope</CardTitle>
+            <CardDescription>A concise boundary for interpretation.</CardDescription>
             </div>
             <ShieldAlert className="h-5 w-5 text-amber-100" />
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-            <p>Sources are NASA/JPL-oriented data products consumed by the backend pipelines.</p>
-            <p>Risk Priority Score is experimental and ranks follow-up priority inside this project.</p>
-            <p>The frontend must never be read as an impact alert, official prediction or public safety tool.</p>
+            <p>Sources are NASA/JPL-oriented data products persisted by the backend pipelines.</p>
+            <p>Risk Priority Score ranks analytical follow-up priority inside this project.</p>
+            <p>Findings are dataset interpretations, not official impact alerts.</p>
           </CardContent>
         </Card>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <MethodCard title="NASA/JPL Sources" body="The backend ingests and transforms NEO object, close-approach and Sentry-related records into Bronze/Silver/Gold layers." icon={<BookOpen className="h-5 w-5" />} />
-        <MethodCard title="Monte Carlo" body="The simulation perturbs score inputs to estimate score stability. It is not orbital propagation and does not compute impact corridors." icon={<FlaskConical className="h-5 w-5" />} />
-        <MethodCard title="Leakage Audit" body="Model results are interpreted with special care around H, MOID, diameter and target-definition-adjacent feature sets." icon={<ShieldAlert className="h-5 w-5" />} />
-        <MethodCard title="GNN Experimental" body="Orbital graph and optional GNN experiments support research exploration. Missing torch-geometric is reported as skipped." icon={<FlaskConical className="h-5 w-5" />} />
-        <MethodCard title="Educational Use" body="The application is built for technical portfolio review, data engineering demonstration and research literacy." icon={<BookOpen className="h-5 w-5" />} />
-        <MethodCard title="Final Phase" body="Docker hardening, reproducibility, final README, demo and release polish remain intentionally out of this phase." icon={<ShieldAlert className="h-5 w-5" />} />
+        <MethodCard title="NASA/JPL Sources" body="The backend ingests NEO object, close-approach and Sentry-related records, then analyzes persisted Bronze/Silver/Gold data products." icon={<BookOpen className="h-5 w-5" />} />
+        <MethodCard title="Risk Priority Score" body="The score combines physical, orbital, approach, Sentry, uncertainty and data-quality signals into a review-priority ranking." icon={<ShieldAlert className="h-5 w-5" />} />
+        <MethodCard title="Score Simulation" body="Score simulation perturbs score inputs to estimate score stability, category-shift probability and p95 score behavior." icon={<FlaskConical className="h-5 w-5" />} />
+        <MethodCard title="Orbital Simulation" body="Orbital simulation perturbs available orbital elements and uses approximate two-body propagation to estimate distance bands." icon={<FlaskConical className="h-5 w-5" />} />
+        <MethodCard title="Orbital Graph" body="The graph links orbitally similar objects so the app can inspect neighborhoods and compare graph evidence against tabular patterns." icon={<BookOpen className="h-5 w-5" />} />
+        <MethodCard title="ML/GNN Evidence" body="Models are secondary evidence for pattern consistency. Definition-heavy feature sets are treated as leakage-sensitive diagnostics." icon={<ShieldAlert className="h-5 w-5" />} />
       </section>
     </div>
   );

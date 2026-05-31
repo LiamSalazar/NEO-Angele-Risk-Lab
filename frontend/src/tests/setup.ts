@@ -20,6 +20,15 @@ const object = {
   h: 19.2
 };
 
+const finding = {
+  title: "Current dataset is analyzable",
+  short_text: "The active dataset contains 1 object with one PHA label.",
+  technical_basis: "Counts are computed from the active mocked risk-score table.",
+  related_objects: ["A-001"],
+  importance: "high",
+  source_module: "dataset"
+};
+
 export const mockApiResponse = (url: string) => {
   const path = new URL(url).pathname;
 
@@ -58,6 +67,105 @@ export const mockApiResponse = (url: string) => {
         score_median: 48.5,
         score_max: 48.5,
         category_counts: { elevated: 1 }
+      }
+    };
+  }
+
+  if (path === "/findings/summary") {
+    return {
+      status: "success",
+      details: {
+        summary: {
+          finding_count: 1,
+          dataset_rows: 1,
+          risk_rows: 1,
+          score_simulation_rows: 0,
+          orbital_simulation_rows: 1,
+          graph_nodes: 0,
+          graph_edges: 0
+        },
+        findings: [finding]
+      }
+    };
+  }
+
+  if (
+    [
+      "/findings/risk",
+      "/findings/score-simulation",
+      "/findings/orbital-simulation",
+      "/findings/orbital-graph",
+      "/findings/model-evidence"
+    ].includes(path)
+  ) {
+    return { status: "success", details: { findings: [finding] } };
+  }
+
+  if (path === "/model-evidence/summary") {
+    return {
+      status: "success",
+      details: {
+        best_defensible_model: {
+          model_name: "random_forest",
+          model_family: "tabular",
+          feature_set: "orbital_only",
+          target: "pha",
+          selection_metric: 0.82
+        },
+        main_evidence_conclusion:
+          "random_forest on orbital_only provides secondary evidence for pattern consistency.",
+        prediction_count: 1,
+        disagreement_count: 0
+      }
+    };
+  }
+
+  if (path === "/model-evidence/object/A-001") {
+    return {
+      status: "success",
+      details: {
+        object_key: "A-001",
+        predictions: [
+          {
+            object_key: "A-001",
+            model_name: "random_forest",
+            feature_set: "orbital_only",
+            predicted_probability: 0.8,
+            confidence_bucket: "medium"
+          }
+        ],
+        disagreements: []
+      }
+    };
+  }
+
+  if (path === "/orbital-simulation/status") {
+    return {
+      status: "ok",
+      details: {
+        source_rows_available: true,
+        orbital_simulation_available: true,
+        row_count: 1,
+        latest_manifest_status: "success"
+      }
+    };
+  }
+
+  if (path.includes("/orbital-simulation/object/")) {
+    return {
+      status: "success",
+      result: {
+        object_key: "A-001",
+        n_clones: 20,
+        horizon_days: 365,
+        time_step_days: 30,
+        simulated_min_distance_p05_au: 0.02,
+        simulated_min_distance_p50_au: 0.05,
+        simulated_min_distance_p95_au: 0.12,
+        dispersion_index: 0.4,
+        scenario_category: "variable",
+        interpretation: "Mock orbital scenario.",
+        distance_trace: { day: [0, 30], p05: [0.03, 0.02], p50: [0.06, 0.05], p95: [0.14, 0.12] }
       }
     };
   }
