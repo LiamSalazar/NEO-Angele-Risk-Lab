@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: neo_ange_api
-    command: uvicorn neo_ange.api.main:app --host 0.0.0.0 --port 8000
+    command: python -m neo_ange.cli api run --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
@@ -14,8 +14,6 @@ services:
       - NEO_ANGE_REQUEST_TIMEOUT=30
       - NEO_ANGE_SPARK_MASTER=local[1]
       - SPARK_LOCAL_IP=127.0.0.1
-      - JAVA_HOME=/usr/local/openjdk-17
-      - PATH=/usr/local/openjdk-17/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports

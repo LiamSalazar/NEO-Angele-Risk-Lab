@@ -21,9 +21,8 @@ COPY configs ./configs
 COPY docs ./docs
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir ".[gnn]"
+    && pip install --no-cache-dir .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "neo_ange.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "neo_ange.cli", "api", "run", "--host", "0.0.0.0", "--port", "8000"]
