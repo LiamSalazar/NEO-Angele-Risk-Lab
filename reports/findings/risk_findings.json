@@ -4,15 +4,15 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "The largest risk category is moderate; 909 objects fall there.",
+      "short_text": "The largest risk category is moderate; 3,743 objects fall there.",
       "source_module": "risk",
       "technical_basis": "Risk categories are counted from the current risk_scores table.",
       "title": "Most objects concentrate in moderate priority",
       "values": {
         "category_counts": {
-          "elevated": 21,
-          "low": 70,
-          "moderate": 909
+          "elevated": 37,
+          "low": 220,
+          "moderate": 3743
         }
       }
     },
@@ -20,39 +20,39 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [
+        "50012416",
+        "50092146",
+        "50092158",
+        "50092174",
+        "50092184",
+        "50092186",
+        "50092148",
+        "50092141",
         "20152637",
-        "20089958",
-        "20067381",
-        "20137108",
-        "20031669",
-        "20141495",
-        "20143487",
-        "20143651",
-        "20016960",
-        "20143649"
+        "20620100"
       ],
-      "short_text": "21 objects are currently elevated or above, keeping the highest-priority review list compact.",
+      "short_text": "37 objects are currently elevated or above, keeping the highest-priority review list compact.",
       "source_module": "risk",
       "technical_basis": "Elevated objects are risk_category in elevated, high or critical.",
       "title": "Elevated priority objects are a focused review set",
       "values": {
-        "elevated_or_above": 21
+        "elevated_or_above": 37
       }
     },
     {
       "caveat": null,
       "importance": "high",
       "related_objects": [
+        "50012416",
+        "50092146",
+        "50092158",
+        "50092174",
+        "50092184",
+        "50092186",
+        "50092148",
+        "50092141",
         "20152637",
-        "20089958",
-        "20067381",
-        "20137108",
-        "20031669",
-        "20141495",
-        "20143487",
-        "20143651",
-        "20016960",
-        "20143649"
+        "20620100"
       ],
       "short_text": "Among the highest-ranked objects, physical size and orbital proximity are the dominant components.",
       "source_module": "risk",
@@ -60,8 +60,9 @@
       "title": "Top-ranked objects are driven by physical and orbital factors",
       "values": {
         "dominant_drivers_top_20": {
-          "orbital proximity": 4,
-          "physical size": 16
+          "orbital proximity": 14,
+          "orbital uncertainty": 1,
+          "physical size": 5
         }
       }
     },
@@ -69,16 +70,16 @@
       "caveat": "The score is an analytical priority score, not an official impact probability.",
       "importance": "high",
       "related_objects": [
-        "20152637"
+        "50012416"
       ],
-      "short_text": "20152637 has the highest current score (47.3/100).",
+      "short_text": "50012416 has the highest current score (55.4/100).",
       "source_module": "risk",
       "technical_basis": "Top object is selected by descending risk_score_0_100.",
       "title": "The current top object is review-worthy within this experimental score",
       "values": {
-        "score_max": 47.271572,
-        "score_mean": 28.766259561,
-        "score_median": 29.164740000000002
+        "score_max": 55.381062,
+        "score_mean": 27.6671392995,
+        "score_median": 27.411882
       }
     }
   ],

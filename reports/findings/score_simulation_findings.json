@@ -4,56 +4,56 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [
+        "20001981",
         "20004179",
-        "20003122",
-        "20000433",
-        "20001685",
-        "20002101"
+        "20005011",
+        "20002329",
+        "20004450"
       ],
-      "short_text": "14 of 21 simulated objects have category-shift probability at or below 20%.",
+      "short_text": "228 of 313 simulated objects have category-shift probability at or below 20%.",
       "source_module": "score_simulation",
       "technical_basis": "Category-shift probability is read from score Monte Carlo results.",
       "title": "Most simulated top objects retain their priority band",
       "values": {
-        "simulation_rows": 21,
-        "stable_count": 14
+        "simulation_rows": 313,
+        "stable_count": 228
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20143487",
-        "20141495",
-        "20143649",
-        "20101955",
-        "20101955"
+        "20741491",
+        "20741491",
+        "20415029",
+        "20415029",
+        "20023187"
       ],
       "short_text": "The highest shift-probability objects should be inspected before treating their category as stable.",
       "source_module": "score_simulation",
       "technical_basis": "Objects are ranked by category_shift_probability.",
       "title": "Some objects show score sensitivity near category thresholds",
       "values": {
-        "max_category_shift_probability": 0.86,
-        "max_p95_score": 46.8915001
+        "max_category_shift_probability": 0.574,
+        "max_p95_score": 56.5209247
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20152637",
-        "20089958",
-        "20137108",
-        "20031669",
-        "20016960"
+        "50012416",
+        "50012416",
+        "50012416",
+        "50092146",
+        "50092146"
       ],
       "short_text": "Current score simulations do not produce critical-priority p95 values in the saved batch.",
       "source_module": "score_simulation",
       "technical_basis": "The finding checks p95_score in saved score Monte Carlo output.",
       "title": "Highest simulated p95 scores remain below critical levels",
       "values": {
-        "max_p95_score": 46.8915001
+        "max_p95_score": 56.5209247
       }
     }
   ],

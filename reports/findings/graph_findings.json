@@ -4,25 +4,25 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "The graph contains 1,000 nodes and 6,955 similarity edges.",
+      "short_text": "The graph contains 4,000 nodes and 27,829 similarity edges.",
       "source_module": "orbital_graph",
       "technical_basis": "Nodes and edges are counted from exported graph Parquet files.",
       "title": "The orbital graph forms an analytical neighborhood",
       "values": {
-        "density": 0.013923923923923925,
-        "edges": 6955,
-        "nodes": 1000
+        "density": 0.0034794948737184297,
+        "edges": 27829,
+        "nodes": 4000
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20001580",
-        "20001864",
-        "20001915",
-        "20002062",
-        "20002100"
+        "20000719",
+        "20000887",
+        "20001221",
+        "20001627",
+        "20001863"
       ],
       "short_text": "Nearest-neighbor links can be used to inspect orbitally similar objects around a selected NEO.",
       "source_module": "orbital_graph",
@@ -30,7 +30,7 @@
       "title": "Graph neighborhoods support object-level comparison",
       "values": {
         "edge_type": {
-          "knn_orbital_similarity": 6955
+          "knn_orbital_similarity": 27829
         }
       }
     }

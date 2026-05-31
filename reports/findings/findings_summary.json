@@ -4,15 +4,15 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "The active dataset contains 1,000 objects, with 280 PHA labels and 720 non-PHA labels.",
+      "short_text": "The active dataset contains 4,000 objects, with 982 PHA labels and 3,018 non-PHA labels.",
       "source_module": "dataset",
       "technical_basis": "Counts are computed from the active gold/risk-score table.",
       "title": "The current observatory dataset is analyzable",
       "values": {
-        "objects": 1000,
+        "objects": 4000,
         "pha": {
-          "false": 720,
-          "true": 280,
+          "false": 3018,
+          "true": 982,
           "unknown": 0
         }
       }
@@ -21,28 +21,28 @@
       "caveat": "Sentry fields are sparse and should not be interpreted as complete alerting.",
       "importance": "medium",
       "related_objects": [],
-      "short_text": "2 of 1,000 objects carry a Sentry signal in the current dataset.",
+      "short_text": "18 of 4,000 objects carry a Sentry signal in the current dataset.",
       "source_module": "dataset",
       "technical_basis": "Sentry count is derived from the sentry_flag field.",
       "title": "Sentry signal is limited to a small subset",
       "values": {
-        "objects": 1000,
-        "sentry_flag_true": 2
+        "objects": 4000,
+        "sentry_flag_true": 18
       }
     },
     {
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "The largest risk category is moderate; 909 objects fall there.",
+      "short_text": "The largest risk category is moderate; 3,743 objects fall there.",
       "source_module": "risk",
       "technical_basis": "Risk categories are counted from the current risk_scores table.",
       "title": "Most objects concentrate in moderate priority",
       "values": {
         "category_counts": {
-          "elevated": 21,
-          "low": 70,
-          "moderate": 909
+          "elevated": 37,
+          "low": 220,
+          "moderate": 3743
         }
       }
     },
@@ -50,39 +50,39 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [
+        "50012416",
+        "50092146",
+        "50092158",
+        "50092174",
+        "50092184",
+        "50092186",
+        "50092148",
+        "50092141",
         "20152637",
-        "20089958",
-        "20067381",
-        "20137108",
-        "20031669",
-        "20141495",
-        "20143487",
-        "20143651",
-        "20016960",
-        "20143649"
+        "20620100"
       ],
-      "short_text": "21 objects are currently elevated or above, keeping the highest-priority review list compact.",
+      "short_text": "37 objects are currently elevated or above, keeping the highest-priority review list compact.",
       "source_module": "risk",
       "technical_basis": "Elevated objects are risk_category in elevated, high or critical.",
       "title": "Elevated priority objects are a focused review set",
       "values": {
-        "elevated_or_above": 21
+        "elevated_or_above": 37
       }
     },
     {
       "caveat": null,
       "importance": "high",
       "related_objects": [
+        "50012416",
+        "50092146",
+        "50092158",
+        "50092174",
+        "50092184",
+        "50092186",
+        "50092148",
+        "50092141",
         "20152637",
-        "20089958",
-        "20067381",
-        "20137108",
-        "20031669",
-        "20141495",
-        "20143487",
-        "20143651",
-        "20016960",
-        "20143649"
+        "20620100"
       ],
       "short_text": "Among the highest-ranked objects, physical size and orbital proximity are the dominant components.",
       "source_module": "risk",
@@ -90,8 +90,9 @@
       "title": "Top-ranked objects are driven by physical and orbital factors",
       "values": {
         "dominant_drivers_top_20": {
-          "orbital proximity": 4,
-          "physical size": 16
+          "orbital proximity": 14,
+          "orbital uncertainty": 1,
+          "physical size": 5
         }
       }
     },
@@ -99,55 +100,52 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [
+        "20001981",
         "20004179",
-        "20003122",
-        "20000433",
-        "20001685",
-        "20002101"
+        "20005011",
+        "20002329",
+        "20004450"
       ],
-      "short_text": "14 of 21 simulated objects have category-shift probability at or below 20%.",
+      "short_text": "228 of 313 simulated objects have category-shift probability at or below 20%.",
       "source_module": "score_simulation",
       "technical_basis": "Category-shift probability is read from score Monte Carlo results.",
       "title": "Most simulated top objects retain their priority band",
       "values": {
-        "simulation_rows": 21,
-        "stable_count": 14
+        "simulation_rows": 313,
+        "stable_count": 228
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20143487",
-        "20141495",
-        "20143649",
-        "20101955",
-        "20101955"
+        "20741491",
+        "20741491",
+        "20415029",
+        "20415029",
+        "20023187"
       ],
       "short_text": "The highest shift-probability objects should be inspected before treating their category as stable.",
       "source_module": "score_simulation",
       "technical_basis": "Objects are ranked by category_shift_probability.",
       "title": "Some objects show score sensitivity near category thresholds",
       "values": {
-        "max_category_shift_probability": 0.86,
-        "max_p95_score": 46.8915001
+        "max_category_shift_probability": 0.574,
+        "max_p95_score": 56.5209247
       }
     },
     {
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "50 objects have saved orbital perturbation results.",
+      "short_text": "1 objects have saved orbital perturbation results.",
       "source_module": "orbital_simulation",
       "technical_basis": "Rows are read from orbital_monte_carlo_results.parquet.",
       "title": "Approximate orbital scenarios are available for priority objects",
       "values": {
-        "rows": 50,
+        "rows": 1,
         "scenario_categories": {
-          "needs_review": 8,
-          "stable": 16,
-          "uncertain": 5,
-          "variable": 21
+          "uncertain": 1
         }
       }
     },
@@ -155,11 +153,7 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20020425",
-        "20101869",
-        "20152685",
-        "20163067",
-        "20199801"
+        "50012416"
       ],
       "short_text": "Objects with the highest dispersion index deserve closer review in the orbital simulation view.",
       "source_module": "orbital_simulation",
@@ -167,10 +161,7 @@
       "title": "Orbital uncertainty varies across the priority set",
       "values": {
         "scenario_categories": {
-          "needs_review": 8,
-          "stable": 16,
-          "uncertain": 5,
-          "variable": 21
+          "uncertain": 1
         }
       }
     },
@@ -178,25 +169,25 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "The graph contains 1,000 nodes and 6,955 similarity edges.",
+      "short_text": "The graph contains 4,000 nodes and 27,829 similarity edges.",
       "source_module": "orbital_graph",
       "technical_basis": "Nodes and edges are counted from exported graph Parquet files.",
       "title": "The orbital graph forms an analytical neighborhood",
       "values": {
-        "density": 0.013923923923923925,
-        "edges": 6955,
-        "nodes": 1000
+        "density": 0.0034794948737184297,
+        "edges": 27829,
+        "nodes": 4000
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20001580",
-        "20001864",
-        "20001915",
-        "20002062",
-        "20002100"
+        "20000719",
+        "20000887",
+        "20001221",
+        "20001627",
+        "20001863"
       ],
       "short_text": "Nearest-neighbor links can be used to inspect orbitally similar objects around a selected NEO.",
       "source_module": "orbital_graph",
@@ -204,7 +195,7 @@
       "title": "Graph neighborhoods support object-level comparison",
       "values": {
         "edge_type": {
-          "knn_orbital_similarity": 6955
+          "knn_orbital_similarity": 27829
         }
       }
     },
@@ -212,52 +203,32 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "random_forest on orbital_only is the current defensible model-evidence view.",
+      "short_text": "graphsage on graph is the current defensible model-evidence view.",
       "source_module": "model_evidence",
       "technical_basis": "The evidence builder excludes definition-heavy feature sets from the best defensible pick. Model evidence supports interpretation; it does not define the priority ranking.",
       "title": "Best defensible evidence avoids definition-heavy leakage",
       "values": {
         "best_defensible_model": {
-          "feature_set": "orbital_only",
-          "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
+          "feature_set": "graph",
+          "interpretation": "The graph model checks whether neighboring orbital contexts support the observed label pattern; it should not be read as impact prediction.",
           "leakage_risk": "low",
           "limitations": [
-            "May understate patterns that depend on physical-size or MOID definition fields."
+            "Graph baselines are sensitive to graph construction choices."
           ],
           "metrics": {
-            "accuracy": 0.856,
-            "brier_score": 0.10931314530557804,
-            "confusion_matrix": [
-              [
-                169,
-                11
-              ],
-              [
-                25,
-                45
-              ]
-            ],
-            "f1": 0.7142857142857143,
-            "false_negative_rate": 0.35714285714285715,
-            "n_samples": 250,
-            "negative_support": 180,
-            "positive_support": 70,
-            "pr_auc": 0.8267495676123587,
-            "precision": 0.8035714285714286,
-            "recall": 0.6428571428571429,
-            "roc_auc": 0.9118253968253969,
-            "top_k_recall": {
-              "10": 0.14285714285714285,
-              "25": 0.32857142857142857,
-              "50": 0.5714285714285714
-            },
-            "warnings": []
+            "accuracy": 0.96625,
+            "f1": 0.9316455696202532,
+            "false_negative_rate": 0.0612244897959183,
+            "pr_auc": 0.9760233191710436,
+            "precision": 0.9246231155778896,
+            "recall": 0.9387755102040816,
+            "roc_auc": 0.9923131504257332
           },
-          "model_family": "tabular",
-          "model_name": "random_forest",
+          "model_family": "gnn",
+          "model_name": "graphsage",
           "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
-          "recommended_use": "Defensible support for pattern consistency without PHA definition variables.",
-          "selection_metric": 0.8267495676123587,
+          "recommended_use": "Evidence of consistency between orbital neighborhoods and observed labels.",
+          "selection_metric": 0.9760233191710436,
           "status": "success",
           "strengths": [
             "Produces probabilistic ranking evidence.",
@@ -272,23 +243,23 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [],
-      "short_text": "310 objects are flagged in disagreement outputs.",
+      "short_text": "1,367 objects are flagged in disagreement outputs.",
       "source_module": "model_evidence",
       "technical_basis": "Disagreements compare high-confidence predictions against observed labels or model families and remain secondary to the Risk Priority Score.",
       "title": "Model disagreements create an inspection queue",
       "values": {
-        "disagreement_count": 310
+        "disagreement_count": 1367
       }
     }
   ],
   "status": "success",
   "summary": {
-    "dataset_rows": 1000,
+    "dataset_rows": 4000,
     "finding_count": 19,
-    "graph_edges": 6955,
-    "graph_nodes": 1000,
-    "orbital_simulation_rows": 50,
-    "risk_rows": 1000,
-    "score_simulation_rows": 21
+    "graph_edges": 27829,
+    "graph_nodes": 4000,
+    "orbital_simulation_rows": 1,
+    "risk_rows": 4000,
+    "score_simulation_rows": 313
   }
 }
