@@ -1,0 +1,14 @@
+flowchart LR
+    Home["Control Panel"] --> Ranking["Risk Ranking"]
+    Home --> Profile["Object Profile"]
+    Home --> ScoreSim["Score Simulation"]
+    Home --> OrbitalSim["Orbital Simulation"]
+    Home --> Graph["Orbital Graph"]
+    Home --> Findings["Findings"]
+    Home --> Methodology["Methodology"]
+    Ranking --> Profile
+    Profile --> ScoreSim
+    Profile --> OrbitalSim
+    Profile --> Graph
+    Findings --> Profile
+    Methodology --> Ranking

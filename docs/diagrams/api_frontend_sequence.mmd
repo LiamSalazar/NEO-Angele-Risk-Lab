@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor User
+    participant Frontend as React frontend
+    participant API as FastAPI
+    participant Gold as data/gold
+    participant Reports as reports
+
+    User->>Frontend: Opens page
+    Frontend->>API: GET /status
+    API->>Gold: Check feature and score tables
+    API->>Reports: Check report availability
+    API-->>Frontend: Status JSON
+    Frontend->>API: GET /rankings/top
+    API->>Gold: Read risk_scores.parquet
+    API-->>Frontend: Ranked objects
+    User->>Frontend: Selects object
+    Frontend->>API: GET /objects/{object_key}
+    Frontend->>API: GET /model-evidence/object/{object_key}
+    Frontend->>API: GET /gnn/object/{object_key}/neighbors
+    API-->>Frontend: Profile, evidence, neighbors

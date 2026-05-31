@@ -1,0 +1,58 @@
+classDiagram
+    class BaseJPLClient {
+        +get(params)
+        +build_url(params)
+    }
+    class SBDBObjectClient
+    class SBDBQueryClient
+    class CloseApproachClient
+    class SentryClient
+    class BronzeStorage {
+        +save_json()
+        +list_files()
+    }
+    class IngestionPipeline
+    class ETLPipeline
+    class GoldBuilder
+    class RiskScorer {
+        +score_dataframe()
+        +score_row()
+    }
+    class MonteCarloEngine
+    class OrbitalMonteCarloEngine
+    class ModelEvidenceBuilder
+    class OrbitalGraphBuilder
+    class GNNExperimentRunner
+    class FindingsBuilder
+    class Asteroid
+    class AsteroidIdentity
+    class Orbit
+    class PhysicalProperties
+    class CloseApproachSummary
+    class SentryRiskSignal
+    class RiskScore
+    class OrbitalGraph
+
+    BaseJPLClient <|-- SBDBObjectClient
+    BaseJPLClient <|-- SBDBQueryClient
+    BaseJPLClient <|-- CloseApproachClient
+    BaseJPLClient <|-- SentryClient
+    IngestionPipeline --> BronzeStorage
+    IngestionPipeline --> SBDBObjectClient
+    IngestionPipeline --> SBDBQueryClient
+    IngestionPipeline --> CloseApproachClient
+    IngestionPipeline --> SentryClient
+    ETLPipeline --> GoldBuilder
+    GoldBuilder --> Asteroid
+    RiskScorer --> RiskScore
+    MonteCarloEngine --> RiskScorer
+    OrbitalMonteCarloEngine --> Orbit
+    ModelEvidenceBuilder --> RiskScore
+    OrbitalGraphBuilder --> OrbitalGraph
+    GNNExperimentRunner --> OrbitalGraphBuilder
+    FindingsBuilder --> ModelEvidenceBuilder
+    Asteroid *-- AsteroidIdentity
+    Asteroid *-- Orbit
+    Asteroid *-- PhysicalProperties
+    Asteroid *-- CloseApproachSummary
+    Asteroid *-- SentryRiskSignal

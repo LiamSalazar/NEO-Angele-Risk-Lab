@@ -1,4 +1,4 @@
-.PHONY: install test lint format ingest-sample etl etl-status build-gold expand-curated expand-all expand-max coverage rebuild-all ml-status ml leakage-audit risk risk-status risk-top api-info api app-dev simulate simulate-status gnn-status gnn-graph gnn gnn-compare frontend-install frontend-dev frontend-build frontend-test frontend-lint clean
+.PHONY: install test lint format ingest-sample etl etl-status build-gold expand-curated expand-all expand-max coverage rebuild-all ml-status ml leakage-audit risk risk-status risk-top api-info api app-dev simulate simulate-status gnn-status gnn-graph gnn gnn-compare docs-pdf frontend-install frontend-dev frontend-build frontend-test frontend-lint clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -85,6 +85,9 @@ gnn:
 
 gnn-compare:
 	python -m neo_ange.cli gnn compare
+
+docs-pdf:
+	bash scripts/build_methodology_pdf.sh
 
 frontend-install:
 	cd frontend && npm install

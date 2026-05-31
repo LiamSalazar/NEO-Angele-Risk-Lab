@@ -1,0 +1,9 @@
+flowchart TD
+    RiskRow["risk score row"] --> Perturb["PerturbationEngine"]
+    Perturb --> Variables["diameter, h, MOID, close approach, Sentry, uncertainty fields"]
+    Variables --> Scenarios["N simulated tabular scenarios"]
+    Scenarios --> Rescore["RiskScorer.score_dataframe"]
+    Rescore --> Distribution["score distribution"]
+    Distribution --> Summary["mean, std, p05, median, p95, probability thresholds"]
+    Summary --> Shift["category_shift_probability"]
+    Summary --> Outputs["monte_carlo_results.parquet and reports/simulation"]

@@ -30,4 +30,4 @@ These values describe score uncertainty, not predicted impact probability.
 
 ## Limitations
 
-The simulation perturbs tabular score inputs, not orbital state vectors. Sparse source rows can produce less informative distributions. Results should be used as educational score-stability diagnostics for future dashboard work.
+The simulation perturbs tabular score inputs, not orbital state vectors. Sparse source rows can produce less informative distributions. Results should be used as educational score-stability diagnostics in the current API and frontend views.

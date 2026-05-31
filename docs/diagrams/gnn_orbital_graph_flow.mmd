@@ -1,0 +1,13 @@
+flowchart TD
+    RiskRows["risk_scores or neo_risk_features"] --> SafeFeatures["safe numeric orbital features"]
+    SafeFeatures --> Scale["median impute and standard scale"]
+    Scale --> KNN["k-nearest neighbors"]
+    KNN --> Graph["OrbitalGraph nodes and edges"]
+    Graph --> Export["nodes.parquet and edges.parquet"]
+    Export --> Metrics["graph_summary"]
+    Graph --> Dataset["GNNDatasetBuilder"]
+    Dataset --> Baselines["logistic, random forest, MLP, label propagation"]
+    Dataset --> OptionalGNN["GraphSAGE and GCN when torch-geometric exists"]
+    Baselines --> Report["gnn_metrics.csv"]
+    OptionalGNN --> Report
+    Report --> Evidence["model evidence and frontend graph view"]

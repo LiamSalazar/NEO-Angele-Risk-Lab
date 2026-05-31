@@ -1,0 +1,65 @@
+flowchart LR
+    subgraph Sources["Public NASA/JPL data"]
+        SBDBObject["SBDB Object API"]
+        SBDBQuery["SBDB Query API"]
+        CAD["Close Approach Data API"]
+        Sentry["Sentry API"]
+    end
+
+    subgraph Backend["Python backend"]
+        Clients["src/neo_ange/clients"]
+        Ingestion["IngestionPipeline"]
+        ETL["Spark ETL"]
+        Risk["RiskScorer and RiskPipeline"]
+        ScoreMC["Score Monte Carlo"]
+        OrbitalMC["Orbital Simulation"]
+        ML["ML and model evidence"]
+        GNN["Orbital graph and GNN lab"]
+        Findings["FindingsBuilder"]
+        API["FastAPI API"]
+    end
+
+    subgraph Lake["Local data lake"]
+        Bronze["data/bronze"]
+        Silver["data/silver"]
+        Gold["data/gold"]
+    end
+
+    subgraph Outputs["Reports and artifacts"]
+        Reports["reports"]
+        Artifacts["artifacts"]
+    end
+
+    Frontend["React TypeScript frontend"]
+    Docker["Docker Compose"]
+
+    SBDBObject --> Clients
+    SBDBQuery --> Clients
+    CAD --> Clients
+    Sentry --> Clients
+    Clients --> Ingestion
+    Ingestion --> Bronze
+    Bronze --> ETL
+    ETL --> Silver
+    Silver --> Gold
+    Gold --> Risk
+    Risk --> Gold
+    Risk --> ScoreMC
+    Risk --> OrbitalMC
+    Gold --> ML
+    Gold --> GNN
+    Risk --> ML
+    GNN --> ML
+    ScoreMC --> Reports
+    OrbitalMC --> Reports
+    ML --> Reports
+    GNN --> Reports
+    Risk --> Reports
+    Reports --> Findings
+    Findings --> Reports
+    Gold --> API
+    Reports --> API
+    API --> Frontend
+    Docker --> API
+    Docker --> Frontend
+    ML --> Artifacts

@@ -1,0 +1,19 @@
+flowchart TD
+    A["NASA/JPL API response"] --> B["Bronze wrapper"]
+    B --> C["metadata: source, query params, object id, signature, ingested_at_utc"]
+    C --> D["data/bronze/{source}/ingest_date=YYYY-MM-DD/*.json"]
+    D --> E["BronzeReader"]
+    E --> F["SilverTransformers"]
+    F --> G1["data/silver/sbdb_objects"]
+    F --> G2["data/silver/close_approaches"]
+    F --> G3["data/silver/sentry_objects"]
+    F --> G4["data/silver/sentry_virtual_impactors"]
+    F --> G5["data/silver/ingestion_events"]
+    G1 --> H["GoldBuilder"]
+    G2 --> H
+    G3 --> H
+    G4 --> H
+    H --> I["data/gold/neo_risk_features"]
+    I --> J["data/gold/quality_reports"]
+    I --> K["data/gold/risk_scores"]
+    K --> L["reports/risk"]

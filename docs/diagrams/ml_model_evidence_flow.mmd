@@ -1,0 +1,15 @@
+flowchart TD
+    Gold["Gold features plus risk scores"] --> FeatureSets["FeatureSetRegistry"]
+    FeatureSets --> Holdout["holdout train/test split"]
+    Holdout --> Metrics["evaluation metrics"]
+    FeatureSets --> FullTrain["full labeled dataset training"]
+    FullTrain --> FullPred["model_predictions_full"]
+    Holdout --> EvalPred["model_predictions_eval"]
+    Metrics --> Cards["model cards"]
+    Cards --> Best["best defensible evidence"]
+    FullPred --> Buckets["confidence buckets"]
+    FullPred --> Disagreements["disagreement queue"]
+    Metrics --> Summary["model_evidence_summary"]
+    Disagreements --> Summary
+    Best --> Summary
+    Summary --> Frontend["Findings and frontend evidence panels"]

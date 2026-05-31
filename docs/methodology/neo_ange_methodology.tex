@@ -1,0 +1,920 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tikz}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black,
+  pdftitle={Neo Angele Risk Lab - Metodologia tecnica integral},
+  pdfauthor={Neo Angele Risk Lab}
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  framerule=0.2pt,
+  rulecolor=\color{black!25},
+  backgroundcolor=\color{black!3}
+}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\project}{Neo Angele Risk Lab}
+
+\title{\textbf{\project}\\Metodologia tecnica integral}
+\author{Liam Salazar / Neo Angele Risk Lab}
+\date{Version documental 1.0\\31 de mayo de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\project{} es un laboratorio de ingenieria de datos, analitica explicable y visualizacion para estudiar objetos cercanos a la Tierra usando datos publicos de NASA/JPL. El sistema descarga respuestas JSON, las guarda en una capa bronze, las transforma con PySpark hacia tablas silver, construye un dataset gold, calcula un Risk Priority Score experimental, genera simulaciones Monte Carlo, crea un grafo orbital, produce evidencia secundaria con modelos y expone resultados mediante FastAPI y React. Este documento explica la metodologia desde cero y documenta formulas, archivos, dependencias, resultados observados y limitaciones. No presenta el sistema como oficial ni como sustituto de NASA/JPL, CNEOS o Sentry.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Resumen ejecutivo}
+
+El proyecto aborda un problema practico: los datos publicos sobre NEOs estan distribuidos en varias APIs y requieren transformacion antes de poder analizarlos de forma reproducible. \project{} integra esas fuentes en un flujo local:
+
+\begin{enumerate}[label=\arabic*.]
+  \item ingesta de APIs NASA/JPL;
+  \item almacenamiento bronze de JSON crudo con metadata;
+  \item normalizacion silver en Parquet;
+  \item construccion del dataset analitico gold;
+  \item score explicable y ranking;
+  \item simulaciones de estabilidad y escenarios orbitales aproximados;
+  \item modelos de evidencia secundaria y grafo orbital;
+  \item API y frontend para exploracion.
+\end{enumerate}
+
+El resultado principal de priorizacion es el \emph{Risk Priority Score}. Los modelos de machine learning y GNN no construyen el ranking: aportan evidencia secundaria, comparaciones y colas de inspeccion.
+
+\section{Introduccion para principiantes}
+
+\subsection{API}
+
+Una API es una interfaz para pedir datos o ejecutar acciones en otro sistema. En este proyecto, las APIs publicas de NASA/JPL responden preguntas como: ``dame datos de este asteroide'', ``dame aproximaciones cercanas'' o ``dame registros Sentry''.
+
+\subsection{Endpoint}
+
+Un endpoint es una URL especifica de una API. Por ejemplo, \code{https://ssd-api.jpl.nasa.gov/sbdb.api} es el endpoint usado para la SBDB Object API.
+
+\subsection{JSON}
+
+JSON es un formato de texto para representar datos con llaves y valores. Las respuestas crudas de NASA/JPL se guardan como JSON en \code{data/bronze}.
+
+\subsection{Dataset}
+
+Un dataset es una coleccion organizada de filas y columnas. En este proyecto, \code{data/gold/neo_risk_features} es el dataset analitico principal.
+
+\subsection{Pipeline}
+
+Un pipeline es una secuencia de pasos. Aqui, la secuencia principal es: ingesta, bronze, silver, gold, score, simulaciones, modelos, hallazgos y visualizacion.
+
+\subsection{ETL}
+
+ETL significa Extract, Transform, Load. En este repositorio:
+
+\begin{itemize}
+  \item Extract: descargar datos de APIs.
+  \item Transform: normalizar campos y construir features.
+  \item Load: escribir tablas Parquet y reportes.
+\end{itemize}
+
+\subsection{Parquet}
+
+Parquet es un formato columnar eficiente para datos tabulares. Se usa en silver y gold porque permite leer columnas especificas y conservar tipos de datos mejor que CSV.
+
+\subsection{Feature}
+
+Una feature es una variable que se usa para scoring, modelos o analisis. Ejemplos: \code{moid}, \code{h}, \code{diameter}, \code{risk_score_0_100}.
+
+\subsection{Etiqueta o target}
+
+Una etiqueta es la variable que un modelo intenta aprender. En este proyecto, el target principal es \code{pha}, que indica si el objeto esta etiquetado como Potentially Hazardous Asteroid en los datos.
+
+\subsection{Modelo}
+
+Un modelo es una funcion entrenada o definida para transformar features en una salida. Los modelos tabulares aqui se usan como evidencia secundaria, no como motor del ranking.
+
+\subsection{Red neuronal}
+
+Una red neuronal es un modelo compuesto por capas que aprenden transformaciones. En el laboratorio GNN, las redes GraphSAGE y GCN se usan solo si \code{torch-geometric} esta instalado.
+
+\subsection{Grafo}
+
+Un grafo es un conjunto de nodos y aristas. En este proyecto, cada nodo representa un objeto y cada arista conecta objetos con similitud orbital.
+
+\section{Contexto del dominio NEO}
+
+Un NEO, Near-Earth Object, es un objeto cuya orbita lo acerca a la vecindad orbital de la Tierra. El proyecto trabaja con conceptos importantes:
+
+\begin{itemize}
+  \item \textbf{PHA}: Potentially Hazardous Asteroid. Es una etiqueta de los datos, no una alerta producida por este proyecto.
+  \item \textbf{MOID}: Minimum Orbit Intersection Distance. Indica distancia minima entre dos orbitas; un MOID bajo puede aumentar prioridad analitica.
+  \item \textbf{Magnitud absoluta H}: proxy de brillo intrinseco. Valores mas bajos suelen asociarse a objetos potencialmente mas grandes.
+  \item \textbf{Sentry}: sistema de monitoreo de riesgo de impacto de CNEOS/JPL. Este proyecto consume campos Sentry cuando existen, pero no reemplaza Sentry.
+  \item \textbf{Close Approach}: registro de aproximacion cercana, con fecha, distancia y velocidad relativa.
+\end{itemize}
+
+La diferencia central es esta: \project{} calcula una prioridad experimental de revision, no una prediccion oficial ni una probabilidad profesional de impacto.
+
+\section{Fuentes de datos}
+
+\begin{longtable}{p{0.19\linewidth}p{0.25\linewidth}p{0.22\linewidth}p{0.24\linewidth}}
+\caption{APIs publicas usadas por el proyecto}\\
+\toprule
+Fuente & Endpoint & Cliente & Uso \\
+\midrule
+\endfirsthead
+\toprule
+Fuente & Endpoint & Cliente & Uso \\
+\midrule
+\endhead
+SBDB Object API & \code{https://ssd-api.jpl.nasa.gov/sbdb.api} & \code{src/neo_ange/clients/sbdb_object.py} & Datos por objeto: identificadores, fisica, orbita, aproximaciones, virtual impactors y datos auxiliares. \\
+SBDB Query API & \code{https://ssd-api.jpl.nasa.gov/sbdb_query.api} & \code{src/neo_ange/clients/sbdb_query.py} & Consultas tabulares, conteos, campos disponibles y descubrimiento de objetos. \\
+Close Approach Data API & \code{https://ssd-api.jpl.nasa.gov/cad.api} & \code{src/neo_ange/clients/close_approach.py} & Registros de aproximacion cercana: fecha, distancia, velocidad, cuerpo y designacion. \\
+Sentry API & \code{https://ssd-api.jpl.nasa.gov/sentry.api} & \code{src/neo_ange/clients/sentry.py} & Registros Sentry: probabilidad, Palermo, Torino, numero de impactos y objetos removidos cuando se solicitan. \\
+\bottomrule
+\end{longtable}
+
+Los clientes heredan de \code{BaseJPLClient}, que maneja HTTP GET, timeout, errores de conexion, errores HTTP, JSON invalido y metadata de la ultima URL solicitada.
+
+\section{Arquitectura del sistema}
+
+La arquitectura esta dividida en capas:
+
+\begin{itemize}
+  \item \textbf{Clientes}: wrappers HTTP para APIs NASA/JPL.
+  \item \textbf{IngestionPipeline}: coordina llamadas a clientes y guarda bronze.
+  \item \textbf{BronzeStorage}: escribe JSON crudo con metadata.
+  \item \textbf{ETLPipeline}: orquesta transformaciones Spark.
+  \item \textbf{SilverTransformers}: normaliza payloads por fuente.
+  \item \textbf{GoldBuilder}: une silver y construye features.
+  \item \textbf{RiskScorer}: calcula score y componentes.
+  \item \textbf{SimulationPipeline}: ejecuta Monte Carlo del score.
+  \item \textbf{OrbitalSimulationService}: ejecuta clones orbitales aproximados.
+  \item \textbf{ML y evidence}: entrena baselines, produce model cards y predicciones.
+  \item \textbf{GNN}: construye grafo, baselines y GNN opcionales.
+  \item \textbf{Findings}: sintetiza hallazgos.
+  \item \textbf{FastAPI}: expone datos y reportes.
+  \item \textbf{React frontend}: interfaz de observatorio.
+  \item \textbf{Docker Compose}: levanta API y frontend.
+\end{itemize}
+
+\begin{lstlisting}
+NASA/JPL APIs -> clients -> ingestion -> bronze -> Spark ETL -> silver -> gold
+gold -> risk -> simulations -> model evidence -> findings -> API -> frontend
+\end{lstlisting}
+
+\section{Estructura de carpetas}
+
+\begin{longtable}{p{0.25\linewidth}p{0.25\linewidth}p{0.20\linewidth}p{0.20\linewidth}}
+\caption{Mapa funcional de carpetas}\\
+\toprule
+Ruta & Proposito & Entradas & Salidas \\
+\midrule
+\endfirsthead
+\toprule
+Ruta & Proposito & Entradas & Salidas \\
+\midrule
+\endhead
+\code{src/neo_ange/clients} & Clientes NASA/JPL & parametros HTTP & JSON parseado \\
+\code{src/neo_ange/pipelines} & Orquestacion & capas de datos y servicios & reportes, manifiestos, tablas \\
+\code{src/neo_ange/services} & Storage local & payloads o DataFrames & paths bronze/silver/gold \\
+\code{src/neo_ange/etl} & Transformaciones Spark & bronze JSON & silver y gold Parquet \\
+\code{src/neo_ange/risk} & Score y ranking & gold features & risk scores y reportes \\
+\code{src/neo_ange/simulation} & Monte Carlo del score & risk rows & resultados de estabilidad \\
+\code{src/neo_ange/orbital_simulation} & Simulacion orbital aproximada & elementos orbitales & escenarios orbitales \\
+\code{src/neo_ange/ml} & Baselines y metricas & gold features & metricas y modelos \\
+\code{src/neo_ange/evidence} & Model evidence & gold, risk, GNN & cards, predicciones, desacuerdos \\
+\code{src/neo_ange/gnn} & Grafo y GNN & risk/gold & nodos, aristas, metricas \\
+\code{src/neo_ange/findings} & Hallazgos & reports y gold & JSON/Markdown de hallazgos \\
+\code{src/neo_ange/api} & FastAPI & data/gold, reports & endpoints JSON \\
+\code{frontend} & UI React & API JSON & interfaz web \\
+\code{data/bronze} & Landing crudo & APIs & JSON con metadata \\
+\code{data/silver} & Normalizado & bronze & Parquet por fuente \\
+\code{data/gold} & Analitico & silver, risk, simulations & features, scores, graph \\
+\code{reports} & Reportes & pipelines & JSON, CSV, Markdown \\
+\code{artifacts} & Artefactos & modelos, capturas & modelos y assets generados \\
+\code{docs} & Documentacion & codigo y reportes & Markdown, LaTeX, Mermaid \\
+\code{tests} & Pruebas & codigo fuente & resultados pytest \\
+\bottomrule
+\end{longtable}
+
+\section{Programacion orientada a objetos}
+
+El proyecto usa POO para representar conceptos del dominio y servicios:
+
+\begin{itemize}
+  \item una \textbf{clase} define estructura y comportamiento;
+  \item un \textbf{objeto} es una instancia concreta;
+  \item una \textbf{entidad de dominio} representa un concepto real del problema;
+  \item una \textbf{factory} construye objetos desde filas tabulares;
+  \item un \textbf{repository} lee datos procesados;
+  \item un \textbf{service} ejecuta una tarea de negocio;
+  \item un \textbf{pipeline} coordina pasos completos.
+\end{itemize}
+
+Entidades reales:
+
+\begin{itemize}
+  \item \code{Asteroid}: agregado principal.
+  \item \code{AsteroidIdentity}: identificadores y nombre.
+  \item \code{Orbit}: elementos orbitales y calidad de observacion.
+  \item \code{PhysicalProperties}: H, diametro, albedo y proxies.
+  \item \code{CloseApproachSummary}: distancia, velocidad y conteo.
+  \item \code{SentryRiskSignal}: campos Sentry.
+  \item \code{RiskScore}: score, componentes y categoria.
+  \item \code{MonteCarloResult}: resumen de simulacion del score.
+  \item \code{OrbitalGraph}: nodos y aristas de similitud.
+\end{itemize}
+
+\section{Ingesta y capa bronze}
+
+\code{IngestionPipeline} usa los clientes de API y \code{BronzeStorage}. Cada archivo bronze se guarda con un wrapper:
+
+\begin{lstlisting}
+{
+  "metadata": {
+    "source": "sbdb_object",
+    "ingested_at_utc": "...",
+    "query_params": {},
+    "object_id": "99942",
+    "api_signature": {}
+  },
+  "data": {}
+}
+\end{lstlisting}
+
+La ruta tiene particion por fecha:
+
+\begin{lstlisting}
+data/bronze/{source}/ingest_date=YYYY-MM-DD/{timestamp}_{slug}.json
+\end{lstlisting}
+
+La capa bronze conserva respuestas crudas para trazabilidad. Si una transformacion futura cambia, se puede volver a procesar el JSON original.
+
+\section{Capa silver}
+
+Silver normaliza estructuras distintas de cada API. \code{SilverTransformers} produce:
+
+\begin{itemize}
+  \item \code{sbdb_objects}
+  \item \code{close_approaches}
+  \item \code{sentry_objects}
+  \item \code{sentry_virtual_impactors}
+  \item \code{ingestion_events}
+\end{itemize}
+
+Limpiezas reales:
+
+\begin{itemize}
+  \item casteo de tipos a string, double, integer o boolean;
+  \item conversion de flags como \code{true}, \code{t}, \code{1}, \code{yes};
+  \item extraccion de elementos orbitales desde arreglos;
+  \item conservacion de \code{raw_json};
+  \item inclusion de \code{bronze_file_path} e \code{ingest_date}.
+\end{itemize}
+
+\section{Capa gold}
+
+\code{GoldBuilder} crea \code{data/gold/neo_risk_features}. Este dataset une objetos, aproximaciones cercanas y Sentry cuando existen.
+
+Columnas relevantes:
+
+\begin{itemize}
+  \item identidad: \code{object_key}, \code{spkid}, \code{des}, \code{full_name}, \code{name};
+  \item clasificacion: \code{neo}, \code{pha}, \code{sentry_flag};
+  \item fisica: \code{h}, \code{diameter}, \code{albedo};
+  \item orbita: \code{e}, \code{a}, \code{q}, \code{i}, \code{om}, \code{w}, \code{ma}, \code{n}, \code{per}, \code{ad}, \code{moid}, \code{moid_ld};
+  \item calidad orbital: \code{condition_code}, \code{arc_length}, \code{n_obs_used}, \code{rms};
+  \item aproximaciones: \code{min_close_approach_dist}, \code{max_close_approach_v_rel}, \code{close_approach_count};
+  \item Sentry: \code{sentry_ip}, \code{sentry_ps_cum}, \code{sentry_ps_max}, \code{sentry_ts_max}, \code{sentry_n_imp};
+  \item features derivadas: \code{log_diameter}, \code{inverse_moid}, \code{inverse_min_distance}, \code{relative_velocity_score}, \code{observation_quality_score}, \code{uncertainty_proxy_score}, \code{size_proxy_score}, \code{proximity_proxy_score}, \code{sentry_presence_score}, \code{feature_completeness_ratio}.
+\end{itemize}
+
+Ejemplos de formulas gold implementadas:
+
+\begin{align}
+\text{log\_diameter} &= \log(1+\text{diameter}) \\
+\text{inverse\_moid} &= \frac{1}{1+\text{moid}} \\
+\text{inverse\_min\_distance} &= \frac{1}{1+\text{min\_close\_approach\_dist}} \\
+\text{relative\_velocity\_score} &= \operatorname{bounded}\left(\frac{v_{rel}}{50}\right)
+\end{align}
+
+\section{Limpieza y transformacion}
+
+El proyecto no intenta rellenar todos los datos faltantes de forma agresiva. En cambio:
+
+\begin{itemize}
+  \item conserva nulos cuando una API no provee campo;
+  \item calcula componentes con solo senales disponibles;
+  \item usa defaults explicitos en componentes de incertidumbre y calidad cuando no hay senales;
+  \item registra advertencias cuando faltan datos importantes;
+  \item separa senales fisicas, orbitales, close approach, Sentry, incertidumbre y calidad.
+\end{itemize}
+
+\section{Risk Priority Score}
+
+\subsection{Objetivo}
+
+El Risk Priority Score ordena objetos por prioridad experimental de revision. Es explicable, reproducible y no usa machine learning. No es una prediccion de impacto.
+
+\subsection{Funciones auxiliares}
+
+\begin{align}
+\operatorname{bounded}(x) &= \min(\max(x,0),1) \\
+C &= \frac{\sum_{j \in A} w_j \operatorname{bounded}(x_j)}{\sum_{j \in A} w_j}
+\end{align}
+
+Donde \(A\) es el conjunto de senales disponibles para un componente.
+
+\subsection{Score final}
+
+\begin{align}
+R &= \sum_{i=1}^{n} w_i C_i \\
+R_{100} &= 100R
+\end{align}
+
+Pesos implementados:
+
+\begin{longtable}{p{0.40\linewidth}p{0.20\linewidth}p{0.30\linewidth}}
+\caption{Pesos del Risk Priority Score}\\
+\toprule
+Componente & Peso & Archivo \\
+\midrule
+\endfirsthead
+\toprule
+Componente & Peso & Archivo \\
+\midrule
+\endhead
+\code{physical_risk_component} & 0.22 & \code{src/neo_ange/risk/schemas.py} \\
+\code{orbital_risk_component} & 0.25 & \code{src/neo_ange/risk/schemas.py} \\
+\code{approach_risk_component} & 0.18 & \code{src/neo_ange/risk/schemas.py} \\
+\code{sentry_risk_component} & 0.17 & \code{src/neo_ange/risk/schemas.py} \\
+\code{uncertainty_risk_component} & 0.13 & \code{src/neo_ange/risk/schemas.py} \\
+\code{data_quality_component} & 0.05 & \code{src/neo_ange/risk/schemas.py} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Componente fisico}
+
+Variables: \code{diameter}, \code{h}, \code{log_diameter}, \code{size_proxy_score}.
+
+\begin{align}
+d_s &= \operatorname{bounded}\left(\frac{\log(1+d)}{\log(11)}\right) \\
+h_s &= \operatorname{bounded}\left(\frac{30-H}{15}\right) \\
+\ell_s &= \operatorname{bounded}\left(\frac{\text{log\_diameter}}{\log(11)}\right)
+\end{align}
+
+El componente usa pesos internos 0.35, 0.30, 0.15 y 0.20 sobre las senales disponibles.
+
+\subsection{Componente orbital}
+
+Variables: \code{moid}, \code{moid_ld}, \code{inverse_moid}, \code{q}, \code{e}, \code{i}.
+
+\begin{align}
+m_s &= \operatorname{bounded}\left(\frac{1}{1+20\max(\text{moid},0)}\right) \\
+ml_s &= \operatorname{bounded}\left(\frac{1}{1+\max(\text{moid\_ld},0)/10}\right) \\
+q_s &= \operatorname{bounded}\left(\frac{1.3-q}{1.3}\right) \\
+e_s &= \operatorname{bounded}(e) \\
+i_s &= \operatorname{bounded}\left(\frac{i}{40}\right)
+\end{align}
+
+Pesos internos: 0.35, 0.20, 0.15, 0.10, 0.12 y 0.08.
+
+\subsection{Componente close approach}
+
+Variables: \code{min_close_approach_dist}, \code{min_close_approach_dist_min}, \code{inverse_min_distance}, \code{max_close_approach_v_rel}, \code{relative_velocity_score}, \code{close_approach_count}.
+
+\begin{align}
+a_d &= \operatorname{bounded}\left(\frac{1}{1+25\max(\text{distance},0)}\right) \\
+v_s &= \operatorname{bounded}\left(\frac{v_{rel}}{50}\right) \\
+c_s &= \operatorname{bounded}\left(\frac{\log(1+\max(c,0))}{\log(26)}\right)
+\end{align}
+
+\subsection{Componente Sentry}
+
+Variables: \code{sentry_flag}, \code{sentry_presence_score}, \code{sentry_ip}, \code{sentry_ps_cum}, \code{sentry_ps_max}, \code{sentry_ts_max}, \code{sentry_n_imp}.
+
+\begin{align}
+p_s &= \operatorname{bounded}\left(\frac{\log_{10}(p)+10}{10}\right), \quad p>0 \\
+P_s &= \operatorname{bounded}\left(\frac{P+8}{10}\right) \\
+T_s &= \operatorname{bounded}\left(\frac{T}{10}\right) \\
+n_s &= \operatorname{bounded}\left(\frac{\log(1+\max(n,0))}{\log(101)}\right)
+\end{align}
+
+La ausencia de Sentry no prueba ausencia de riesgo; solo baja este componente en los datos disponibles.
+
+\subsection{Componente de incertidumbre}
+
+Variables: \code{condition_code}, \code{rms}, \code{arc_length}, \code{n_obs_used}, \code{uncertainty_proxy_score}.
+
+\begin{align}
+c_s &= \operatorname{bounded}\left(\frac{\text{condition\_code}}{9}\right) \\
+r_s &= \operatorname{bounded}\left(\frac{\text{rms}}{2}\right) \\
+arc_s &= 1-\operatorname{bounded}\left(\frac{\log(1+\max(arc,0))}{\log(3651)}\right) \\
+obs_s &= 1-\operatorname{bounded}\left(\frac{\log(1+\max(obs,0))}{\log(1001)}\right)
+\end{align}
+
+Si no hay senales disponibles, el default del componente es 0.35.
+
+\subsection{Componente de calidad de datos}
+
+Variables: \code{feature_completeness_ratio}, \code{arc_length}, \code{n_obs_used}.
+
+\begin{align}
+q_{missing} &= 1-\operatorname{bounded}(\text{feature\_completeness\_ratio})
+\end{align}
+
+El default del componente es 0.40 cuando no hay senales.
+
+\subsection{Categorias}
+
+\begin{longtable}{p{0.25\linewidth}p{0.25\linewidth}p{0.40\linewidth}}
+\caption{Categorias implementadas}\\
+\toprule
+Categoria & Rango & Interpretacion \\
+\midrule
+\endfirsthead
+\toprule
+Categoria & Rango & Interpretacion \\
+\midrule
+\endhead
+\code{low} & \(0 \le R_{100}<20\) & Prioridad experimental baja. \\
+\code{moderate} & \(20 \le R_{100}<40\) & Prioridad moderada. \\
+\code{elevated} & \(40 \le R_{100}<60\) & Prioridad elevada de revision. \\
+\code{high} & \(60 \le R_{100}<80\) & Prioridad alta dentro del laboratorio. \\
+\code{critical} & \(R_{100}\ge 80\) & Bandera critica experimental, no alerta oficial. \\
+\bottomrule
+\end{longtable}
+
+\section{Risk Ranking}
+
+\code{RiskRankingService} ordena por:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \code{risk_score_0_100} descendente;
+  \item \code{uncertainty_risk_component} descendente;
+  \item \code{sentry_risk_component} descendente.
+\end{enumerate}
+
+El frontend muestra score, categoria, drivers, senales fisicas, orbitales, Sentry y evidencia secundaria cuando existe. El \emph{dominant driver} se calcula tomando el componente mas alto entre fisico, orbital, approach, Sentry, incertidumbre y calidad de datos.
+
+\section{Score Simulation}
+
+La Score Simulation esta en \code{src/neo_ange/simulation}. Es un Monte Carlo sobre entradas tabulares del score:
+
+\begin{enumerate}[label=\arabic*.]
+  \item se toma una fila con features y score;
+  \item se perturban variables seleccionadas;
+  \item se recalculan scores con \code{RiskScorer};
+  \item se resume la distribucion.
+\end{enumerate}
+
+Variables perturbadas reales:
+
+\begin{lstlisting}
+diameter, h, moid, moid_ld,
+min_close_approach_dist, min_close_approach_dist_min,
+max_close_approach_v_rel,
+sentry_ip, sentry_ps_cum,
+condition_code, rms, arc_length, n_obs_used
+\end{lstlisting}
+
+Cantidades positivas usan perturbacion lognormal cuando el valor base es positivo. Otras variables usan distribucion normal con escala inferida. Luego se aplican cotas fisicas simples: no negativos para distancias, diametro, velocidad, RMS, arco y observaciones; \code{sentry_ip} entre 0 y 1; \code{condition_code} entre 0 y 9.
+
+Metricas:
+
+\begin{align}
+\mu &= \frac{1}{N}\sum_{k=1}^{N} R_{100}^{(k)} \\
+\sigma &= \sqrt{\frac{1}{N}\sum_{k=1}^{N}\left(R_{100}^{(k)}-\mu\right)^2} \\
+P(R_{100}>60) &= \frac{\#\{k:R_{100}^{(k)}>60\}}{N}
+\end{align}
+
+La \code{category_shift_probability} es la proporcion de simulaciones cuya categoria difiere de la categoria base.
+
+\section{Orbital Simulation}
+
+La Orbital Simulation esta en \code{src/neo_ange/orbital_simulation}. A diferencia del Monte Carlo del score, aqui se perturban elementos orbitales y se propagan posiciones aproximadas.
+
+\subsection{Elementos usados}
+
+\begin{lstlisting}
+a, e, i, om, w, ma, n, per, q, moid,
+condition_code, arc_length, n_obs_used, rms
+\end{lstlisting}
+
+Si faltan datos de propagacion, se aplican defaults con advertencias. Por ejemplo, si falta \code{a}, se usa 1 AU; si falta \code{e}, se usa 0; si falta \code{n}, se estima desde el periodo o desde \(a\).
+
+\subsection{Uncertainty score}
+
+\begin{align}
+U &= \operatorname{clip}\left(0.35C + 0.25R + 0.20A + 0.20O,0,1\right) \\
+C &= \frac{\min(\max(\text{condition},0),9)}{9} \\
+R &= \frac{\min(\max(\text{rms},0),2)}{2} \\
+A &= \frac{1}{1+\max(arc,0)/365} \\
+O &= \frac{1}{1+\max(obs,0)/250}
+\end{align}
+
+\subsection{Perturbacion de clones}
+
+El codigo usa escala:
+
+\begin{align}
+s = 0.5 + 4U
+\end{align}
+
+y genera clones con normales alrededor de \code{a}, \code{e}, \code{i}, \code{om}, \code{w}, \code{ma} y \code{n}, con cotas para \code{a}, \code{e} y \code{n}.
+
+\subsection{Propagacion}
+
+La anomalia media se actualiza como:
+
+\begin{align}
+M(t)=M_0+n t
+\end{align}
+
+La ecuacion de Kepler se resuelve con iteraciones de Newton:
+
+\begin{align}
+M=E-e\sin(E)
+\end{align}
+
+Coordenadas orbitales:
+
+\begin{align}
+x_{orb} &= a(\cos E-e) \\
+y_{orb} &= a\sqrt{1-e^2}\sin E
+\end{align}
+
+Luego se rotan a 3D usando \(\Omega\), \(i\) y \(\omega\). La Tierra se aproxima como orbita circular:
+
+\begin{align}
+\theta(t) &= \frac{2\pi}{365.256}t \\
+\vec{r}_{Tierra}(t) &= (\cos\theta,\sin\theta,0)
+\end{align}
+
+Distancia:
+
+\begin{align}
+d(t)=\|\vec{r}_{objeto}(t)-\vec{r}_{Tierra}(t)\|_2
+\end{align}
+
+Categorias de escenario:
+
+\begin{itemize}
+  \item \code{needs_review}: p05 bajo y dispersion/incertidumbre alta;
+  \item \code{uncertain}: dispersion o incertidumbre muy alta;
+  \item \code{variable}: dispersion moderada;
+  \item \code{stable}: dispersion baja.
+\end{itemize}
+
+\section{Machine Learning}
+
+El ML es supervisado y usa \code{pha} como target por defecto. La implementacion separa feature sets para estudiar leakage.
+
+Modelos reales en \code{src/neo_ange/ml/baselines.py}:
+
+\begin{itemize}
+  \item \code{dummy_most_frequent};
+  \item \code{logistic_regression}: \code{class_weight=balanced}, \code{max_iter=1000};
+  \item \code{random_forest}: \code{class_weight=balanced}, \code{n_estimators=100}, \code{min_samples_leaf=2};
+  \item \code{hist_gradient_boosting}: \code{learning_rate=0.08}, \code{max_iter=100};
+  \item \code{rule_based_pha}: regla \code{moid <= 0.05} y \code{h <= 22}.
+\end{itemize}
+
+Feature sets:
+
+\begin{itemize}
+  \item \code{full_features};
+  \item \code{definition_features_only};
+  \item \code{no_definition_features};
+  \item \code{orbital_only};
+  \item \code{approach_and_quality};
+  \item \code{sentry_related}.
+\end{itemize}
+
+El split usa \code{train_test_split} con \code{test_size=0.25} y estratificacion solo si ambas clases tienen suficiente soporte.
+
+\section{Metricas ML}
+
+Las metricas se calculan con \code{scikit-learn}; no se usa \code{torchmetrics}.
+
+\begin{align}
+Accuracy &= \frac{TP+TN}{TP+TN+FP+FN} \\
+Precision &= \frac{TP}{TP+FP} \\
+Recall &= \frac{TP}{TP+FN} \\
+F1 &= \frac{2\cdot Precision\cdot Recall}{Precision+Recall} \\
+FNR &= \frac{FN}{FN+TP}
+\end{align}
+
+Tambien se reportan ROC-AUC, PR-AUC, Brier score, confusion matrix y top-k recall cuando hay probabilidades.
+
+\section{Model Evidence}
+
+\code{ModelEvidenceBuilder} crea:
+
+\begin{itemize}
+  \item \code{model_cards.json};
+  \item \code{model_predictions_eval.parquet};
+  \item \code{model_predictions_full.parquet};
+  \item \code{model_disagreements.csv};
+  \item \code{high_confidence_predictions.csv};
+  \item \code{low_confidence_predictions.csv};
+  \item \code{false_positives.csv};
+  \item \code{false_negatives.csv};
+  \item \code{model_evidence_summary.json}.
+\end{itemize}
+
+La evidencia defendible prefiere feature sets con bajo riesgo de leakage. Feature sets como \code{full_features}, \code{definition_features_only} y \code{graph_node_features} se consideran de riesgo alto o diagnostico cuando incluyen senales cercanas a la definicion de PHA.
+
+\section{Grafos}
+
+Un grafo se define como:
+
+\begin{align}
+G=(V,E)
+\end{align}
+
+Donde \(V\) son nodos y \(E\) aristas. En \project{}, cada nodo es un objeto y cada arista indica similitud orbital.
+
+La densidad no dirigida se calcula conceptualmente como:
+
+\begin{align}
+\rho = \frac{|E|}{|V|(|V|-1)/2}
+\end{align}
+
+\section{Construccion del grafo orbital}
+
+\code{OrbitalSimilarityCalculator} selecciona features numericas seguras, imputa medianas, escala con \code{StandardScaler} y usa \code{NearestNeighbors}. La similitud se calcula desde la distancia escalada:
+
+\begin{align}
+sim(u,v)=\frac{1}{1+d(u,v)}
+\end{align}
+
+Features de similitud reales:
+
+\begin{lstlisting}
+e, a, q, i, om, w, ma, n, per, ad, moid, h, diameter, risk_score_0_100
+\end{lstlisting}
+
+Features prohibidas:
+
+\begin{lstlisting}
+pha, neo, object_key, spkid, des, full_name, name,
+risk_category, built_at_utc, source_availability_json,
+next_close_approach_datetime
+\end{lstlisting}
+
+\section{Redes neuronales de grafos}
+
+Las GNN estan definidas en \code{src/neo_ange/gnn/models.py}. Si \code{torch} y \code{torch-geometric} no estan disponibles, las clases lanzan error controlado y el pipeline reporta \code{skipped_missing_dependency}.
+
+\subsection{Message passing conceptual}
+
+La idea general de una GNN es:
+
+\begin{align}
+h_v^{(k+1)} = \phi\left(h_v^{(k)}, \operatorname{AGG}\{h_u^{(k)}:u\in N(v)\}\right)
+\end{align}
+
+Esta formula es conceptual. La implementacion real usa capas \code{SAGEConv} y \code{GCNConv} de \code{torch-geometric} cuando estan disponibles.
+
+\subsection{GCN conceptual}
+
+\begin{align}
+H^{(l+1)} = \sigma\left(\hat{D}^{-1/2}\hat{A}\hat{D}^{-1/2}H^{(l)}W^{(l)}\right)
+\end{align}
+
+\subsection{GraphSAGE conceptual}
+
+\begin{align}
+h_v^{(l+1)} = \sigma\left(W\cdot [h_v^{(l)} \Vert \operatorname{mean}_{u\in N(v)}h_u^{(l)}]\right)
+\end{align}
+
+Parametros reales de entrenamiento:
+
+\begin{itemize}
+  \item \code{hidden_channels=32};
+  \item \code{out_channels=2};
+  \item \code{dropout=0.2};
+  \item optimizador Adam con \code{lr=0.01} y \code{weight_decay=5e-4};
+  \item maximo 300 epocas aunque el parametro default sea 100;
+  \item early stopping por paciencia.
+\end{itemize}
+
+\section{FastAPI}
+
+FastAPI expone reportes y tablas para el frontend. Endpoints principales:
+
+\begin{longtable}{p{0.33\linewidth}p{0.30\linewidth}p{0.27\linewidth}}
+\caption{Endpoints principales}\\
+\toprule
+Endpoint & Proposito & Fuente \\
+\midrule
+\endfirsthead
+\toprule
+Endpoint & Proposito & Fuente \\
+\midrule
+\endhead
+\code{GET /health} & Salud de API & runtime \\
+\code{GET /status} & Estado general & data y reports \\
+\code{GET /objects} & Lista de objetos & risk scores o gold \\
+\code{GET /objects/{object_key}} & Perfil de objeto & risk scores o gold \\
+\code{GET /rankings/top} & Ranking & risk scores \\
+\code{GET /risk/explain/{object_key}} & Explicacion & risk scoring \\
+\code{POST /simulations/batch} & Score Monte Carlo & risk scores \\
+\code{POST /orbital-simulation/batch} & Simulacion orbital & risk/gold \\
+\code{GET /gnn/graph} & Grafo orbital & gnn graph parquet \\
+\code{GET /findings/summary} & Hallazgos & reports/findings \\
+\code{GET /model-evidence/summary} & Evidencia de modelos & reports/model_evidence \\
+\bottomrule
+\end{longtable}
+
+\section{Frontend}
+
+El frontend esta en \code{frontend}. Usa React, TypeScript, Vite, TanStack Query, ECharts, Framer Motion, Lucide, Tailwind y Three.js.
+
+Rutas reales en \code{frontend/src/routes.tsx}:
+
+\begin{itemize}
+  \item \code{/}: Control Panel.
+  \item \code{/ranking}: Risk Ranking.
+  \item \code{/objects} y \code{/objects/:objectKey}: Object Profile.
+  \item \code{/monte-carlo}: Score Simulation.
+  \item \code{/orbital-simulation}: Orbital Simulation.
+  \item \code{/gnn}: Orbital Graph y GNN Research Lab.
+  \item \code{/findings}: Findings.
+  \item \code{/methodology}: Methodology.
+\end{itemize}
+
+\section{Docker}
+
+\code{docker-compose.yml} define dos servicios:
+
+\begin{itemize}
+  \item \code{app}: FastAPI con \code{uvicorn neo_ange.api.main:app --host 0.0.0.0 --port 8000}.
+  \item \code{frontend}: build Vite servido con Nginx en el puerto 5174.
+\end{itemize}
+
+El \code{Dockerfile} instala Java 17 porque PySpark necesita Java. El frontend usa Nginx para servir archivos estaticos compilados.
+
+Comando principal:
+
+\begin{lstlisting}
+docker compose up -d --build
+\end{lstlisting}
+
+\section{Resultados finales observados}
+
+Los siguientes resultados se leyeron de archivos existentes en el checkout. Hay artefactos de corridas distintas; por eso esta seccion separa tablas actuales y reportes historicos.
+
+\begin{longtable}{p{0.38\linewidth}p{0.52\linewidth}}
+\caption{Resultados observados en archivos actuales}\\
+\toprule
+Archivo & Resultado \\
+\midrule
+\endfirsthead
+\toprule
+Archivo & Resultado \\
+\midrule
+\endhead
+\code{data/gold/neo_risk_features} & 1,000 filas; 280 PHA; 720 no PHA. \\
+\code{data/gold/risk_scores/risk_scores.parquet} & 1,000 filas; categorias: 70 low, 909 moderate, 21 elevated. \\
+\code{reports/risk/risk_scores_summary.json} & Score min 14.389905; media 28.766260; mediana 29.164740; max 47.271572. \\
+Top risk object del summary & \code{20152637}, \code{152637 (1997 NC1)}, categoria elevated, score 47.271572. \\
+\code{data/gold/simulation_results/monte_carlo_results.parquet} & 21 filas de Score Simulation. \\
+\code{reports/simulation/monte_carlo_summary.json} & Estado success; version \code{monte-carlo-v0.1.0}. \\
+\code{data/gold/orbital_simulation/orbital_monte_carlo_results.parquet} & 50 filas; 16 stable, 21 variable, 8 needs_review, 5 uncertain. \\
+\code{reports/orbital_simulation/orbital_simulation_summary.json} & p05 minimo 0.020102 AU; dispersion media 0.617105. \\
+\code{data/gold/gnn_graph/nodes.parquet} & 1,000 nodos. \\
+\code{data/gold/gnn_graph/edges.parquet} & 6,955 aristas. \\
+\code{reports/gnn/graph_summary.json} & Densidad 0.0139239; estado success. \\
+\code{reports/gnn/gnn_metrics.csv} & 14 filas; GraphSAGE y GCN figuran como \code{skipped_missing_dependency} en este CSV. \\
+\code{reports/model_evidence/model_evidence_summary.json} & 20,000 predicciones full, 5,000 eval, coverage 1.0, 1,367 desacuerdos; el reporte indica 4,000 objetos y no coincide con los Parquet actuales de 1,000 objetos. \\
+\code{reports/findings/findings_summary.json} & Refleja una corrida de 4,000 objetos; debe regenerarse para alinearse con el estado actual. \\
+\bottomrule
+\end{longtable}
+
+\section{Limitaciones}
+
+\begin{itemize}
+  \item El Risk Priority Score es experimental.
+  \item La ausencia de Sentry en una fila no prueba ausencia de riesgo.
+  \item Los datos estan incompletos para algunos objetos.
+  \item El target PHA puede inducir leakage cuando se usan H, MOID, diametro o proxies.
+  \item La simulacion orbital es aproximada y no usa determinacion orbital profesional.
+  \item Los reportes del checkout no pertenecen todos a la misma corrida.
+  \item GNN real depende de \code{torch-geometric}; si falta, se reporta como dependencia ausente.
+\end{itemize}
+
+\section{Reproducibilidad}
+
+\subsection{Docker}
+
+\begin{lstlisting}
+docker compose up -d --build
+\end{lstlisting}
+
+Validacion:
+
+\begin{lstlisting}
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
+\end{lstlisting}
+
+\subsection{Regeneracion completa}
+
+\begin{lstlisting}
+docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli simulate batch --limit 100 --n-simulations 500
+docker compose exec app python -m neo_ange.cli orbital-sim batch --limit 50 --n-clones 300 --horizon-days 3650 --time-step-days 10
+docker compose exec app python -m neo_ange.cli ml run-all --target pha
+docker compose exec app python -m neo_ange.cli gnn build-graph --k 10 --min-nodes 100
+docker compose exec app python -m neo_ange.cli gnn run --target pha --k 10 --min-nodes 100
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
+\end{lstlisting}
+
+\section{Diagramas}
+
+Los diagramas Mermaid se guardan como archivos separados:
+
+\begin{itemize}
+  \item \code{docs/diagrams/system_architecture.mmd}
+  \item \code{docs/diagrams/data_pipeline_bronze_silver_gold.mmd}
+  \item \code{docs/diagrams/class_diagram_domain.mmd}
+  \item \code{docs/diagrams/risk_scoring_flow.mmd}
+  \item \code{docs/diagrams/ml_model_evidence_flow.mmd}
+  \item \code{docs/diagrams/gnn_orbital_graph_flow.mmd}
+  \item \code{docs/diagrams/score_monte_carlo_flow.mmd}
+  \item \code{docs/diagrams/orbital_simulation_flow.mmd}
+  \item \code{docs/diagrams/api_frontend_sequence.mmd}
+  \item \code{docs/diagrams/final_app_navigation.mmd}
+\end{itemize}
+
+LaTeX no renderiza Mermaid directamente en este documento. Para incluirlos como imagenes, se deben convertir antes con Mermaid CLI o una herramienta equivalente.
+
+\section{Apendice A: comandos CLI}
+
+\begin{lstlisting}
+python -m neo_ange.cli info
+python -m neo_ange.cli ingest sample
+python -m neo_ange.cli etl run-all
+python -m neo_ange.cli risk build
+python -m neo_ange.cli simulate batch --limit 100 --n-simulations 500
+python -m neo_ange.cli orbital-sim batch --limit 50 --n-clones 300 --horizon-days 3650 --time-step-days 10
+python -m neo_ange.cli ml run-all --target pha
+python -m neo_ange.cli gnn build-graph --k 10 --min-nodes 100
+python -m neo_ange.cli gnn run --target pha --k 10 --min-nodes 100
+python -m neo_ange.cli model-evidence build
+python -m neo_ange.cli findings build
+\end{lstlisting}
+
+\section{Apendice B: glosario}
+
+\begin{description}
+  \item[Bronze] Capa cruda de JSON con metadata.
+  \item[Silver] Capa normalizada en Parquet.
+  \item[Gold] Capa analitica lista para scoring y modelos.
+  \item[MOID] Distancia minima de interseccion orbital.
+  \item[PHA] Potentially Hazardous Asteroid.
+  \item[Risk Priority Score] Score experimental de prioridad analitica.
+  \item[Monte Carlo] Metodo de simulacion con muchas perturbaciones.
+  \item[GNN] Red neuronal de grafos.
+  \item[Leakage] Uso de variables que revelan directa o indirectamente la etiqueta.
+\end{description}
+
+\section{Conclusiones}
+
+\project{} demuestra un flujo completo de ingenieria de datos y analitica: consumo de APIs publicas, lakehouse local, transformaciones Spark, scoring explicable, simulacion, ML, grafo, API y frontend. Su aporte principal no es producir alertas oficiales, sino construir una plataforma transparente donde los datos, formulas, modelos, reportes y limitaciones quedan trazables.
+
+La mejora mas importante antes de una entrega publica seria regenerar todos los artefactos en una sola corrida final para eliminar diferencias entre reportes antiguos y tablas actuales.
+
+\end{document}

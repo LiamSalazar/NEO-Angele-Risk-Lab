@@ -2,7 +2,7 @@
 
 ## Overview
 
-Neo Angele Risk Lab now supports a local PySpark ETL flow from bronze JSON wrappers to silver Parquet tables and an initial gold feature dataset. The flow is designed for small local portfolio runs today, while keeping table boundaries ready for future ML, simulation, ranking, and service layers.
+Neo Angele Risk Lab supports a local PySpark ETL flow from bronze JSON wrappers to silver Parquet tables and a gold feature dataset. The table boundaries now feed ML, simulation, ranking, model evidence, GNN, API, and frontend layers.
 
 ```text
 data/bronze/{source}/ingest_date=*/...json
@@ -49,9 +49,9 @@ The ETL reader preserves source metadata, query parameters, object IDs, API sign
 
 ## Gold Dataset
 
-`gold/neo_risk_features/` is the initial analytical table for future ML, ranking, and simulation phases. It includes object identifiers, classification flags, physical and orbital fields, close approach aggregates, Sentry fields, and simple derived features.
+`gold/neo_risk_features/` is the analytical table used by ML, ranking, simulation, model evidence, GNN, API, and frontend flows. It includes object identifiers, classification flags, physical and orbital fields, close approach aggregates, Sentry fields, and derived features.
 
-This table is not the final Risk Priority Score. It intentionally contains transparent, conservative proxy features such as inverse MOID, inverse minimum close approach distance, relative velocity score, observation quality score, and feature completeness ratio.
+This table is not itself the Risk Priority Score. It contains transparent, conservative proxy features such as inverse MOID, inverse minimum close approach distance, relative velocity score, observation quality score, and feature completeness ratio. The score is built later by `src/neo_ange/risk/scoring.py`.
 
 ## Quality Checks
 
@@ -76,9 +76,5 @@ Warnings do not stop the pipeline. Empty gold output or missing critical columns
 - PySpark requires a working Java installation.
 - On Windows without Hadoop `winutils.exe`, the writer falls back to PyArrow for local Parquet writes.
 - CAD and Sentry joins are best-effort and primarily use designation or SPK IDs when present.
-- Derived features are initial engineering signals, not calibrated risk scores.
-- The pipeline does not train ML models, serve APIs, run dashboards, run Monte Carlo simulations, or build graph models yet.
-
-## Next Phases
-
-Future phases can build on `neo_risk_features` for baseline ML, leakage audits, transparent scoring, analytical APIs, dashboarding, uncertainty simulation, and graph research.
+- Derived features are engineering signals. They support the separate experimental Risk Priority Score but are not official calibrated impact-risk probabilities.
+- Downstream ML, API, frontend, simulations, model evidence, and graph workflows depend on this table being current.

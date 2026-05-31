@@ -1,0 +1,12 @@
+flowchart TD
+    ObjectRow["risk or gold object row"] --> Elements["extract orbital elements"]
+    Elements --> Defaults["fill missing propagation inputs with warnings"]
+    Elements --> Uncertainty["uncertainty_score"]
+    Uncertainty --> Clones["perturb orbital clones"]
+    Elements --> Baseline["baseline_min_distance"]
+    Clones --> Propagate["two-body heliocentric propagation"]
+    Propagate --> Earth["circular 1 AU Earth approximation"]
+    Earth --> Distances["Earth-object distance bands"]
+    Distances --> Metrics["p05, p50, p95, closest day, dispersion"]
+    Metrics --> Category["stable, variable, needs_review, uncertain"]
+    Category --> Outputs["orbital_monte_carlo_results.parquet and reports"]

@@ -1,6 +1,6 @@
 # Architecture
 
-Neo Angele Risk Lab follows a staged analytical data platform architecture. The current implementation includes ingestion, bronze storage, data expansion, Spark ETL, silver Parquet tables, a gold feature dataset, run manifests, baseline ML, leakage audit, and quality reporting.
+Neo Angele Risk Lab follows a staged analytical data platform architecture. The current implementation includes ingestion, bronze storage, data expansion, Spark ETL, silver Parquet tables, a gold feature dataset, run manifests, baseline ML, leakage audit, quality reporting, Risk Priority Score, Monte Carlo simulations, orbital graph research, model evidence, findings, FastAPI, and a React frontend.
 
 ## High-Level Architecture
 
@@ -29,7 +29,7 @@ Silver Parquet tables
 Gold neo_risk_features
         |
         v
-Quality reports, manifests, baseline ML, and leakage audit
+Risk scores, simulations, ML/GNN evidence, findings, API, frontend
 ```
 
 ## Current Implemented Layers
@@ -45,17 +45,22 @@ Quality reports, manifests, baseline ML, and leakage audit
 - Gold builder: constructs `neo_risk_features` from available silver tables.
 - Quality checks: produce JSON reports for required columns, emptiness, null ratios, duplicate keys, and numeric ranges.
 - ML pipeline: loads gold features, validates target volume, trains baseline models when appropriate, writes metrics, and audits PHA leakage.
+- Risk pipeline: builds the experimental Risk Priority Score, categories, rankings, explanations, and risk reports.
+- Simulation pipelines: run score Monte Carlo and approximate orbital clone simulations.
+- GNN and model evidence: build orbital similarity graphs, compare baselines, run optional GraphSAGE/GCN, and publish model cards, predictions, and disagreements.
+- API and frontend: expose processed data through FastAPI and a React/Vite observatory.
 - Reports and artifacts: writes ML JSON/CSV/Markdown reports under `reports/ml/` and generated model files under `artifacts/models/`.
 - CLI: exposes repeatable ingestion, expansion, ETL, ML, and project information commands.
 - Tests: cover clients, storage, pipeline behavior, and CLI entry points without requiring internet access.
 
-## Future Layers
+## Implemented Analytical Layers
 
-- Risk Priority Score based on transparent, calibrated signals.
-- Dashboard for exploration and portfolio presentation.
-- FastAPI service for programmatic access to processed datasets and scores.
-- Monte Carlo simulation for uncertainty-aware trajectory and risk experiments.
-- GNN research over object, approach, orbit-class, and temporal relationship graphs.
+- Risk Priority Score based on transparent, explainable signals.
+- FastAPI service for processed datasets, scores, simulations, GNN, findings, and model evidence.
+- React frontend for exploration and portfolio presentation.
+- Monte Carlo score simulation for input-perturbation stability analysis.
+- Approximate orbital simulation for clone-based distance scenarios.
+- GNN research over orbital similarity graphs.
 
 ## Directory Responsibilities
 
@@ -65,7 +70,7 @@ Quality reports, manifests, baseline ML, and leakage audit
 - `data/gold/`: analytical marts, feature datasets, and quality reports.
 - `docs/`: architecture, data source, and roadmap documentation.
 - `notebooks/`: reserved for exploratory work, kept empty in this phase.
-- `reports/`: run manifests, ML reports, and future data-quality reports.
+- `reports/`: run manifests, ML, risk, simulation, GNN, model evidence, findings, and data-quality reports.
 - `artifacts/`: generated models and figures, ignored by git except `.gitkeep` placeholders.
 - `src/neo_ange/clients/`: public NASA/JPL API clients.
 - `src/neo_ange/domain/`: lightweight metadata models.
@@ -78,5 +83,5 @@ Quality reports, manifests, baseline ML, and leakage audit
 - `src/neo_ange/spark/`: Spark session factory.
 - `src/neo_ange/utils/`: configuration, logging, and time helpers.
 - `tests/`: unit tests using mocks and temporary directories.
-- `api/`: reserved for future FastAPI implementation.
-- `dashboard/`: reserved for future dashboard implementation.
+- `src/neo_ange/api/`: FastAPI application and routers.
+- `frontend/`: React/TypeScript/Vite observatory.

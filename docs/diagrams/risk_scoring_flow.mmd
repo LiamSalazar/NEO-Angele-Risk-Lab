@@ -1,0 +1,19 @@
+flowchart LR
+    Features["neo_risk_features row"] --> Physical["physical_risk_component"]
+    Features --> Orbital["orbital_risk_component"]
+    Features --> Approach["approach_risk_component"]
+    Features --> Sentry["sentry_risk_component"]
+    Features --> Uncertainty["uncertainty_risk_component"]
+    Features --> Quality["data_quality_component"]
+    Physical --> Weighted["weighted sum"]
+    Orbital --> Weighted
+    Approach --> Weighted
+    Sentry --> Weighted
+    Uncertainty --> Weighted
+    Quality --> Weighted
+    Weighted --> Score["risk_score_0_100"]
+    Score --> Category["low, moderate, elevated, high, critical"]
+    Category --> Explanation["RiskExplanationService"]
+    Score --> Ranking["RiskRankingService"]
+    Explanation --> API["API and frontend"]
+    Ranking --> API
