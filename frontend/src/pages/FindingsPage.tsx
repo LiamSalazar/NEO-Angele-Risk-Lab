@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { Finding } from "@/api/types";
 import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
+import { BestDefensibleEvidenceCard } from "@/components/findings/BestDefensibleEvidenceCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +35,7 @@ export function FindingsPage() {
       <PageHeader
         eyebrow="Findings"
         title="Analytical Findings"
-        description="User-facing conclusions generated from the active NEO dataset, scores, simulations, orbital graph and model evidence."
+        description="User-facing conclusions generated from the active NEO dataset, scores, simulations, orbital graph and secondary model evidence."
       />
 
       {summary.isError ? <ErrorState error={summary.error} endpoint="/findings/summary" /> : null}
@@ -60,25 +61,7 @@ export function FindingsPage() {
             <FindingGroup key={group.key} groupKey={group.key} title={group.title} />
           ))}
         </div>
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Best Defensible Evidence</CardTitle>
-              <CardDescription>ML/GNN evidence is secondary support, not the product center.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <pre className="max-h-[360px] overflow-auto rounded-md border border-cyan-300/12 bg-black/35 p-3 font-mono text-xs leading-5 text-slate-300">
-              {JSON.stringify(modelEvidence.data?.details?.best_defensible_model ?? {}, null, 2)}
-            </pre>
-            <p className="mt-4 text-sm leading-6 text-slate-400">
-              {String(
-                modelEvidence.data?.details?.main_evidence_conclusion ??
-                  "Model evidence is pending."
-              )}
-            </p>
-          </CardContent>
-        </Card>
+        <BestDefensibleEvidenceCard details={modelEvidence.data?.details} />
       </section>
     </div>
   );
@@ -98,7 +81,11 @@ function FindingGroup({
       <CardHeader>
         <div>
           <CardTitle>{title}</CardTitle>
-          <CardDescription>Conclusion, support data and related objects.</CardDescription>
+          <CardDescription>
+            {groupKey === "modelEvidence"
+              ? "Model evidence supports interpretation; it does not define the priority ranking."
+              : "Conclusion, support data and related objects."}
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

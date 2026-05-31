@@ -1,9 +1,14 @@
 {
   "best_defensible_model": {
     "feature_set": "orbital_only",
+    "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
+    "leakage_risk": "low",
+    "limitations": [
+      "May understate patterns that depend on physical-size or MOID definition fields."
+    ],
     "metrics": {
       "accuracy": 0.856,
-      "brier_score": 0.10931314530557805,
+      "brier_score": 0.10931314530557804,
       "confusion_matrix": [
         [
           169,
@@ -32,11 +37,25 @@
     },
     "model_family": "tabular",
     "model_name": "random_forest",
+    "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
+    "recommended_use": "Defensible support for pattern consistency without PHA definition variables.",
     "selection_metric": 0.8267495676123587,
+    "status": "success",
+    "strengths": [
+      "Produces probabilistic ranking evidence.",
+      "Provides a measurable check on positive-label retrieval.",
+      "Avoids direct PHA definition variables."
+    ],
     "target": "pha"
   },
+  "best_defensible_model_interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
   "best_graph_based_evidence": {
     "feature_set": "graph_node_features",
+    "interpretation": "The graph model checks whether neighboring orbital contexts support the observed label pattern; it should not be read as impact prediction.",
+    "leakage_risk": "high",
+    "limitations": [
+      "Graph baselines are sensitive to graph construction choices."
+    ],
     "metrics": {
       "accuracy": 1.0,
       "f1": 1.0,
@@ -48,14 +67,26 @@
     },
     "model_family": "graph",
     "model_name": "random_forest",
+    "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
+    "recommended_use": "Evidence of consistency between orbital neighborhoods and observed labels.",
     "selection_metric": 1.0,
+    "status": "success",
+    "strengths": [
+      "Produces probabilistic ranking evidence.",
+      "Provides a measurable check on positive-label retrieval."
+    ],
     "target": "pha"
   },
   "best_no_definition_feature_model": {
     "feature_set": "orbital_only",
+    "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
+    "leakage_risk": "low",
+    "limitations": [
+      "May understate patterns that depend on physical-size or MOID definition fields."
+    ],
     "metrics": {
       "accuracy": 0.856,
-      "brier_score": 0.10931314530557805,
+      "brier_score": 0.10931314530557804,
       "confusion_matrix": [
         [
           169,
@@ -84,11 +115,24 @@
     },
     "model_family": "tabular",
     "model_name": "random_forest",
+    "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
+    "recommended_use": "Defensible support for pattern consistency without PHA definition variables.",
     "selection_metric": 0.8267495676123587,
+    "status": "success",
+    "strengths": [
+      "Produces probabilistic ranking evidence.",
+      "Provides a measurable check on positive-label retrieval.",
+      "Avoids direct PHA definition variables."
+    ],
     "target": "pha"
   },
   "best_overall_metric": {
     "feature_set": "full_features",
+    "interpretation": "High scores here validate that definition-related variables encode the label, but this is not the best user-facing evidence.",
+    "leakage_risk": "high",
+    "limitations": [
+      "Definition-adjacent inputs can make PHA metrics look stronger than they are."
+    ],
     "metrics": {
       "accuracy": 1.0,
       "brier_score": 0.0004252713209455209,
@@ -120,10 +164,21 @@
     },
     "model_family": "tabular",
     "model_name": "random_forest",
+    "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
+    "recommended_use": "Internal diagnostic for leakage-sensitive behavior.",
     "selection_metric": 1.0,
+    "status": "success",
+    "strengths": [
+      "Produces probabilistic ranking evidence.",
+      "Provides a measurable check on positive-label retrieval."
+    ],
     "target": "pha"
   },
-  "disagreement_count": 104,
+  "coverage_ratio": 1.0,
+  "disagreement_count": 310,
+  "eval_predictions_path": "reports\\model_evidence\\model_predictions_eval.parquet",
+  "full_inference_available": true,
+  "full_predictions_path": "reports\\model_evidence\\model_predictions_full.parquet",
   "leakage_sensitive_models": [
     {
       "feature_set": "full_features",
@@ -156,8 +211,130 @@
       "model_name": "label_propagation"
     }
   ],
-  "main_evidence_conclusion": "random_forest on orbital_only provides secondary evidence for pattern consistency; disagreements remain an inspection queue (104 rows).",
-  "prediction_count": 1250,
+  "main_evidence_conclusion": "random_forest on orbital_only provides secondary evidence for pattern consistency; disagreements remain an inspection queue (310 rows).",
+  "models_used": [
+    {
+      "feature_set": "no_definition_features",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "random_forest",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "orbital_only",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "logistic_regression",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "orbital_only",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "random_forest",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "full_features",
+      "leakage_risk": "high",
+      "model_family": "tabular",
+      "model_name": "random_forest",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "definition_features_only",
+      "leakage_risk": "high",
+      "model_family": "tabular",
+      "model_name": "random_forest",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "no_definition_features",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "logistic_regression",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "no_definition_features",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "mlp",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "no_definition_features",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "label_propagation",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "orbital_only",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "mlp",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "orbital_only",
+      "leakage_risk": "low",
+      "model_family": "tabular",
+      "model_name": "label_propagation",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "graph_node_features",
+      "leakage_risk": "high",
+      "model_family": "graph",
+      "model_name": "logistic_regression",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "graph_node_features",
+      "leakage_risk": "high",
+      "model_family": "graph",
+      "model_name": "random_forest",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "graph_node_features",
+      "leakage_risk": "high",
+      "model_family": "graph",
+      "model_name": "mlp",
+      "status": "success",
+      "target": "pha"
+    },
+    {
+      "feature_set": "graph_node_features",
+      "leakage_risk": "high",
+      "model_family": "graph",
+      "model_name": "label_propagation",
+      "status": "success",
+      "target": "pha"
+    }
+  ],
+  "prediction_count": 5000,
+  "prediction_rows_eval": 1250,
+  "prediction_rows_full": 5000,
+  "ranking_source": "Risk Priority Score",
+  "recommended_use": "secondary evidence",
   "status": "success",
-  "target": "pha"
+  "target": "pha",
+  "total_gold_objects": 1000,
+  "total_risk_objects": 1000,
+  "unique_eval_object_keys": 250,
+  "unique_full_object_keys": 1000
 }

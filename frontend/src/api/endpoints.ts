@@ -68,7 +68,7 @@ export const endpoints = {
   modelEvidence: {
     summary: "/model-evidence/summary",
     cards: "/model-evidence/cards",
-    predictions: "/model-evidence/predictions",
+    predictions: withQuery("/model-evidence/predictions", { mode: "full" }),
     disagreements: "/model-evidence/disagreements",
     object: (objectKey: string) => `/model-evidence/object/${encodeURIComponent(objectKey)}`
   },

@@ -110,12 +110,53 @@ export const mockApiResponse = (url: string) => {
           model_family: "tabular",
           feature_set: "orbital_only",
           target: "pha",
-          selection_metric: 0.82
+          selection_metric: 0.82,
+          leakage_risk: "low",
+          recommended_use: "secondary evidence",
+          metrics: {
+            accuracy: 0.86,
+            f1: 0.71,
+            pr_auc: 0.83,
+            precision: 0.8,
+            recall: 0.64,
+            false_negative_rate: 0.36
+          }
         },
+        best_defensible_model_interpretation:
+          "random_forest on orbital_only provides secondary evidence for pattern consistency.",
         main_evidence_conclusion:
           "random_forest on orbital_only provides secondary evidence for pattern consistency.",
         prediction_count: 1,
-        disagreement_count: 0
+        prediction_rows_eval: 1,
+        unique_eval_object_keys: 1,
+        prediction_rows_full: 1,
+        unique_full_object_keys: 1,
+        total_gold_objects: 1,
+        total_risk_objects: 1,
+        coverage_ratio: 1,
+        disagreement_count: 0,
+        recommended_use: "secondary evidence",
+        ranking_source: "Risk Priority Score"
+      }
+    };
+  }
+
+  if (path === "/model-evidence/predictions") {
+    return {
+      status: "success",
+      details: {
+        mode: "full",
+        predictions: [
+          {
+            object_key: "A-001",
+            model_name: "random_forest",
+            feature_set: "orbital_only",
+            predicted_probability: 0.8,
+            confidence_bucket: "medium",
+            leakage_risk: "low",
+            evidence_role: "secondary_evidence"
+          }
+        ]
       }
     };
   }

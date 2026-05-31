@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from neo_ange.evidence.model_cards import leakage_risk_for_feature_set
 from neo_ange.evidence.schemas import PredictionRecord
 from neo_ange.ml.baselines import build_model_pipeline
 from neo_ange.ml.feature_sets import FeatureSetRegistry
@@ -26,16 +27,16 @@ def run_tabular_predictions(
     df: pd.DataFrame,
     target: str = "pha",
     random_state: int = 42,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Train compact holdout models and return prediction rows plus metric records."""
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return eval predictions, full-dataset inference rows, and metric records."""
     if df.empty or target not in df.columns:
-        return [], []
+        return [], [], []
     frame = df.copy()
     y = _target_to_int(frame[target])
     frame = frame.loc[y.notna()].copy()
     y = y.loc[frame.index].astype(int)
     if len(frame) < 20 or y.nunique() < 2:
-        return [], []
+        return [], [], []
 
     train_idx, test_idx = train_test_split(
         frame.index,
@@ -44,7 +45,8 @@ def run_tabular_predictions(
         stratify=y,
     )
     registry = FeatureSetRegistry()
-    prediction_rows: list[dict[str, Any]] = []
+    eval_prediction_rows: list[dict[str, Any]] = []
+    full_prediction_rows: list[dict[str, Any]] = []
     metric_rows: list[dict[str, Any]] = []
     for model_name, feature_set in EVIDENCE_EXPERIMENTS:
         resolved = registry.resolve(frame, feature_set, target=target)
@@ -62,15 +64,15 @@ def run_tabular_predictions(
                 }
             )
             continue
-        model = build_model_pipeline(model_name, features, random_state=random_state)
+        eval_model = build_model_pipeline(model_name, features, random_state=random_state)
         X_train = frame.loc[train_idx, features]
         X_test = frame.loc[test_idx, features]
         y_train = y.loc[train_idx]
         y_test = y.loc[test_idx]
-        model.fit(X_train, y_train)
-        predicted = model.predict(X_test)
-        probabilities = _positive_probability(model, X_test)
-        metrics = calculate_classification_metrics(y_test, predicted, probabilities)
+        eval_model.fit(X_train, y_train)
+        eval_predicted = eval_model.predict(X_test)
+        eval_probabilities = _positive_probability(eval_model, X_test)
+        metrics = calculate_classification_metrics(y_test, eval_predicted, eval_probabilities)
         metric_rows.append(
             {
                 "status": "success",
@@ -82,28 +84,83 @@ def run_tabular_predictions(
                 "warnings": [*resolved["warnings"], *metrics.get("warnings", [])],
             }
         )
-        for row_index, actual, label, probability in zip(
-            test_idx, y_test.to_numpy(), predicted, probabilities, strict=True
-        ):
-            source = frame.loc[row_index]
-            prediction_rows.append(
-                PredictionRecord(
-                    object_key=str(source.get("object_key")),
-                    designation=_designation(source),
-                    actual_label=int(actual),
-                    predicted_label=int(label),
-                    predicted_probability=float(probability),
-                    model_name=model_name,
-                    feature_set=feature_set,
-                    model_family="tabular",
-                    correct=bool(int(actual) == int(label)),
-                    confidence_bucket=confidence_bucket(float(probability)),
-                    risk_score_0_100=_optional_float(source.get("risk_score_0_100")),
-                    risk_category=_optional_str(source.get("risk_category")),
-                    notes=_prediction_note(feature_set),
-                ).to_dict()
+        eval_prediction_rows.extend(
+            _prediction_rows(
+                frame.loc[test_idx],
+                y_test,
+                eval_predicted,
+                eval_probabilities,
+                model_name=model_name,
+                feature_set=feature_set,
+                model_family="tabular",
+                prediction_mode="eval",
+                training_strategy="holdout_train_test_split",
             )
-    return prediction_rows, metric_rows
+        )
+
+        full_model = build_model_pipeline(model_name, features, random_state=random_state)
+        full_model.fit(frame.loc[:, features], y)
+        full_predicted = full_model.predict(frame.loc[:, features])
+        full_probabilities = _positive_probability(full_model, frame.loc[:, features])
+        full_prediction_rows.extend(
+            _prediction_rows(
+                frame,
+                y,
+                full_predicted,
+                full_probabilities,
+                model_name=model_name,
+                feature_set=feature_set,
+                model_family="tabular",
+                prediction_mode="full",
+                training_strategy="full_labeled_dataset_after_holdout_evaluation",
+            )
+        )
+    return eval_prediction_rows, full_prediction_rows, metric_rows
+
+
+def _prediction_rows(
+    frame: pd.DataFrame,
+    y_true: pd.Series,
+    predicted: Any,
+    probabilities: Any,
+    *,
+    model_name: str,
+    feature_set: str,
+    model_family: str,
+    prediction_mode: str,
+    training_strategy: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    leakage_risk = leakage_risk_for_feature_set(feature_set)
+    evidence_role = "diagnostic" if leakage_risk == "high" else "secondary_evidence"
+    for (_, source), actual, label, probability in zip(
+        frame.iterrows(), y_true.to_numpy(), predicted, probabilities, strict=True
+    ):
+        row = PredictionRecord(
+            object_key=str(source.get("object_key")),
+            designation=_designation(source),
+            actual_label=int(actual),
+            predicted_label=int(label),
+            predicted_probability=float(probability),
+            model_name=model_name,
+            feature_set=feature_set,
+            model_family=model_family,
+            correct=bool(int(actual) == int(label)),
+            confidence_bucket=confidence_bucket(float(probability)),
+            risk_score_0_100=_optional_float(source.get("risk_score_0_100")),
+            risk_category=_optional_str(source.get("risk_category")),
+            notes=_prediction_note(feature_set),
+        ).to_dict()
+        row.update(
+            {
+                "prediction_mode": prediction_mode,
+                "training_strategy": training_strategy,
+                "leakage_risk": leakage_risk,
+                "evidence_role": evidence_role,
+            }
+        )
+        rows.append(row)
+    return rows
 
 
 def add_graph_metric_records(
@@ -118,6 +175,9 @@ def add_graph_metric_records(
         feature_set = str(row.get("feature_set") or "graph")
         model_name = str(row.get("model_name") or row.get("model") or "graph_model")
         family = str(row.get("family") or "graph")
+        model_family = "gnn" if family == "gnn" else "graph"
+        if family == "baseline" and feature_set != "graph_node_features":
+            model_family = "tabular"
         metrics = {
             key: _optional_float(row.get(key))
             for key in [
@@ -134,7 +194,7 @@ def add_graph_metric_records(
             {
                 "status": str(row.get("status") or "unknown"),
                 "model_name": model_name,
-                "model_family": "gnn" if family == "gnn" else "graph",
+                "model_family": model_family,
                 "feature_set": feature_set,
                 "target": str(row.get("target") or target),
                 "metrics": metrics,

@@ -40,13 +40,16 @@ def cards(paths: Annotated[dict, Depends(get_data_paths)]) -> StatusResponse:
 
 
 @router.get("/predictions", response_model=StatusResponse)
-def predictions(paths: Annotated[dict, Depends(get_data_paths)]) -> StatusResponse:
-    """Return observable prediction rows."""
+def predictions(
+    paths: Annotated[dict, Depends(get_data_paths)],
+    mode: str = "full",
+) -> StatusResponse:
+    """Return observable prediction rows for full inference or eval mode."""
     builder = _builder(paths)
-    payload = builder.read_predictions()
+    payload = builder.read_predictions(mode=mode)
     if payload.get("status") == "missing_data":
         builder.build(write=True)
-        payload = builder.read_predictions()
+        payload = builder.read_predictions(mode=mode)
     return StatusResponse(status=payload.get("status", "success"), details=payload)
 
 
@@ -65,10 +68,11 @@ def disagreements(paths: Annotated[dict, Depends(get_data_paths)]) -> StatusResp
 def object_evidence(
     object_key: str,
     paths: Annotated[dict, Depends(get_data_paths)],
+    mode: str = "full",
 ) -> StatusResponse:
     """Return model evidence for one object."""
     builder = _builder(paths)
     if not builder.read_summary():
         builder.build(write=True)
-    payload = builder.object_evidence(object_key)
+    payload = builder.object_evidence(object_key, mode=mode)
     return StatusResponse(status=payload.get("status", "success"), details=payload)

@@ -111,14 +111,14 @@ Nearest-neighbor links can be used to inspect orbitally similar objects around a
 
 random_forest on orbital_only is the current defensible model-evidence view.
 
-- Basis: The evidence builder excludes definition-heavy feature sets from the best defensible pick.
+- Basis: The evidence builder excludes definition-heavy feature sets from the best defensible pick. Model evidence supports interpretation; it does not define the priority ranking.
 - Importance: high
 - Source: model_evidence
 
 ### Model disagreements create an inspection queue
 
-104 object/model rows are flagged in disagreement outputs.
+310 objects are flagged in disagreement outputs.
 
-- Basis: Disagreements compare high-confidence predictions against observed labels or model families.
+- Basis: Disagreements compare high-confidence predictions against observed labels or model families and remain secondary to the Risk Priority Score.
 - Importance: medium
 - Source: model_evidence

@@ -547,7 +547,8 @@ def build_model_findings(summary: dict[str, Any]) -> list[dict[str, Any]]:
             ),
             (
                 "The evidence builder excludes definition-heavy feature sets from the "
-                "best defensible pick."
+                "best defensible pick. Model evidence supports interpretation; it does "
+                "not define the priority ranking."
             ),
             importance="high",
             source_module="model_evidence",
@@ -555,10 +556,10 @@ def build_model_findings(summary: dict[str, Any]) -> list[dict[str, Any]]:
         ),
         finding(
             "Model disagreements create an inspection queue",
-            f"{disagreements:,} object/model rows are flagged in disagreement outputs.",
+            f"{disagreements:,} objects are flagged in disagreement outputs.",
             (
                 "Disagreements compare high-confidence predictions against observed "
-                "labels or model families."
+                "labels or model families and remain secondary to the Risk Priority Score."
             ),
             importance="medium",
             source_module="model_evidence",

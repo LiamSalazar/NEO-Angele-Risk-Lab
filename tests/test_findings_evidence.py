@@ -5,6 +5,7 @@ import pandas as pd
 from neo_ange.evidence.disagreement import build_disagreements
 from neo_ange.evidence.model_cards import build_model_card, leakage_risk_for_feature_set
 from neo_ange.evidence.predictions import confidence_bucket
+from neo_ange.evidence.reporting import ModelEvidenceBuilder
 from neo_ange.findings.reporting import (
     FindingsBuilder,
     build_orbital_findings,
@@ -133,3 +134,53 @@ def test_model_disagreements_capture_split_predictions() -> None:
 
     assert len(disagreements) == 1
     assert disagreements.iloc[0]["reason"] == "model_family_disagreement"
+
+
+def test_model_evidence_separates_eval_and_full_inference(tmp_path) -> None:
+    risk_dir = tmp_path / "gold" / "risk_scores"
+    risk_dir.mkdir(parents=True)
+    rows = []
+    for index in range(48):
+        is_pha = index % 3 == 0
+        rows.append(
+            {
+                "object_key": f"A-{index:03d}",
+                "des": f"2026 Q{index}",
+                "pha": is_pha,
+                "h": 18.5 if is_pha else 23.5,
+                "diameter": 1.0 if is_pha else 0.2,
+                "moid": 0.02 if is_pha else 0.18,
+                "e": 0.08 + (index % 5) * 0.025,
+                "a": 1.0 + (index % 7) * 0.03,
+                "q": 0.9 + (index % 6) * 0.02,
+                "i": 1.0 + (index % 9),
+                "om": float((index * 13) % 360),
+                "w": float((index * 17) % 360),
+                "ma": float((index * 19) % 360),
+                "n": 0.2 + (index % 8) * 0.01,
+                "per": 300 + index,
+                "ad": 1.2 + (index % 10) * 0.02,
+                "risk_score_0_100": 70.0 if is_pha else 20.0,
+                "risk_category": "elevated" if is_pha else "low",
+            }
+        )
+    pd.DataFrame(rows).to_parquet(risk_dir / "risk_scores.parquet", index=False)
+
+    result = ModelEvidenceBuilder(
+        gold_root=tmp_path / "gold",
+        reports_root=tmp_path / "reports",
+    ).build(write=True)
+
+    eval_predictions = pd.read_parquet(
+        tmp_path / "reports" / "model_evidence" / "model_predictions_eval.parquet"
+    )
+    full_predictions = pd.read_parquet(
+        tmp_path / "reports" / "model_evidence" / "model_predictions_full.parquet"
+    )
+
+    assert result["summary"]["unique_eval_object_keys"] < 48
+    assert result["summary"]["unique_full_object_keys"] == 48
+    assert result["summary"]["coverage_ratio"] == 1.0
+    assert result["summary"]["full_inference_available"] is True
+    assert eval_predictions["object_key"].nunique() < full_predictions["object_key"].nunique()
+    assert full_predictions["object_key"].nunique() == 48

@@ -1,6 +1,8 @@
 {
   "metric_count": 19,
   "note": "Runtime is measured by the benchmark module; this file records artifact counts.",
-  "prediction_count": 1250,
+  "prediction_count": 5000,
+  "prediction_rows_eval": 1250,
+  "prediction_rows_full": 5000,
   "status": "success"
 }

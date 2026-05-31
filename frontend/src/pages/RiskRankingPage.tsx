@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RiskCategoryBadge } from "@/components/risk/RiskCategoryBadge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBuildRiskMutation, useObjectsQuery, useRankingSummaryQuery } from "@/hooks/useRiskRanking";
@@ -30,8 +31,10 @@ export function RiskRankingPage() {
     const rows = (modelPredictions.data?.details?.predictions ?? []) as Array<Record<string, unknown>>;
     return rows.reduce<Record<string, string>>((acc, row) => {
       const key = String(row.object_key ?? "");
-      if (!key || acc[key] === "high") return acc;
-      const bucket = String(row.confidence_bucket ?? "medium");
+      if (!key || row.evidence_role === "diagnostic" || row.leakage_risk === "high") return acc;
+      const bucket = normalizedEvidenceBucket(row.confidence_bucket);
+      const current = acc[key];
+      if (current && evidenceBucketRank(current) >= evidenceBucketRank(bucket)) return acc;
       acc[key] = bucket;
       return acc;
     }, {});
@@ -66,7 +69,7 @@ export function RiskRankingPage() {
       <PageHeader
         eyebrow="Risk ranking"
         title="Experimental Priority Table"
-        description="Interactive ranking of scored NEO objects with category, Sentry and object-key filters."
+        description="Interactive ranking of scored NEO objects. Priority comes from the Risk Priority Score; model evidence is secondary support."
         actions={
           <Button type="button" variant="primary" disabled={buildRisk.isPending} onClick={() => buildRisk.mutate()}>
             {buildRisk.isPending ? "Building" : "Build risk scores"}
@@ -152,7 +155,13 @@ export function RiskRankingPage() {
                     "profile"
                   ].map((column) => (
                     <th key={column} className="px-3 py-2 technical-label text-[10px]">
-                      {column}
+                      {column === "model evidence" ? (
+                        <span title="Secondary ML/GNN evidence; ranking is score-based.">
+                          {column}
+                        </span>
+                      ) : (
+                        column
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -172,7 +181,9 @@ export function RiskRankingPage() {
                       <td className="px-3 py-3 font-mono">{formatScore(Number(object.sentry_risk_component ?? 0) * 100)}</td>
                       <td className="px-3 py-3 font-mono">{formatScore(Number(object.uncertainty_risk_component ?? 0) * 100)}</td>
                       <td className="px-3 py-3">{String(object.dominant_driver ?? dominantDriver(object))}</td>
-                      <td className="px-3 py-3">{evidenceByObject[key] ?? "pending"}</td>
+                      <td className="px-3 py-3">
+                        <ModelEvidenceBadge value={evidenceByObject[key] ?? "not available"} />
+                      </td>
                       <td className="px-3 py-3 font-mono">{formatBoolean(object.sentry_flag)}</td>
                       <td className="rounded-r-md px-3 py-3">
                         <Button asChild size="sm">
@@ -202,6 +213,22 @@ function dominantDriver(object: Record<string, unknown>) {
     uncertainty: Number(object.uncertainty_risk_component ?? 0)
   };
   return Object.entries(values).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
+}
+
+function normalizedEvidenceBucket(value: unknown) {
+  const normalized = String(value ?? "medium").toLowerCase();
+  return ["high", "medium", "low"].includes(normalized) ? normalized : "medium";
+}
+
+function evidenceBucketRank(value: string) {
+  return { high: 3, medium: 2, low: 1 }[value as "high" | "medium" | "low"] ?? 0;
+}
+
+function ModelEvidenceBadge({ value }: { value: string }) {
+  const normalized = value.toLowerCase();
+  const variant =
+    normalized === "high" ? "green" : normalized === "medium" ? "cyan" : normalized === "low" ? "amber" : "neutral";
+  return <Badge variant={variant}>{normalized}</Badge>;
 }
 
 function Summary({ label, value, score }: { label: string; value: unknown; score?: boolean }) {
