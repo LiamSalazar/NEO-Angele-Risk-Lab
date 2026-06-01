@@ -11,6 +11,7 @@ import pandas as pd
 from neo_ange.evidence.disagreement import build_disagreements
 from neo_ange.evidence.model_cards import build_model_card, leakage_risk_for_feature_set
 from neo_ange.evidence.predictions import add_graph_metric_records, run_tabular_predictions
+from neo_ange.ml.validation import MLValidationReportBuilder
 from neo_ange.utils.serialization import to_jsonable, write_json
 
 
@@ -39,6 +40,10 @@ class ModelEvidenceBuilder:
             _read_csv(self.reports_root / "gnn" / "gnn_metrics.csv"),
             target=target,
         )
+        validation_result = MLValidationReportBuilder(
+            gold_root=self.gold_root,
+            report_dir=self.report_dir,
+        ).build(target=target)
         metrics = [*tabular_metrics, *graph_metrics]
         cards = [
             build_model_card(
@@ -92,6 +97,7 @@ class ModelEvidenceBuilder:
                 false_positives=false_positives,
                 false_negatives=false_negatives,
             )
+            payload["outputs"].update(validation_result.get("outputs", {}))
         return to_jsonable(payload)
 
     def status(self) -> dict[str, Any]:

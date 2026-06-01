@@ -42,6 +42,15 @@ GOLD_FEATURE_COLUMNS: list[tuple[str, T.DataType]] = [
     ("n", T.DoubleType()),
     ("per", T.DoubleType()),
     ("ad", T.DoubleType()),
+    ("covariance_available", T.BooleanType()),
+    ("covariance_epoch", T.StringType()),
+    ("covariance_labels", T.StringType()),
+    ("covariance_matrix_json", T.StringType()),
+    ("covariance_form", T.StringType()),
+    ("covariance_units", T.StringType()),
+    ("covariance_dimension", T.IntegerType()),
+    ("covariance_method", T.StringType()),
+    ("has_valid_covariance", T.BooleanType()),
     ("moid", T.DoubleType()),
     ("moid_ld", T.DoubleType()),
     ("condition_code", T.StringType()),
@@ -138,6 +147,15 @@ class GoldBuilder:
                     F.col("n").cast("double").alias("n"),
                     F.col("per").cast("double").alias("per"),
                     F.col("ad").cast("double").alias("ad"),
+                    F.col("covariance_available").cast("boolean").alias("covariance_available"),
+                    F.col("covariance_epoch").cast("string").alias("covariance_epoch"),
+                    F.col("covariance_labels").cast("string").alias("covariance_labels"),
+                    F.col("covariance_matrix_json").cast("string").alias("covariance_matrix_json"),
+                    F.col("covariance_form").cast("string").alias("covariance_form"),
+                    F.col("covariance_units").cast("string").alias("covariance_units"),
+                    F.col("covariance_dimension").cast("int").alias("covariance_dimension"),
+                    F.col("covariance_method").cast("string").alias("covariance_method"),
+                    F.col("has_valid_covariance").cast("boolean").alias("has_valid_covariance"),
                     F.col("moid").cast("double").alias("moid"),
                     F.col("moid_ld").cast("double").alias("moid_ld"),
                     F.col("condition_code").cast("string").alias("condition_code"),
@@ -165,6 +183,7 @@ class GoldBuilder:
                     F.col("h").cast("double").alias("h"),
                     F.col("diameter").cast("double").alias("diameter"),
                     *[_null_double(name) for name in ORBITAL_BASE_COLUMNS],
+                    *[_null_covariance_col(name) for name in COVARIANCE_COLUMNS],
                     F.lit(None).cast("string").alias("condition_code"),
                     F.lit(None).cast("double").alias("arc_length"),
                     F.lit(None).cast("int").alias("n_obs_used"),
@@ -190,6 +209,7 @@ class GoldBuilder:
                     F.col("h").cast("double").alias("h"),
                     F.col("diameter").cast("double").alias("diameter"),
                     *[_null_double(name) for name in ORBITAL_BASE_COLUMNS],
+                    *[_null_covariance_col(name) for name in COVARIANCE_COLUMNS],
                     F.lit(None).cast("string").alias("condition_code"),
                     F.lit(None).cast("double").alias("arc_length"),
                     F.lit(None).cast("int").alias("n_obs_used"),
@@ -338,6 +358,18 @@ ORBITAL_BASE_COLUMNS = [
     "moid_ld",
 ]
 
+COVARIANCE_COLUMNS: dict[str, T.DataType] = {
+    "covariance_available": T.BooleanType(),
+    "covariance_epoch": T.StringType(),
+    "covariance_labels": T.StringType(),
+    "covariance_matrix_json": T.StringType(),
+    "covariance_form": T.StringType(),
+    "covariance_units": T.StringType(),
+    "covariance_dimension": T.IntegerType(),
+    "covariance_method": T.StringType(),
+    "has_valid_covariance": T.BooleanType(),
+}
+
 CAD_AGG_COLUMNS: dict[str, T.DataType] = {
     "min_close_approach_dist": T.DoubleType(),
     "min_close_approach_dist_min": T.DoubleType(),
@@ -371,7 +403,10 @@ def _empty_gold_df(spark: SparkSession) -> DataFrame:
 
 
 def _empty_base_df(spark: SparkSession) -> DataFrame:
-    base_columns = GOLD_FEATURE_COLUMNS[:29]
+    base_end = next(
+        index for index, (name, _dtype) in enumerate(GOLD_FEATURE_COLUMNS) if name == "rms"
+    )
+    base_columns = GOLD_FEATURE_COLUMNS[: base_end + 1]
     return spark.createDataFrame(
         [],
         T.StructType([T.StructField(name, dtype, True) for name, dtype in base_columns]),
@@ -392,6 +427,10 @@ def _null_double_or_string(name: str) -> Column:
 
 def _null_sentry_col(name: str) -> Column:
     return F.lit(None).cast(SENTRY_AGG_COLUMNS[name]).alias(name)
+
+
+def _null_covariance_col(name: str) -> Column:
+    return F.lit(None).cast(COVARIANCE_COLUMNS[name]).alias(name)
 
 
 def _bounded(value: Column) -> Column:

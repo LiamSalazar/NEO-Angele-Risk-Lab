@@ -1,4 +1,4 @@
-"""Approximate Monte Carlo engine for risk-score stability analysis."""
+"""Risk Score uncertainty propagation and sensitivity analysis engine."""
 
 from __future__ import annotations
 
@@ -14,15 +14,17 @@ from neo_ange.risk.ranking import RiskRankingService
 from neo_ange.risk.scoring import RiskScorer
 from neo_ange.simulation.perturbation import PerturbationConfig, PerturbationEngine
 from neo_ange.simulation.schemas import MONTE_CARLO_VERSION
+from neo_ange.simulation.sensitivity import SensitivityAnalyzer
 from neo_ange.utils.serialization import to_jsonable
 
 
 class MonteCarloEngine:
-    """Run approximate probabilistic perturbations over risk-score inputs."""
+    """Run score uncertainty propagation over base score inputs."""
 
     def __init__(self, risk_scorer: RiskScorer | None = None) -> None:
         self.risk_scorer = risk_scorer or RiskScorer()
         self.perturbation_engine = PerturbationEngine()
+        self.sensitivity = SensitivityAnalyzer(self.risk_scorer)
         self.categories = RiskCategoryAssigner()
         self.ranking = RiskRankingService()
 
@@ -31,17 +33,30 @@ class MonteCarloEngine:
         row: dict[str, Any] | pd.Series | Asteroid,
         n_simulations: int = 1000,
         random_state: int | None = 42,
+        reference_df: pd.DataFrame | None = None,
     ) -> dict[str, Any]:
-        """Perturb one object and summarize the simulated score distribution."""
+        """Sample one object's base variables and summarize propagated score outcomes."""
         base_row = _row_to_dict(row)
         config = PerturbationConfig(
             n_simulations=n_simulations,
             random_state=random_state,
             clip_values=True,
         )
-        perturbed = self.perturbation_engine.perturb_row(base_row, config)
+        perturbed = self.perturbation_engine.perturb_row(
+            base_row,
+            config,
+            reference_df=reference_df,
+        )
         scored = self.risk_scorer.score_dataframe(perturbed)
         summary = self.summarize_simulated_scores(scored, base_row)
+        sensitivity_rows = self.sensitivity.top_sensitivity_factors(base_row, limit=5)
+        summary.update(self.perturbation_engine.last_uncertainty_summary)
+        summary["most_influential_variables"] = sensitivity_rows
+        summary["score_sensitivity_index"] = _score_sensitivity_index(
+            summary.get("std_score"),
+            summary.get("base_score"),
+            sensitivity_rows,
+        )
         summary["random_state"] = random_state
         summary["simulated_at_utc"] = datetime.now(UTC).isoformat()
         return to_jsonable(summary)
@@ -74,6 +89,7 @@ class MonteCarloEngine:
                     row,
                     n_simulations=n_simulations,
                     random_state=seed,
+                    reference_df=df,
                 )
             )
         mean_scores = [item["mean_score"] for item in results if item.get("mean_score") is not None]
@@ -113,16 +129,23 @@ class MonteCarloEngine:
             "n_simulations": int(len(scores)),
             "base_score": base_score,
             "mean_score": float(scores.mean()) if len(scores) else 0.0,
+            "mean": float(scores.mean()) if len(scores) else 0.0,
             "std_score": float(scores.std(ddof=0)) if len(scores) else 0.0,
+            "std": float(scores.std(ddof=0)) if len(scores) else 0.0,
             "min_score": float(scores.min()) if len(scores) else 0.0,
             "p05_score": float(scores.quantile(0.05)) if len(scores) else 0.0,
+            "p05": float(scores.quantile(0.05)) if len(scores) else 0.0,
             "p25_score": float(scores.quantile(0.25)) if len(scores) else 0.0,
             "median_score": float(scores.median()) if len(scores) else 0.0,
+            "p50": float(scores.median()) if len(scores) else 0.0,
             "p75_score": float(scores.quantile(0.75)) if len(scores) else 0.0,
             "p95_score": p95_score,
+            "p95": p95_score,
             "max_score": float(scores.max()) if len(scores) else 0.0,
             "probability_score_above_60": float((scores > 60.0).mean()) if len(scores) else 0.0,
             "probability_score_above_80": float((scores > 80.0).mean()) if len(scores) else 0.0,
+            "prob_score_gt_60": float((scores > 60.0).mean()) if len(scores) else 0.0,
+            "prob_score_gt_80": float((scores > 80.0).mean()) if len(scores) else 0.0,
             "category_shift_probability": category_shift_probability,
             "base_category": base_category,
             "p95_category": self.categories.assign(p95_score),
@@ -148,3 +171,21 @@ def _object_key(row: dict[str, Any]) -> str:
         if value is not None and not pd.isna(value):
             return str(value)
     return "unknown-object"
+
+
+def _score_sensitivity_index(
+    std_score: Any,
+    base_score: Any,
+    sensitivity_rows: list[dict[str, Any]],
+) -> float:
+    try:
+        std_part = float(std_score or 0.0) / max(abs(float(base_score or 0.0)), 1.0)
+    except (TypeError, ValueError):
+        std_part = 0.0
+    max_delta = 0.0
+    for row in sensitivity_rows:
+        try:
+            max_delta = max(max_delta, abs(float(row.get("absolute_effect") or 0.0)) / 100.0)
+        except (TypeError, ValueError):
+            continue
+    return float(min(max(std_part + max_delta, 0.0), 1.0))

@@ -20,7 +20,7 @@ export function SimulationSummary({ result }: SimulationSummaryProps) {
     <div className="rounded-lg border border-cyan-300/14 bg-slate-950/45 p-4" data-testid="simulation-summary">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="technical-label text-[11px] text-slate-500">Monte Carlo output</p>
+          <p className="technical-label text-[11px] text-slate-500">Score simulation output</p>
           <h3 className="mt-1 font-semibold text-white">{result?.object_key || "No object selected"}</h3>
         </div>
         <RiskCategoryBadge category={result?.p95_category || result?.base_category} />

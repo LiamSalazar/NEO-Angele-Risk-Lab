@@ -1,4 +1,4 @@
-"""Simple one-variable sensitivity checks for the risk score."""
+"""Deterministic one-variable sensitivity checks for the risk score."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import pandas as pd
 
 from neo_ange.risk.scoring import RiskScorer
 from neo_ange.simulation.schemas import PERTURBED_VARIABLES
+from neo_ange.simulation.uncertainty import refresh_derived_features
 from neo_ange.utils.serialization import to_jsonable
 
 
@@ -23,20 +24,22 @@ class SensitivityAnalyzer:
         variables: list[str] | None = None,
         perturbation_pct: float = 0.1,
     ) -> list[dict[str, Any]]:
-        """Return score changes after lowering and raising each variable."""
-        base = row.to_dict() if isinstance(row, pd.Series) else dict(row)
+        """Return score changes after deterministic sweeps of base variables."""
+        raw_base = row.to_dict() if isinstance(row, pd.Series) else dict(row)
+        base = _with_refreshed_derived(raw_base)
         variables = variables or list(PERTURBED_VARIABLES)
         results: list[dict[str, Any]] = []
+        base_score = self.risk_scorer.score_row(base)["risk_score_0_100"]
         for variable in variables:
             if variable not in base:
                 continue
             base_value = _to_float(base.get(variable))
             if base_value is None:
                 continue
-            low_value = base_value * (1.0 - perturbation_pct)
-            high_value = base_value * (1.0 + perturbation_pct)
-            low_row = dict(base, **{variable: low_value})
-            high_row = dict(base, **{variable: high_value})
+            low_value = _swept_value(variable, base_value, -perturbation_pct)
+            high_value = _swept_value(variable, base_value, perturbation_pct)
+            low_row = _with_refreshed_derived(base, variable, low_value)
+            high_row = _with_refreshed_derived(base, variable, high_value)
             low_score = self.risk_scorer.score_row(low_row)["risk_score_0_100"]
             high_score = self.risk_scorer.score_row(high_row)["risk_score_0_100"]
             direction = "mixed_or_low_effect"
@@ -50,10 +53,14 @@ class SensitivityAnalyzer:
                     "base_value": base_value,
                     "low_value": low_value,
                     "high_value": high_value,
+                    "base_score": base_score,
                     "score_low": low_score,
                     "score_high": high_score,
+                    "delta_low": float(low_score) - float(base_score),
+                    "delta_high": float(high_score) - float(base_score),
                     "absolute_effect": abs(float(high_score) - float(low_score)),
                     "direction": direction,
+                    "analysis_mode": "deterministic_sensitivity",
                 }
             )
         results.sort(key=lambda item: item["absolute_effect"], reverse=True)
@@ -77,3 +84,26 @@ def _to_float(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _swept_value(variable: str, base_value: float, perturbation_pct: float) -> float:
+    if variable == "condition_code":
+        return float(round(min(max(base_value + perturbation_pct * 9.0, 0.0), 9.0)))
+    if variable == "sentry_ip":
+        return float(min(max(base_value * (1.0 + perturbation_pct), 0.0), 1.0))
+    if base_value == 0 and perturbation_pct > 0:
+        return 0.01
+    return max(base_value * (1.0 + perturbation_pct), 0.0)
+
+
+def _with_refreshed_derived(
+    base: dict[str, Any],
+    variable: str | None = None,
+    value: float | None = None,
+) -> dict[str, Any]:
+    row = dict(base)
+    if variable is not None:
+        row[variable] = value
+    frame = pd.DataFrame([row])
+    refreshed = refresh_derived_features(frame)
+    return refreshed.iloc[0].to_dict()

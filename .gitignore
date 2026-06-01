@@ -72,6 +72,9 @@ artifacts/graph_exports/*
 *.joblib
 *.pkl
 *.pickle
+*.bak
+*.bak.*
+*.tmp
 
 # Notebooks
 .ipynb_checkpoints/

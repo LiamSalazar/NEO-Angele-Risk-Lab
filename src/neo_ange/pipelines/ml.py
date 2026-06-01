@@ -15,6 +15,7 @@ from neo_ange.manifests.run_manifest import (
 from neo_ange.ml.dataset import MLDatasetLoader
 from neo_ange.ml.experiments import BaselineExperimentRunner
 from neo_ange.ml.leakage import LeakageAuditor
+from neo_ange.ml.validation import MLValidationReportBuilder
 
 
 class MLPipeline:
@@ -113,10 +114,24 @@ class MLPipeline:
         result["outputs"]["manifest_path"] = str(manifest_path)
         return result
 
-    def run_all(self, target: str = "pha") -> dict[str, Any]:
+    def run_all(
+        self,
+        target: str = "pha",
+        min_rows: int = 100,
+        min_positive: int = 5,
+    ) -> dict[str, Any]:
         """Run baseline training and then refresh leakage audit outputs."""
-        baseline_result = self.run_baselines(target=target)
+        baseline_result = self.run_baselines(
+            target=target,
+            min_rows=min_rows,
+            min_positive=min_positive,
+        )
         leakage_result = self.run_leakage_audit(target=target)
+        validation_result = MLValidationReportBuilder(
+            gold_root=self.gold_root,
+            report_dir="reports/model_evidence",
+            random_state=self.random_state,
+        ).build(target=target)
         status = _combine_statuses(baseline_result["status"], leakage_result["status"])
         return {
             "status": status,
@@ -124,15 +139,18 @@ class MLPipeline:
             "outputs": {
                 **baseline_result.get("outputs", {}),
                 **leakage_result.get("outputs", {}),
+                **validation_result.get("outputs", {}),
             },
             "metrics_summary": baseline_result.get("metrics_summary", {}),
             "warnings": [
                 *baseline_result.get("warnings", []),
                 *leakage_result.get("warnings", []),
+                *validation_result.get("warnings", []),
             ],
             "errors": [
                 *baseline_result.get("errors", []),
                 *leakage_result.get("errors", []),
+                *validation_result.get("errors", []),
             ],
         }
 

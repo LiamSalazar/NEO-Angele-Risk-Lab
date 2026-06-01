@@ -32,7 +32,7 @@ export function SimulationControlPanel({
         <div>
           <h2 className="font-semibold text-white">Scenario control</h2>
           <p className="text-sm text-slate-400">
-            Monte Carlo perturbs score inputs; it is not orbital propagation.
+            Score simulation measures uncertainty propagation and sensitivity; it is not orbital propagation.
           </p>
         </div>
       </div>

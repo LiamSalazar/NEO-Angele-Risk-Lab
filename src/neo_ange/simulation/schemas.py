@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-MONTE_CARLO_VERSION = "monte-carlo-v0.1.0"
+MONTE_CARLO_VERSION = "risk-score-uncertainty-v0.2.0"
 
 PERTURBED_VARIABLES = [
-    "diameter",
     "h",
+    "diameter",
+    "albedo",
     "moid",
     "moid_ld",
     "min_close_approach_dist",
@@ -14,6 +15,8 @@ PERTURBED_VARIABLES = [
     "max_close_approach_v_rel",
     "sentry_ip",
     "sentry_ps_cum",
+    "sentry_ps_max",
+    "sentry_ts_max",
     "condition_code",
     "rms",
     "arc_length",

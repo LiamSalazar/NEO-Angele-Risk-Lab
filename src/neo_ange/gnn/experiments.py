@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import networkx as nx
 import pandas as pd
 
 from neo_ange.gnn.baselines import GraphBaselineRunner
@@ -93,6 +94,7 @@ class GNNExperimentRunner:
         graph_result = self.run_graph_experiment(target=target, k=k, min_nodes=min_nodes)
         source_df = self.graph_builder._load_source_dataframe()
         baseline_metrics = self.run_baseline_comparison(source_df, target=target)
+        graph_k_ablation = self.run_graph_k_ablation(target=target, min_nodes=min_nodes)
         gnn_metrics: dict[str, Any] = {}
 
         status = graph_result["status"]
@@ -103,6 +105,7 @@ class GNNExperimentRunner:
                 k=k,
                 target=target,
                 min_nodes=1,
+                write_summary=False,
             )
             dataset = self.dataset_builder.to_torch_geometric_data(graph, target=target)
             if not torch_geometric_available():
@@ -138,8 +141,16 @@ class GNNExperimentRunner:
             "n_nodes": graph_result.get("n_nodes", 0),
             "n_edges": graph_result.get("n_edges", 0),
             "graph_summary": graph_result.get("graph_summary", {}),
+            "graph_k_ablation": graph_k_ablation,
             "baseline_metrics": baseline_metrics,
             "gnn_metrics": gnn_metrics,
+            "transductive_setting": {
+                "is_transductive": True,
+                "warning": (
+                    "GNN evaluation is transductive when test nodes remain in the graph; "
+                    "labels are not used for edges, but message passing shares graph structure."
+                ),
+            },
             "warnings": warnings,
             "artifacts": graph_result.get("outputs", {}),
         }
@@ -152,6 +163,49 @@ class GNNExperimentRunner:
         }
         write_json(result, self.report_dir / "gnn_experiment_results.json")
         return to_jsonable(result)
+
+    def run_graph_k_ablation(
+        self,
+        target: str = "pha",
+        min_nodes: int = 100,
+        k_values: list[int] | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate graph structure statistics over several k values."""
+        rows: list[dict[str, Any]] = []
+        for k_value in k_values or [5, 10, 15, 30]:
+            started = pd.Timestamp.utcnow()
+            graph = self.graph_builder.build_graph_from_risk_scores(
+                k=k_value,
+                target=target,
+                min_nodes=min_nodes,
+                write_summary=False,
+            )
+            nx_graph = graph.to_networkx()
+            runtime_seconds = (pd.Timestamp.utcnow() - started).total_seconds()
+            degrees = [degree for _, degree in nx_graph.degree()]
+            rows.append(
+                {
+                    "k": k_value,
+                    "status": "success" if graph.node_count() else "insufficient_data",
+                    "nodes": graph.node_count(),
+                    "edges": graph.edge_count(),
+                    "density": graph.density(),
+                    "connected_components": (
+                        nx.number_connected_components(nx_graph) if graph.node_count() else 0
+                    ),
+                    "average_degree": float(sum(degrees) / len(degrees)) if degrees else 0.0,
+                    "isolated_nodes": (
+                        int(sum(1 for _node, degree in nx_graph.degree() if degree == 0))
+                        if graph.node_count()
+                        else 0
+                    ),
+                    "runtime_seconds": runtime_seconds,
+                }
+            )
+        return {
+            "status": "success" if any(row["nodes"] for row in rows) else "insufficient_data",
+            "rows": rows,
+        }
 
     def _save_manifest(
         self,

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
@@ -168,3 +169,96 @@ class DataQualityChecker:
         output_path = reports_dir / f"neo_risk_features_quality_{utc_timestamp_compact()}.json"
         output_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
         return output_path
+
+    def write_schema_validation_reports(
+        self,
+        df: DataFrame,
+        expected_columns: list[str],
+        report_dir: str | Path = "reports/data_quality",
+    ) -> dict[str, str]:
+        """Write lightweight schema and missingness reports for portfolio review."""
+        output_dir = ensure_directory(report_dir)
+        row_count = df.count()
+        missing_columns = [column for column in expected_columns if column not in df.columns]
+        summary = {
+            "status": "warn" if missing_columns else "pass",
+            "dataset": "neo_risk_features",
+            "row_count": int(row_count),
+            "column_count": len(df.columns),
+            "expected_column_count": len(expected_columns),
+            "missing_columns": missing_columns,
+            "extra_columns": sorted(set(df.columns) - set(expected_columns)),
+        }
+        schema_path = output_dir / "schema_validation_summary.json"
+        schema_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
+
+        rows: list[dict[str, Any]] = []
+        if row_count:
+            aggregate = df.agg(
+                *[
+                    F.sum(F.when(F.col(column).isNull(), F.lit(1)).otherwise(F.lit(0))).alias(
+                        column
+                    )
+                    for column in df.columns
+                ]
+            ).first()
+            for column in df.columns:
+                missing = int(aggregate[column] or 0)
+                rows.append(
+                    {
+                        "column": column,
+                        "missing_count": missing,
+                        "missing_ratio": missing / row_count,
+                    }
+                )
+        else:
+            rows = [
+                {"column": column, "missing_count": None, "missing_ratio": None}
+                for column in df.columns
+            ]
+        missingness_path = output_dir / "missingness_summary.csv"
+        pd.DataFrame(rows).to_csv(missingness_path, index=False)
+        return {
+            "schema_validation_summary_json": str(schema_path),
+            "missingness_summary_csv": str(missingness_path),
+        }
+
+    def write_api_signature_summary(
+        self,
+        ingestion_events: DataFrame,
+        report_dir: str | Path = "reports/data_quality",
+    ) -> Path:
+        """Write source API signature version coverage from ingestion events."""
+        output_dir = ensure_directory(report_dir)
+        path = output_dir / "api_signature_summary.json"
+        if ingestion_events.rdd.isEmpty():
+            payload = {
+                "status": "missing_data",
+                "source_count": 0,
+                "warnings": ["No ingestion events."],
+            }
+        else:
+            grouped = (
+                ingestion_events.groupBy("source", "api_signature_version")
+                .agg(F.count(F.lit(1)).alias("row_count"))
+                .toPandas()
+            )
+            missing_count = int(
+                grouped["api_signature_version"].isna().sum()
+                if "api_signature_version" in grouped.columns
+                else 0
+            )
+            payload = {
+                "status": "warn" if missing_count else "pass",
+                "source_count": (
+                    int(grouped["source"].nunique()) if "source" in grouped.columns else 0
+                ),
+                "signature_rows": grouped.to_dict(orient="records"),
+                "warnings": (
+                    ["Some source responses are missing signature.version."]
+                    if missing_count
+                    else []
+                ),
+            }
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        return path

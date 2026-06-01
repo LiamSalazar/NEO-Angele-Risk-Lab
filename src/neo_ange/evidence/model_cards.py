@@ -11,6 +11,8 @@ LEAKAGE_HIGH_FEATURE_SETS = {
     "definition_features_only",
     "risk_score_features",
     "graph_node_features",
+    "graph_node_features_without_risk_score",
+    "graph_node_features_with_risk_score",
 }
 LEAKAGE_MEDIUM_FEATURE_SETS = {"sentry_related"}
 

@@ -10,7 +10,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from neo_ange.etl.bronze_reader import BronzeReader, BronzeSourceNotFoundError
-from neo_ange.etl.gold_builder import GoldBuilder
+from neo_ange.etl.gold_builder import GOLD_FEATURE_COLUMNS, GoldBuilder
 from neo_ange.etl.quality import DataQualityChecker
 from neo_ange.etl.silver_transformers import SilverTransformers
 from neo_ange.etl.writers import ParquetTableWriter
@@ -80,6 +80,9 @@ class ETLPipeline:
                 events_df,
                 self.silver_storage.table_path("ingestion_events"),
             )
+            outputs["api_signature_summary"] = str(
+                self.quality.write_api_signature_summary(events_df)
+            )
 
         if source is None:
             for expected in DEFAULT_SOURCES:
@@ -120,6 +123,10 @@ class ETLPipeline:
         try:
             quality_report = self.quality.run_gold_quality_checks(features_df)
             report_path = self.quality.write_quality_report(quality_report, self.gold_root)
+            quality_outputs = self.quality.write_schema_validation_reports(
+                features_df,
+                expected_columns=[name for name, _dtype in GOLD_FEATURE_COLUMNS],
+            )
 
             output = self.writer.write(
                 features_df,
@@ -136,7 +143,7 @@ class ETLPipeline:
 
         return {
             "status": "failed" if errors else ("partial_success" if warnings else "success"),
-            "gold_outputs": {"neo_risk_features": output},
+            "gold_outputs": {"neo_risk_features": output, **quality_outputs},
             "quality_report": str(report_path),
             "quality_status": quality_report["status"],
             "metrics": {

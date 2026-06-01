@@ -1,0 +1,6 @@
+{
+  "brier_score": 0.12042104264614258,
+  "calibration_method": "out_of_fold_probability_bins",
+  "expected_calibration_error": 0.030202971639966863,
+  "status": "success"
+}

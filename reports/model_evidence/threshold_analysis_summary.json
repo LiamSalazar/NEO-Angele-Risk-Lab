@@ -1,0 +1,6 @@
+{
+  "balanced_f1_threshold": 0.4,
+  "high_recall_threshold": 0.1,
+  "low_false_negative_threshold": 0.1,
+  "status": "success"
+}

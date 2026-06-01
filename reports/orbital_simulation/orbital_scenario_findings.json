@@ -3,11 +3,7 @@
     {
       "importance": "medium",
       "related_objects": [
-        "20020425",
-        "20101869",
-        "20152685",
-        "20163067",
-        "20199801"
+        "20089958"
       ],
       "short_text": "These objects show the widest clone spread in approximate orbital simulations.",
       "source_module": "orbital_simulation",
@@ -18,11 +14,7 @@
       "caveat": "Approximate orbital scenario analysis based on available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "20020425",
-        "20163067",
-        "20101869",
-        "20031669",
-        "20199801"
+        "20089958"
       ],
       "short_text": "These objects have the smallest lower-tail simulated minimum distances.",
       "source_module": "orbital_simulation",

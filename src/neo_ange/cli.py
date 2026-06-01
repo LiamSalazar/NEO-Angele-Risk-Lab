@@ -588,30 +588,11 @@ def ml_run_all(
     """Run baseline ML and leakage audit reports."""
 
     def callback() -> dict:
-        pipeline = build_ml_pipeline()
-        baseline_result = pipeline.run_baselines(
+        return build_ml_pipeline().run_all(
             target=target,
             min_rows=min_rows,
             min_positive=min_positive,
         )
-        leakage_result = pipeline.run_leakage_audit(target=target)
-        return {
-            "status": baseline_result["status"],
-            "target": target,
-            "outputs": {
-                **baseline_result.get("outputs", {}),
-                **leakage_result.get("outputs", {}),
-            },
-            "metrics_summary": baseline_result.get("metrics_summary", {}),
-            "warnings": [
-                *baseline_result.get("warnings", []),
-                *leakage_result.get("warnings", []),
-            ],
-            "errors": [
-                *baseline_result.get("errors", []),
-                *leakage_result.get("errors", []),
-            ],
-        }
 
     _run_ml("Full ML pipeline", callback)
 

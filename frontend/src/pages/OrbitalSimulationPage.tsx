@@ -48,7 +48,7 @@ export function OrbitalSimulationPage() {
       <PageHeader
         eyebrow="Orbital simulation"
         title="Approximate Orbital Scenario Analysis"
-        description="Perturb available orbital elements and estimate Earth-object distance bands across a simplified two-body horizon."
+        description="Uses SBDB covariance when available and explicit fallback scenarios otherwise."
         actions={
           <Button
             type="button"
@@ -186,12 +186,17 @@ function NumberField({
 
 function ScenarioCards({ result }: { result: OrbitalSimulationResult | null }) {
   const cards = [
+    ["method", result?.simulation_method, ""],
+    ["covariance", result?.covariance_available ? "available" : "not available", ""],
+    ["valid clones", result?.valid_clone_count, ""],
+    ["invalid clones", result?.invalid_clone_count, ""],
     ["min distance p05", result?.simulated_min_distance_p05_au, "AU"],
     ["min distance p50", result?.simulated_min_distance_p50_au, "AU"],
     ["min distance p95", result?.simulated_min_distance_p95_au, "AU"],
     ["dispersion index", result?.dispersion_index, ""],
-    ["closest day mean", result?.closest_approach_day_mean, "days"],
-    ["scenario", result?.scenario_category, ""]
+    ["CAD error", result?.cad_validation_error_au, "AU"],
+    ["scenario", result?.scenario_category, ""],
+    ["warning", result?.fallback_reason || (result?.possible_resolution_miss ? "time step may miss close approach" : "none"), ""]
   ];
   return (
     <Card>

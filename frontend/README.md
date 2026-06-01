@@ -1,6 +1,6 @@
 # Neo Angele Risk Lab Frontend
 
-Mission-control frontend for the Neo Angele Risk Lab FastAPI backend. It presents a dark space observatory for NEO risk ranking, object profiles, Monte Carlo simulations, ML/leakage status, GNN graph research, domain aggregates and pipeline readiness.
+Mission-control frontend for the Neo Angele Risk Lab FastAPI backend. It presents a dark space observatory for NEO risk ranking, object profiles, score uncertainty propagation, ML/leakage status, GNN graph research, domain aggregates and pipeline readiness.
 
 ## Stack
 
@@ -58,7 +58,7 @@ The frontend consumes local API endpoints directly through `VITE_API_BASE_URL`. 
 - `/` Mission Control
 - `/ranking` Risk Ranking
 - `/objects` and `/objects/:objectKey` Asteroid Profile/Search
-- `/monte-carlo` Monte Carlo Lab
+- `/monte-carlo` Score Simulation Lab
 - `/ml-lab` ML & Leakage Lab
 - `/gnn` GNN Research Lab
 - `/domain` Domain Explorer

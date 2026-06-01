@@ -4,14 +4,17 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "1 objects have saved orbital perturbation results.",
+      "short_text": "50 objects have saved orbital perturbation results.",
       "source_module": "orbital_simulation",
       "technical_basis": "Rows are read from orbital_monte_carlo_results.parquet.",
       "title": "Approximate orbital scenarios are available for priority objects",
       "values": {
-        "rows": 1,
+        "rows": 50,
         "scenario_categories": {
-          "uncertain": 1
+          "needs_review": 8,
+          "stable": 16,
+          "uncertain": 5,
+          "variable": 21
         }
       }
     },
@@ -19,7 +22,11 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "50012416"
+        "20020425",
+        "20101869",
+        "20152685",
+        "20163067",
+        "20199801"
       ],
       "short_text": "Objects with the highest dispersion index deserve closer review in the orbital simulation view.",
       "source_module": "orbital_simulation",
@@ -27,7 +34,10 @@
       "title": "Orbital uncertainty varies across the priority set",
       "values": {
         "scenario_categories": {
-          "uncertain": 1
+          "needs_review": 8,
+          "stable": 16,
+          "uncertain": 5,
+          "variable": 21
         }
       }
     },
@@ -35,14 +45,18 @@
       "caveat": "The orbital simulation is approximate and uses available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "50012416"
+        "20020425",
+        "20163067",
+        "20101869",
+        "20031669",
+        "20199801"
       ],
       "short_text": "The lowest simulated p05 minimum-distance rows are useful as an inspection queue.",
       "source_module": "orbital_simulation",
       "technical_basis": "Objects are ranked by simulated_min_distance_p05_au.",
       "title": "Small p05 distance scenarios identify objects worth inspection",
       "values": {
-        "lowest_p05_au": 0.409901118813632
+        "lowest_p05_au": 0.020102261677992648
       }
     }
   ],

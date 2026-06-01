@@ -188,6 +188,13 @@ export interface SimulationResult extends ApiRecord {
   base_category?: RiskCategory;
   p95_category?: RiskCategory;
   simulated_at_utc?: string;
+  simulation_method?: string;
+  uncertainty_source?: string;
+  is_formal_uncertainty?: boolean;
+  fallback_used?: boolean;
+  fallback_count?: number;
+  score_sensitivity_index?: number;
+  most_influential_variables?: ApiRecord[] | string;
 }
 
 export interface OrbitalSimulationResult extends ApiRecord {
@@ -197,6 +204,7 @@ export interface OrbitalSimulationResult extends ApiRecord {
   time_step_days?: number;
   baseline_min_distance_au?: number | null;
   simulated_min_distance_mean_au?: number | null;
+  simulated_min_distance_std_au?: number | null;
   simulated_min_distance_p05_au?: number | null;
   simulated_min_distance_p50_au?: number | null;
   simulated_min_distance_p95_au?: number | null;
@@ -206,6 +214,19 @@ export interface OrbitalSimulationResult extends ApiRecord {
   dispersion_index?: number | null;
   orbital_uncertainty_score?: number;
   scenario_category?: string;
+  valid_clone_count?: number | null;
+  invalid_clone_count?: number | null;
+  covariance_available?: boolean;
+  simulation_method?: string;
+  covariance_dimension?: number | null;
+  covariance_epoch?: string | null;
+  covariance_method?: string | null;
+  fallback_reason?: string | null;
+  uncertainty_quality?: string | null;
+  propagator?: string;
+  cad_validation_available?: boolean;
+  cad_validation_error_au?: number | null;
+  possible_resolution_miss?: boolean;
   interpretation?: string;
   warnings?: string[];
   distance_trace?: {

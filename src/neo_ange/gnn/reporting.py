@@ -21,14 +21,82 @@ class GNNReportWriter:
         self.report_dir.mkdir(parents=True, exist_ok=True)
         json_path = write_json(result, self.report_dir / "gnn_experiment_results.json")
         metrics_path = self.report_dir / "gnn_metrics.csv"
-        pd.DataFrame(_metric_rows(result)).to_csv(metrics_path, index=False)
+        metric_rows = _metric_rows(result)
+        pd.DataFrame(metric_rows).to_csv(metrics_path, index=False)
+        k_ablation_csv, k_ablation_json, k_ablation_md = self._write_k_ablation(
+            result.get("graph_k_ablation", {})
+        )
+        benchmark_csv, benchmark_md = self._write_benchmark(metric_rows)
         summary_path = self.report_dir / "gnn_summary.md"
         summary_path.write_text(render_summary(result), encoding="utf-8")
         return {
             "gnn_experiment_results": str(json_path),
             "gnn_metrics": str(metrics_path),
             "gnn_summary": str(summary_path),
+            "graph_k_ablation_csv": str(k_ablation_csv),
+            "graph_k_ablation_summary_json": str(k_ablation_json),
+            "graph_k_ablation_summary_markdown": str(k_ablation_md),
+            "gnn_vs_tabular_benchmark_csv": str(benchmark_csv),
+            "gnn_vs_tabular_benchmark_summary_markdown": str(benchmark_md),
         }
+
+    def _write_k_ablation(self, payload: dict[str, Any]) -> tuple[Path, Path, Path]:
+        rows = payload.get("rows", []) if isinstance(payload, dict) else []
+        csv_path = self.report_dir / "graph_k_ablation.csv"
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
+        summary = {
+            "status": (
+                payload.get("status", "missing_data")
+                if isinstance(payload, dict)
+                else "missing_data"
+            ),
+            "k_values": [row.get("k") for row in rows],
+            "max_edges": max((row.get("edges", 0) for row in rows), default=0),
+            "min_connected_components": min(
+                (row.get("connected_components", 0) for row in rows),
+                default=0,
+            ),
+            "interpretation": (
+                "k controls graph density. Higher k can improve connectivity but may blur local "
+                "orbital neighborhoods."
+            ),
+        }
+        json_path = write_json(summary, self.report_dir / "graph_k_ablation_summary.json")
+        md_path = self.report_dir / "graph_k_ablation_summary.md"
+        md_path.write_text(_render_k_ablation_summary(summary, rows), encoding="utf-8")
+        return csv_path, json_path, md_path
+
+    def _write_benchmark(self, rows: list[dict[str, Any]]) -> tuple[Path, Path]:
+        benchmark_rows = []
+        best_tabular = _best_f1(row for row in rows if row.get("family") == "baseline")
+        best_gnn = _best_f1(row for row in rows if row.get("family") == "gnn")
+        for row in rows:
+            feature_set = str(row.get("feature_set"))
+            benchmark_rows.append(
+                {
+                    **row,
+                    "leakage_sensitive": feature_set
+                    in {
+                        "graph_node_features",
+                        "graph_node_features_without_risk_score",
+                        "graph_node_features_with_risk_score",
+                    },
+                    "transductive_setting": row.get("family") == "gnn",
+                    "improves_over_best_tabular": (
+                        bool(
+                            row.get("family") == "gnn"
+                            and best_tabular is not None
+                            and row.get("f1") is not None
+                            and float(row["f1"]) > best_tabular
+                        )
+                    ),
+                }
+            )
+        csv_path = self.report_dir / "gnn_vs_tabular_benchmark.csv"
+        pd.DataFrame(benchmark_rows).to_csv(csv_path, index=False)
+        md_path = self.report_dir / "gnn_vs_tabular_benchmark_summary.md"
+        md_path.write_text(_render_benchmark_summary(best_tabular, best_gnn), encoding="utf-8")
+        return csv_path, md_path
 
 
 def render_summary(result: dict[str, Any]) -> str:
@@ -92,6 +160,8 @@ def render_summary(result: dict[str, Any]) -> str:
             "- The target label is not used as a node feature or similarity feature.",
             "- Definition-adjacent PHA features are isolated in baseline feature sets "
             "for honest comparison.",
+            "- The GNN setting is transductive when test nodes remain in the graph; it is not "
+            "claimed as inductive generalization.",
             "",
             "## Limitations",
             "",
@@ -181,6 +251,64 @@ def _best_f1_from_baselines(baseline: dict[str, Any]) -> float | None:
             value = payload.get("metrics", {}).get("f1")
             if value is not None:
                 values.append(float(value))
+    return max(values) if values else None
+
+
+def _render_k_ablation_summary(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
+    lines = [
+        "# Graph k Ablation Summary",
+        "",
+        summary.get("interpretation", ""),
+        "",
+    ]
+    for row in rows:
+        lines.append(
+            f"- k={row.get('k')}: nodes={row.get('nodes')}, edges={row.get('edges')}, "
+            f"density={row.get('density')}, components={row.get('connected_components')}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_benchmark_summary(best_tabular: float | None, best_gnn: float | None) -> str:
+    lines = [
+        "# GNN vs Tabular Benchmark",
+        "",
+        "Graph models are experimental secondary evidence. The Risk Priority Score remains "
+        "the ranking source.",
+        "",
+        f"- Best tabular F1: {best_tabular}",
+        f"- Best GNN F1: {best_gnn}",
+        "",
+    ]
+    if best_gnn is None:
+        lines.append("No comparable GNN metric was produced in this run.")
+    elif best_tabular is None:
+        lines.append("No comparable tabular metric was produced, so no superiority claim is made.")
+    elif best_gnn > best_tabular:
+        lines.append("Best GNN F1 exceeded best tabular F1 in this run.")
+    else:
+        lines.append("Best GNN F1 did not exceed best tabular F1 in this run.")
+    lines.extend(
+        [
+            "",
+            "The setting is transductive if test nodes are present in the graph; labels must not "
+            "be used to construct edges.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _best_f1(rows: Any) -> float | None:
+    values: list[float] = []
+    for row in rows:
+        value = row.get("f1")
+        if value is not None:
+            try:
+                values.append(float(value))
+            except (TypeError, ValueError):
+                continue
     return max(values) if values else None
 
 

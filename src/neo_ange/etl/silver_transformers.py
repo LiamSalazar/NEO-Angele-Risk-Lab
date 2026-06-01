@@ -53,6 +53,15 @@ SBDB_OBJECT_COLUMNS: list[tuple[str, T.DataType]] = [
     ("tp", DOUBLE),
     ("per", DOUBLE),
     ("ad", DOUBLE),
+    ("covariance_available", BOOLEAN),
+    ("covariance_epoch", STRING),
+    ("covariance_labels", STRING),
+    ("covariance_matrix_json", STRING),
+    ("covariance_form", STRING),
+    ("covariance_units", STRING),
+    ("covariance_dimension", INTEGER),
+    ("covariance_method", STRING),
+    ("has_valid_covariance", BOOLEAN),
     ("raw_json", STRING),
 ]
 
@@ -141,6 +150,9 @@ class SilverTransformers:
             _col(bronze_df, "data.orbit_defs.moid_ld", DOUBLE),
             F.when(moid > 0, moid * F.lit(389.174)),
         )
+        covariance_json = _covariance_json(bronze_df)
+        covariance_labels = _covariance_labels(bronze_df)
+        covariance_dimension = _covariance_dimension(bronze_df)
 
         selected = bronze_df.select(
             F.coalesce(
@@ -217,6 +229,30 @@ class SilverTransformers:
             _orbital_element(bronze_df, "tp").alias("tp"),
             _orbital_element(bronze_df, "per").alias("per"),
             _orbital_element(bronze_df, "ad").alias("ad"),
+            (covariance_json.isNotNull() & (F.length(F.trim(covariance_json)) > F.lit(2))).alias(
+                "covariance_available"
+            ),
+            F.coalesce(
+                _col(bronze_df, "data.orbit.covariance.epoch"),
+                _col(bronze_df, "data.orbit.cov.epoch"),
+            ).alias("covariance_epoch"),
+            covariance_labels.alias("covariance_labels"),
+            covariance_json.alias("covariance_matrix_json"),
+            F.coalesce(
+                _col(bronze_df, "data.orbit.covariance.form"),
+                _col(bronze_df, "data.orbit.cov.form"),
+            ).alias("covariance_form"),
+            F.coalesce(
+                _json_col(bronze_df, "data.orbit.covariance.units"),
+                _json_col(bronze_df, "data.orbit.cov.units"),
+            ).alias("covariance_units"),
+            covariance_dimension.alias("covariance_dimension"),
+            F.when(covariance_json.isNotNull(), F.lit("sbdb_object_api_covariance"))
+            .otherwise(F.lit(None).cast(STRING))
+            .alias("covariance_method"),
+            (covariance_json.isNotNull() & (covariance_dimension > F.lit(0))).alias(
+                "has_valid_covariance"
+            ),
             _json_col(bronze_df, "data").alias("raw_json"),
         )
         return _cast_to_schema(selected, SBDB_OBJECT_COLUMNS)
@@ -440,3 +476,39 @@ def _orbital_element(df: DataFrame, name: str) -> Column:
         _array_value_by_name(df, "data.orbit.elements", name, DOUBLE),
         _col(df, f"data.orbit_defs.{name}", DOUBLE),
     )
+
+
+def _covariance_json(df: DataFrame) -> Column:
+    return F.coalesce(
+        _json_col(df, "data.orbit.covariance.data"),
+        _json_col(df, "data.orbit.cov.data"),
+        _json_col(df, "data.orbit.covariance.matrix"),
+        _json_col(df, "data.orbit.cov.matrix"),
+        _json_col(df, "data.orbit.covariance"),
+        _json_col(df, "data.orbit.cov"),
+    )
+
+
+def _covariance_labels(df: DataFrame) -> Column:
+    return F.coalesce(
+        _json_col(df, "data.orbit.covariance.labels"),
+        _json_col(df, "data.orbit.cov.labels"),
+        _json_col(df, "data.orbit.covariance.elements"),
+        _json_col(df, "data.orbit.cov.elements"),
+    )
+
+
+def _covariance_dimension(df: DataFrame) -> Column:
+    candidates: list[Column] = []
+    for path in (
+        "data.orbit.covariance.data",
+        "data.orbit.cov.data",
+        "data.orbit.covariance.matrix",
+        "data.orbit.cov.matrix",
+    ):
+        field_type = _field_type(df, path)
+        if isinstance(field_type, T.ArrayType):
+            candidates.append(F.size(F.col(path)).cast(INTEGER))
+    if not candidates:
+        return F.lit(None).cast(INTEGER)
+    return F.coalesce(*candidates)

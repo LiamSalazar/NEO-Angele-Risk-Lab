@@ -1,0 +1,2 @@
+object_key,cad_validation_available,baseline_min_distance_au,cad_validation_error_au,simulation_method
+20089958,False,0.47490568744472855,,heuristic_fallback

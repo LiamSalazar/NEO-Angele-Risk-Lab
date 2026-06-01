@@ -40,7 +40,8 @@ class GraphBaselineRunner:
         feature_sets = feature_sets or [
             "no_definition_features",
             "orbital_only",
-            "graph_node_features",
+            "graph_node_features_without_risk_score",
+            "graph_node_features_with_risk_score",
         ]
         results: dict[str, Any] = {}
         for feature_set in feature_sets:
@@ -269,11 +270,19 @@ class GraphBaselineRunner:
         feature_set: str,
         target: str,
     ) -> tuple[list[str], list[str]]:
-        if feature_set == "graph_node_features":
+        if feature_set in {"graph_node_features", "graph_node_features_with_risk_score"}:
             features = [
                 feature
                 for feature in GRAPH_NODE_FEATURES
                 if feature in df.columns and feature not in FORBIDDEN_GRAPH_FEATURES | {target}
+            ]
+            return features, ["Feature set includes risk_score_0_100 and is leakage_sensitive."]
+        if feature_set == "graph_node_features_without_risk_score":
+            features = [
+                feature
+                for feature in GRAPH_NODE_FEATURES
+                if feature in df.columns
+                and feature not in FORBIDDEN_GRAPH_FEATURES | {target, "risk_score_0_100"}
             ]
             return features, []
         try:

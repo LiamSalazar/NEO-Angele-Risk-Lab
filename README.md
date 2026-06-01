@@ -2,7 +2,7 @@
 
 Neo Angele Risk Lab es un laboratorio de ingenieria de datos, analitica de riesgo experimental y visualizacion para estudiar objetos cercanos a la Tierra, o NEOs, usando datos publicos de NASA/JPL.
 
-El proyecto descarga datos de APIs publicas, los conserva en una capa bronze, los normaliza con PySpark hacia silver, construye un dataset gold, calcula un Risk Priority Score explicable, genera rankings, ejecuta simulaciones Monte Carlo, construye un grafo orbital, produce evidencia secundaria con modelos de machine learning y expone resultados mediante FastAPI y un frontend React.
+El proyecto descarga datos de APIs publicas, los conserva en una capa bronze, los normaliza con PySpark hacia silver, construye un dataset gold, calcula un Risk Priority Score explicable, genera rankings, ejecuta propagacion de incertidumbre y sensibilidad del score, construye un grafo orbital, produce evidencia secundaria con modelos de machine learning y expone resultados mediante FastAPI y un frontend React.
 
 ## Que problema atiende
 
@@ -34,7 +34,7 @@ Este checkout contiene las siguientes capacidades implementadas:
 - Dataset gold `data/gold/neo_risk_features`.
 - Risk Priority Score y ranking en `data/gold/risk_scores`.
 - Explicaciones por objeto y categorias `low`, `moderate`, `elevated`, `high`, `critical`.
-- Score Simulation mediante Monte Carlo tabular.
+- Score Simulation mediante propagacion de incertidumbre y sensibilidad tabular.
 - Orbital Simulation mediante clones orbitales aproximados.
 - Grafo orbital kNN y laboratorio GNN.
 - Evidencia de modelos, model cards, predicciones eval/full y desacuerdos.
@@ -60,7 +60,7 @@ flowchart LR
         Ingestion["IngestionPipeline"]
         ETL["Spark ETL"]
         Risk["RiskScorer"]
-        ScoreMC["Score Monte Carlo"]
+        ScoreMC["Score Uncertainty"]
         OrbitalMC["Orbital Simulation"]
         ML["ML evidence"]
         GNN["Orbital graph and GNN"]
@@ -131,7 +131,7 @@ No se requieren llaves privadas de API.
 | `src/neo_ange/services` | Resolucion y escritura de capas bronze, silver y gold. |
 | `src/neo_ange/etl` | Lectura bronze, transformaciones silver, gold builder, calidad y writers. |
 | `src/neo_ange/risk` | Score, categorias, ranking, explicaciones y reportes. |
-| `src/neo_ange/simulation` | Monte Carlo del score. |
+| `src/neo_ange/simulation` | Propagacion de incertidumbre y sensibilidad del score. |
 | `src/neo_ange/orbital_simulation` | Simulacion orbital aproximada por clones. |
 | `src/neo_ange/ml` | Feature sets, baselines, metricas y auditoria de leakage. |
 | `src/neo_ange/evidence` | Model evidence, model cards, predicciones y desacuerdos. |
@@ -349,7 +349,7 @@ Endpoints principales:
 | `GET /rankings/summary` | Estadisticas del ranking. |
 | `POST /risk/build` | Recalcula scores. |
 | `GET /risk/explain/{object_key}` | Explicacion de score por objeto. |
-| `POST /simulations/batch` | Score Monte Carlo por lote. |
+| `POST /simulations/batch` | Propagacion de incertidumbre del score por lote. |
 | `GET /orbital-simulation/status` | Estado de simulacion orbital. |
 | `POST /orbital-simulation/batch` | Simulacion orbital por lote. |
 | `GET /gnn/status` | Estado de grafo y dependencias GNN. |

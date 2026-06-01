@@ -17,6 +17,7 @@ def summarize_orbital_scenarios(
     if len(min_distances) == 0:
         return {
             "mean": None,
+            "std": None,
             "p05": None,
             "p50": None,
             "p95": None,
@@ -36,6 +37,7 @@ def summarize_orbital_scenarios(
     )
     return {
         "mean": float(np.mean(min_distances)),
+        "std": float(np.std(min_distances, ddof=0)),
         "p05": p05,
         "p50": p50,
         "p95": p95,

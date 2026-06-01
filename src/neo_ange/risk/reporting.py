@@ -9,6 +9,7 @@ import pandas as pd
 
 from neo_ange.risk.ranking import RiskRankingService
 from neo_ange.risk.schemas import DEFAULT_COMPONENT_WEIGHTS, RISK_SCORE_VERSION
+from neo_ange.risk.validation import RiskValidationReporter
 from neo_ange.utils.serialization import write_json
 
 
@@ -46,11 +47,13 @@ class RiskReportWriter:
         self.ranking.rank(scored_df, limit=top_limit).to_csv(top_path, index=False)
 
         methodology_path = self.write_methodology(weights or DEFAULT_COMPONENT_WEIGHTS)
+        validation_outputs = RiskValidationReporter(self.report_dir).write_all(scored_df)
         return {
             "risk_scores_parquet": str(self.score_path),
             "risk_scores_summary_json": str(summary_path),
             "top_risk_objects_csv": str(top_path),
             "risk_methodology_md": str(methodology_path),
+            **validation_outputs,
         }
 
     def write_methodology(self, weights: dict[str, float] | None = None) -> Path:
@@ -99,8 +102,8 @@ class RiskReportWriter:
             "orbital propagation.",
             "- Sparse rows can still be scored, but explanations flag limited data coverage.",
             "- Sentry absence is treated as a low component, not proof of no risk.",
-            "- Future Monte Carlo reports perturb score inputs to estimate score stability, "
-            "not impact probability.",
+            "- Score uncertainty reports propagate base input uncertainty and deterministic "
+            "sensitivity; they do not estimate impact probability.",
             "",
             f"Score version: `{RISK_SCORE_VERSION}`",
             "",

@@ -34,25 +34,37 @@ class OrbitalGraphBuilder:
         k: int = 10,
         target: str = "pha",
         min_nodes: int = 100,
+        write_summary: bool = True,
     ) -> OrbitalGraph:
         """Build a kNN orbital graph from risk scores, or report insufficient data."""
         df = self._load_source_dataframe()
         if len(df) < min_nodes:
             graph = OrbitalGraph(nodes=[], edges=[], graph_version=GRAPH_VERSION)
-            self._write_graph_summary(
-                graph,
-                source_df=df,
-                target=target,
-                status="insufficient_data",
-                warnings=[
-                    f"Need at least {min_nodes} nodes for GNN graph construction; found {len(df)}."
-                ],
-            )
+            if write_summary:
+                self._write_graph_summary(
+                    graph,
+                    source_df=df,
+                    target=target,
+                    status="insufficient_data",
+                    warnings=[
+                        (
+                            f"Need at least {min_nodes} nodes for GNN graph construction; "
+                            f"found {len(df)}."
+                        )
+                    ],
+                )
             return graph
         nodes = self._build_nodes(df, target=target)
         edges = self.similarity.compute_knn_edges(df, k=k)
         graph = OrbitalGraph(nodes=nodes, edges=edges, graph_version=GRAPH_VERSION)
-        self._write_graph_summary(graph, source_df=df, target=target, status="success", warnings=[])
+        if write_summary:
+            self._write_graph_summary(
+                graph,
+                source_df=df,
+                target=target,
+                status="success",
+                warnings=[],
+            )
         return graph
 
     def build_networkx_graph(self, graph: OrbitalGraph) -> nx.Graph:

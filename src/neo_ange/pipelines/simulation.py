@@ -98,7 +98,7 @@ class SimulationPipeline:
             n_simulations=n_simulations,
             random_state=random_state,
         )
-        outputs = self.report_writer.save_outputs([summary])
+        outputs = self.report_writer.save_outputs([summary], source_rows=pd.DataFrame([row]))
         metrics = {"object_key": object_key, **summary}
         result = self._result("success", outputs, metrics, warnings, errors)
         manifest_path = self._save_manifest(
@@ -144,7 +144,12 @@ class SimulationPipeline:
         )
         warnings.extend(batch.get("warnings", []))
         results = batch.get("results", [])
-        outputs = self.report_writer.save_outputs(results)
+        source_rows = (
+            df.sort_values("risk_score_0_100", ascending=False).head(limit)
+            if "risk_score_0_100" in df.columns
+            else df.head(limit)
+        )
+        outputs = self.report_writer.save_outputs(results, source_rows=source_rows)
         metrics = batch.get("summary", {})
         status = "partial_success" if warnings else "success"
         result = self._result(status, outputs, metrics, warnings, errors)
@@ -178,11 +183,15 @@ class SimulationPipeline:
             "risk_scores_available": not self.load_risk_scores().empty,
             "simulation_results_available": self.simulation_results_path.exists(),
             "simulation_results_path": str(self.simulation_results_path),
+            "score_uncertainty_results_path": str(
+                self.simulation_output_dir / "score_uncertainty_results.parquet"
+            ),
             "row_count": row_count,
             "latest_reports": [str(path) for path in latest_reports],
             "latest_manifests": latest_manifests,
             "latest_manifest_status": latest_manifest.get("status") if latest_manifest else None,
             "simulation_version": MONTE_CARLO_VERSION,
+            "simulation_method": "uncertainty_propagation",
         }
 
     def latest_for_object(self, object_key: str) -> dict[str, Any] | None:
@@ -201,7 +210,7 @@ class SimulationPipeline:
 
     def methodology(self) -> dict[str, Any]:
         """Return methodology report path and content."""
-        path = self.report_dir / "monte_carlo_methodology.md"
+        path = self.report_dir / "score_simulation_methodology.md"
         if not path.exists():
             path = self.report_writer.write_methodology()
         return {"path": str(path), "content": path.read_text(encoding="utf-8")}

@@ -224,6 +224,8 @@ class OrbitalSimulationService:
             ],
             "latest_manifest_status": latest_manifest.get("status") if latest_manifest else None,
             "simulation_version": ORBITAL_SIMULATION_VERSION,
+            "simulation_method": "covariance_based_or_heuristic_fallback",
+            "covariance_status_path": str(self.report_dir / "orbital_covariance_status.json"),
         }
 
     def _with_manifest(

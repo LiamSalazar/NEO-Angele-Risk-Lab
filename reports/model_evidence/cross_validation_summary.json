@@ -1,0 +1,33 @@
+{
+  "feature_set": "orbital_only",
+  "folds": 5,
+  "leakage_notes": {
+    "definition_features_only": "leakage_sensitive",
+    "full_features": "leakage_sensitive",
+    "graph_node_features_with_risk_score": "leakage_sensitive",
+    "orbital_only": "low_leakage_risk"
+  },
+  "metrics": {
+    "accuracy_mean": 0.817,
+    "accuracy_std": null,
+    "brier_score": 0.12042104264614258,
+    "f1_mean": 0.6617375231053605,
+    "f1_std": null,
+    "false_negative_rate_mean": 0.3607142857142857,
+    "false_negative_rate_std": null,
+    "folds": 5,
+    "n_samples": 1000,
+    "pr_auc_mean": 0.7421242477334244,
+    "pr_auc_std": null,
+    "precision_mean": 0.685823754789272,
+    "precision_std": null,
+    "recall_mean": 0.6392857142857142,
+    "recall_std": null,
+    "roc_auc_mean": 0.8904216269841271,
+    "roc_auc_std": null
+  },
+  "model_name": "random_forest",
+  "recommended_use": "secondary evidence only",
+  "status": "success",
+  "target": "pha"
+}

@@ -34,7 +34,11 @@ class SBDBObjectClient(BaseJPLClient):
             params["neo"] = 1
         return self.get(params)
 
-    def get_rich_object(self, designation_or_name: str) -> dict[str, Any]:
+    def get_rich_object(
+        self,
+        designation_or_name: str,
+        covariance_format: str | None = "mat",
+    ) -> dict[str, Any]:
         params = {
             "sstr": designation_or_name,
             "phys-par": 1,
@@ -47,6 +51,11 @@ class SBDBObjectClient(BaseJPLClient):
             "orbit-defs": 1,
             "anc-data": 1,
         }
+        if covariance_format is not None:
+            if covariance_format not in VALID_COVARIANCE_FORMATS:
+                allowed = ", ".join(sorted(VALID_COVARIANCE_FORMATS))
+                raise ValueError(f"covariance_format must be one of: {allowed}")
+            params["cov"] = covariance_format
         return self.get(params)
 
     def get_with_covariance(

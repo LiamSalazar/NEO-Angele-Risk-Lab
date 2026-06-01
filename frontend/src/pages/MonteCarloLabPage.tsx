@@ -42,7 +42,7 @@ export function MonteCarloLabPage() {
       <PageHeader
         eyebrow="Score simulation"
         title="Score Stability Simulation"
-        description="Perturb Risk Priority Score inputs to estimate stability bands, category-shift probability and threshold sensitivity."
+        description="Measures uncertainty propagation and sensitivity of the Risk Priority Score."
         actions={
           <Button
             type="button"
@@ -105,18 +105,19 @@ export function MonteCarloLabPage() {
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>Score Simulation Availability</CardTitle>
-                <CardDescription>Saved rows and current status for score-stability results.</CardDescription>
+                <CardTitle>Method & Sensitivity</CardTitle>
+                <CardDescription>Uncertainty propagation source and fallback status.</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3">
                 <StatusLine label="status" value={String((simulationStatus.data as Record<string, unknown> | undefined)?.status ?? "unknown")} />
                 <StatusLine label="saved rows" value={String((simulationStatus.data as Record<string, unknown> | undefined)?.row_count ?? 0)} />
-                <StatusLine
-                  label="interpretation"
-                  value="Stable categories support ranking confidence; high shift probabilities mark objects for review."
-                />
+                <StatusLine label="method" value={String(result?.simulation_method ?? "pending")} />
+                <StatusLine label="uncertainty source" value={String(result?.uncertainty_source ?? "pending")} />
+                <StatusLine label="fallback used" value={result?.fallback_used ? "yes" : "no"} />
+                <StatusLine label="sensitivity index" value={String(result?.score_sensitivity_index ?? "pending")} />
+                <StatusLine label="top variables" value={formatInfluentialVariables(result?.most_influential_variables)} />
               </div>
             </CardContent>
           </Card>
@@ -124,6 +125,24 @@ export function MonteCarloLabPage() {
       </section>
     </div>
   );
+}
+
+function formatInfluentialVariables(value: unknown) {
+  if (!value) {
+    return "pending";
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as Array<Record<string, unknown>>;
+      return parsed.map((item) => item.variable).filter(Boolean).slice(0, 4).join(", ") || "pending";
+    } catch {
+      return value;
+    }
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => (item as Record<string, unknown>).variable).filter(Boolean).slice(0, 4).join(", ") || "pending";
+  }
+  return "pending";
 }
 
 function StatusLine({ label, value }: { label: string; value: string }) {
