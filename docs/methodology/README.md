@@ -1,30 +1,30 @@
 # Neo Angele Risk Lab methodology
 
-Esta carpeta contiene la memoria tecnica/metodologica del proyecto.
+This folder contains the project's technical and methodological report.
 
-## Archivos
+## Files
 
-- `neo_ange_methodology.tex`: documento LaTeX principal.
-- `build_pdf.md`: instrucciones para compilar a PDF.
+- `neo_ange_methodology.tex`: main LaTeX document.
+- `build_pdf.md`: instructions for compiling the PDF.
 
-## Compilacion rapida
+## Quick Build
 
 ```bash
 cd docs/methodology
 pdflatex neo_ange_methodology.tex
 ```
 
-Si tu instalacion de LaTeX requiere varias pasadas para actualizar indice y referencias:
+If your LaTeX installation requires multiple passes to update the index and references:
 
 ```bash
 pdflatex neo_ange_methodology.tex
 pdflatex neo_ange_methodology.tex
 ```
 
-Desde la raiz del repositorio tambien puedes usar:
+From the repository root, you can also use:
 
 ```bash
 bash scripts/build_methodology_pdf.sh
 ```
 
-El documento no depende de imagenes externas. Los diagramas Mermaid se conservan como archivos `.mmd` en `docs/diagrams` y se describen dentro del documento.
+The document does not depend on external images. Mermaid diagrams are kept as `.mmd` files in `docs/diagrams` and are described inside the document.

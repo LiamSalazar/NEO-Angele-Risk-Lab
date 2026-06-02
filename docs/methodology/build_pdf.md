@@ -1,24 +1,24 @@
-# Construir el PDF metodologico
+# Build the Methodology PDF
 
-El archivo principal es:
+The main file is:
 
 ```text
 docs/methodology/neo_ange_methodology.tex
 ```
 
-## Requisitos
+## Requirements
 
-Instala una distribucion LaTeX compatible con `pdflatex`, `xelatex` o `lualatex`.
+Install a LaTeX distribution compatible with `pdflatex`, `xelatex`, or `lualatex`.
 
-Opciones comunes:
+Common options:
 
 - Linux: TeX Live.
-- macOS: MacTeX o BasicTeX.
-- Windows: MiKTeX o TeX Live.
+- macOS: MacTeX or BasicTeX.
+- Windows: MiKTeX or TeX Live.
 
-## Compilar con pdflatex
+## Compile with pdflatex
 
-Desde la raiz del repositorio:
+From the repository root:
 
 ```bash
 cd docs/methodology
@@ -26,26 +26,26 @@ pdflatex neo_ange_methodology.tex
 pdflatex neo_ange_methodology.tex
 ```
 
-La segunda pasada ayuda a actualizar indice y referencias.
+The second pass helps update the index and references.
 
-## Compilar con el script
+## Compile with the Script
 
-Desde la raiz del repositorio:
+From the repository root:
 
 ```bash
 bash scripts/build_methodology_pdf.sh
 ```
 
-El script intenta usar, en este orden:
+The script tries to use these tools in order:
 
 1. `latexmk`
 2. `pdflatex`
 3. `xelatex`
 4. `lualatex`
 
-Si ninguno esta instalado, mostrara un mensaje y no generara PDF.
+If none of them is installed, it will show a message and will not generate a PDF.
 
-## Salida esperada
+## Expected Output
 
 ```text
 docs/methodology/neo_ange_methodology.pdf
@@ -53,10 +53,10 @@ docs/methodology/neo_ange_methodology.pdf
 
 ## Diagramas Mermaid
 
-Los diagramas Mermaid estan en:
+Mermaid diagrams are in:
 
 ```text
 docs/diagrams/*.mmd
 ```
 
-LaTeX no los compila directamente en este proyecto. Si quieres convertirlos a imagenes, puedes usar Mermaid CLI y luego incluir las imagenes en el `.tex`.
+LaTeX does not compile them directly in this project. To convert them to images, use Mermaid CLI and then include the images in the `.tex` file.

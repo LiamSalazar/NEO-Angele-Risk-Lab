@@ -12,7 +12,7 @@ The frontend is designed as a technical space-observatory console for Near-Earth
 - Monte Carlo Lab: object simulation controls and score-stability summary.
 - ML & Leakage Lab: ML status from manifests, target distribution, baseline/leakage placeholders when metrics are insufficient.
 - GNN Research Lab: graph status, graph preview, metrics and neighbor explorer.
-- Domain Explorer: POO entity overview and domain aggregate JSON.
+- Domain Explorer: OOP entity overview and domain aggregate JSON.
 - Pipeline Monitor: Bronze/Silver/Gold, readiness, coverage, manifests and next commands.
 - Methodology: source framing, score limitations, Monte Carlo limits, leakage and GNN caveats.
 

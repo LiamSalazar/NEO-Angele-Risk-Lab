@@ -1,51 +1,51 @@
 # Neo Angele Risk Lab
 
-Neo Angele Risk Lab es un laboratorio de ingenieria de datos, analitica de riesgo experimental y visualizacion para estudiar objetos cercanos a la Tierra, o NEOs, usando datos publicos de NASA/JPL.
+Neo Angele Risk Lab is a data engineering, experimental risk analytics, and visualization lab for studying Near-Earth Objects, or NEOs, using public NASA/JPL data.
 
-El proyecto descarga datos de APIs publicas, los conserva en una capa bronze, los normaliza con PySpark hacia silver, construye un dataset gold, calcula un Risk Priority Score explicable, genera rankings, ejecuta propagacion de incertidumbre y sensibilidad del score, construye un grafo orbital, produce evidencia secundaria con modelos de machine learning y expone resultados mediante FastAPI y un frontend React.
+The project downloads data from public APIs, preserves it in a bronze layer, normalizes it with PySpark into silver, builds a gold dataset, calculates an explainable Risk Priority Score, generates rankings, runs score uncertainty propagation and sensitivity analysis, builds an orbital graph, produces secondary evidence with machine learning models, and exposes results through FastAPI and a React frontend.
 
-## Que problema atiende
+## Problem Addressed
 
-Los datos sobre NEOs existen en fuentes publicas, pero suelen estar repartidos en APIs, formatos y tablas diferentes. Este proyecto organiza esas fuentes en un flujo reproducible para responder preguntas analiticas como:
+NEO data exists in public sources, but it is usually spread across different APIs, formats, and tables. This project organizes those sources into a reproducible flow to answer analytical questions such as:
 
-- que objetos tienen mayor prioridad de revision dentro de este laboratorio;
-- que variables explican esa prioridad;
-- que tan estable es el score ante perturbaciones aproximadas;
-- que objetos tienen vecindarios orbitales similares;
-- donde coinciden o discrepan modelos de evidencia secundaria.
+- which objects have the highest review priority inside this lab;
+- which variables explain that priority;
+- how stable the score is under approximate perturbations;
+- which objects have similar orbital neighborhoods;
+- where secondary-evidence models agree or disagree.
 
-El sistema no predice impactos y no emite alertas oficiales. Su valor esta en la integracion tecnica, la trazabilidad de datos, la explicabilidad del score y la visualizacion educativa.
+The system does not predict impacts and does not issue official alerts. Its value is in technical integration, data traceability, score explainability, and educational visualization.
 
-## Que es un NEO
+## What Is a NEO
 
-Un NEO, Near-Earth Object, es un objeto pequeno del sistema solar cuya orbita lo acerca a la region orbital de la Tierra. En este proyecto se trabajan principalmente asteroides con campos como magnitud absoluta `h`, diametro, MOID, elementos orbitales, aproximaciones cercanas y senales de Sentry cuando estan disponibles.
+A NEO, or Near-Earth Object, is a small Solar System object whose orbit brings it close to Earth's orbital region. This project mainly works with asteroids and fields such as absolute magnitude `h`, diameter, MOID, orbital elements, close approaches, and Sentry signals when available.
 
-## Que no pretende ser
+## What This Is Not
 
-Neo Angele Risk Lab no es un sistema oficial de alerta, no reemplaza NASA/JPL, CNEOS, Sentry ni analisis orbital profesional. El Risk Priority Score es una prioridad analitica experimental de 0 a 100 para ordenar revision dentro de este repositorio.
+Neo Angele Risk Lab is not an official alerting system, and it does not replace NASA/JPL, CNEOS, Sentry, or professional orbital analysis. The Risk Priority Score is an experimental analytical priority from 0 to 100 for ordering review inside this repository.
 
-## Estado final del proyecto
+## Final Project State
 
-Este checkout contiene las siguientes capacidades implementadas:
+This checkout contains the following implemented capabilities:
 
-- Clientes para SBDB Object API, SBDB Query API, Close Approach Data API y Sentry API.
-- Ingesta a `data/bronze` con metadata de fuente, parametros, objeto, firma de API y hora UTC.
-- ETL bronze/silver/gold con PySpark y escritura Parquet.
-- Dataset gold `data/gold/neo_risk_features`.
-- Risk Priority Score y ranking en `data/gold/risk_scores`.
-- Explicaciones por objeto y categorias `low`, `moderate`, `elevated`, `high`, `critical`.
-- Score Simulation mediante propagacion de incertidumbre y sensibilidad tabular.
-- Orbital Simulation mediante clones orbitales aproximados.
-- Grafo orbital kNN y laboratorio GNN.
-- Evidencia de modelos, model cards, predicciones eval/full y desacuerdos.
-- Hallazgos analiticos en `reports/findings`.
-- API FastAPI.
-- Frontend React/TypeScript/Vite.
-- Docker Compose para levantar API y frontend.
+- Clients for the SBDB Object API, SBDB Query API, Close Approach Data API, and Sentry API.
+- Ingestion into `data/bronze` with source metadata, parameters, object id, API signature, and UTC time.
+- Bronze/silver/gold ETL with PySpark and Parquet writes.
+- Gold dataset at `data/gold/neo_risk_features`.
+- Risk Priority Score and ranking at `data/gold/risk_scores`.
+- Per-object explanations and categories: `low`, `moderate`, `elevated`, `high`, `critical`.
+- Score Simulation through uncertainty propagation and tabular sensitivity analysis.
+- Orbital Simulation through approximate orbital clones.
+- kNN orbital graph and GNN lab.
+- Model evidence, model cards, eval/full predictions, and disagreements.
+- Analytical findings in `reports/findings`.
+- FastAPI API.
+- React/TypeScript/Vite frontend.
+- Docker Compose for running the API and frontend.
 
-## Arquitectura general
+## Overall Architecture
 
-El diagrama fuente vive en [`docs/diagrams/system_architecture.mmd`](docs/diagrams/system_architecture.mmd).
+The source diagram lives in [`docs/diagrams/system_architecture.mmd`](docs/diagrams/system_architecture.mmd).
 
 ```mermaid
 flowchart LR
@@ -86,9 +86,9 @@ flowchart LR
     API --> Frontend
 ```
 
-## Flujo de datos bronze, silver y gold
+## Bronze, Silver, and Gold Data Flow
 
-El diagrama fuente vive en [`docs/diagrams/data_pipeline_bronze_silver_gold.mmd`](docs/diagrams/data_pipeline_bronze_silver_gold.mmd).
+The source diagram lives in [`docs/diagrams/data_pipeline_bronze_silver_gold.mmd`](docs/diagrams/data_pipeline_bronze_silver_gold.mmd).
 
 ```mermaid
 flowchart TD
@@ -111,45 +111,45 @@ flowchart TD
     I --> K["ML, GNN, simulations, findings"]
 ```
 
-## Fuentes de datos usadas
+## Data Sources Used
 
-| Fuente | Endpoint | Cliente | Uso principal |
+| Source | Endpoint | Client | Main use |
 | --- | --- | --- | --- |
-| SBDB Object API | `https://ssd-api.jpl.nasa.gov/sbdb.api` | `src/neo_ange/clients/sbdb_object.py` | Datos ricos por objeto: identidad, fisica, orbita, aproximaciones y datos auxiliares. |
-| SBDB Query API | `https://ssd-api.jpl.nasa.gov/sbdb_query.api` | `src/neo_ange/clients/sbdb_query.py` | Consultas tabulares y descubrimiento de objetos. |
-| Close Approach Data API | `https://ssd-api.jpl.nasa.gov/cad.api` | `src/neo_ange/clients/close_approach.py` | Aproximaciones cercanas, distancia, velocidad y fecha. |
-| Sentry API | `https://ssd-api.jpl.nasa.gov/sentry.api` | `src/neo_ange/clients/sentry.py` | Senales de riesgo Sentry, probabilidades, Palermo/Torino y virtual impactors cuando existen. |
+| SBDB Object API | `https://ssd-api.jpl.nasa.gov/sbdb.api` | `src/neo_ange/clients/sbdb_object.py` | Rich per-object data: identity, physical data, orbit, close approaches, and auxiliary data. |
+| SBDB Query API | `https://ssd-api.jpl.nasa.gov/sbdb_query.api` | `src/neo_ange/clients/sbdb_query.py` | Tabular queries and object discovery. |
+| Close Approach Data API | `https://ssd-api.jpl.nasa.gov/cad.api` | `src/neo_ange/clients/close_approach.py` | Close approaches, distance, velocity, and date. |
+| Sentry API | `https://ssd-api.jpl.nasa.gov/sentry.api` | `src/neo_ange/clients/sentry.py` | Sentry risk signals, probabilities, Palermo/Torino scales, and virtual impactors when available. |
 
-No se requieren llaves privadas de API.
+Private API keys are not required.
 
-## Estructura de carpetas
+## Folder Structure
 
-| Ruta | Proposito |
+| Path | Purpose |
 | --- | --- |
-| `src/neo_ange/clients` | Clientes HTTP para APIs NASA/JPL. |
-| `src/neo_ange/pipelines` | Orquestacion de ingesta, ETL, ML, risk y simulaciones. |
-| `src/neo_ange/services` | Resolucion y escritura de capas bronze, silver y gold. |
-| `src/neo_ange/etl` | Lectura bronze, transformaciones silver, gold builder, calidad y writers. |
-| `src/neo_ange/risk` | Score, categorias, ranking, explicaciones y reportes. |
-| `src/neo_ange/simulation` | Propagacion de incertidumbre y sensibilidad del score. |
-| `src/neo_ange/orbital_simulation` | Simulacion orbital aproximada por clones. |
-| `src/neo_ange/ml` | Feature sets, baselines, metricas y auditoria de leakage. |
-| `src/neo_ange/evidence` | Model evidence, model cards, predicciones y desacuerdos. |
-| `src/neo_ange/gnn` | Grafo orbital, datasets, baselines, GraphSAGE/GCN opcionales y reportes. |
-| `src/neo_ange/findings` | Hallazgos analiticos para API/frontend. |
-| `src/neo_ange/api` | FastAPI, routers y schemas. |
+| `src/neo_ange/clients` | HTTP clients for NASA/JPL APIs. |
+| `src/neo_ange/pipelines` | Ingestion, ETL, ML, risk, and simulation orchestration. |
+| `src/neo_ange/services` | Bronze, silver, and gold layer resolution and writes. |
+| `src/neo_ange/etl` | Bronze reading, silver transformations, gold builder, quality checks, and writers. |
+| `src/neo_ange/risk` | Score, categories, ranking, explanations, and reports. |
+| `src/neo_ange/simulation` | Score uncertainty propagation and sensitivity analysis. |
+| `src/neo_ange/orbital_simulation` | Approximate clone-based orbital simulation. |
+| `src/neo_ange/ml` | Feature sets, baselines, metrics, and leakage audit. |
+| `src/neo_ange/evidence` | Model evidence, model cards, predictions, and disagreements. |
+| `src/neo_ange/gnn` | Orbital graph, datasets, baselines, optional GraphSAGE/GCN, and reports. |
+| `src/neo_ange/findings` | Analytical findings for API/frontend. |
+| `src/neo_ange/api` | FastAPI, routers, and schemas. |
 | `frontend` | App React/TypeScript/Vite. |
-| `data/bronze` | JSON crudo envuelto con metadata. |
-| `data/silver` | Tablas Parquet normalizadas. |
-| `data/gold` | Features, risk scores, simulaciones y grafo. |
-| `reports` | Resumenes JSON/CSV/Markdown. |
-| `artifacts` | Modelos, capturas y artefactos generados. |
-| `docs` | Documentacion tecnica y diagramas. |
-| `tests` | Pruebas unitarias y de integracion local. |
+| `data/bronze` | Raw JSON wrapped with metadata. |
+| `data/silver` | Normalized Parquet tables. |
+| `data/gold` | Features, risk scores, simulations, and graph. |
+| `reports` | JSON/CSV/Markdown summaries. |
+| `artifacts` | Generated models, screenshots, and artifacts. |
+| `docs` | Technical documentation and diagrams. |
+| `tests` | Unit tests and local integration tests. |
 
-## Programacion orientada a objetos
+## Object-Oriented Programming
 
-El dominio principal esta en `src/neo_ange/domain`. Las clases convierten filas tabulares en conceptos legibles: `Asteroid`, `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, `CloseApproachSummary`, `SentryRiskSignal`, `RiskScore`, `MonteCarloResult` y `OrbitalGraph`.
+The main domain lives in `src/neo_ange/domain`. The classes convert tabular rows into readable concepts: `Asteroid`, `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, `CloseApproachSummary`, `SentryRiskSignal`, `RiskScore`, `MonteCarloResult`, and `OrbitalGraph`.
 
 ```mermaid
 classDiagram
@@ -177,20 +177,20 @@ classDiagram
 
 ## Risk Priority Score
 
-El ranking no lo construyen los modelos. El ranking se construye con `RiskScorer` en `src/neo_ange/risk/scoring.py`.
+The ranking is not built by the models. The ranking is built with `RiskScorer` in `src/neo_ange/risk/scoring.py`.
 
-Formula general:
+General formula:
 
 ```text
 R = sum(w_i * C_i)
 R_100 = 100 * R
 ```
 
-Donde `C_i` es cada componente normalizado en el rango `[0, 1]`, `w_i` es su peso y la suma de pesos es 1.
+Where `C_i` is each normalized component in the `[0, 1]` range, `w_i` is its weight, and the sum of weights is 1.
 
-Pesos reales en `src/neo_ange/risk/schemas.py`:
+Actual weights in `src/neo_ange/risk/schemas.py`:
 
-| Componente | Peso |
+| Component | Weight |
 | --- | ---: |
 | `physical_risk_component` | 0.22 |
 | `orbital_risk_component` | 0.25 |
@@ -199,27 +199,27 @@ Pesos reales en `src/neo_ange/risk/schemas.py`:
 | `uncertainty_risk_component` | 0.13 |
 | `data_quality_component` | 0.05 |
 
-Componentes reales:
+Actual components:
 
-- `physical_risk_component`: diametro, `h`, `log_diameter`, `size_proxy_score`.
+- `physical_risk_component`: diameter, `h`, `log_diameter`, `size_proxy_score`.
 - `orbital_risk_component`: `moid`, `moid_ld`, `inverse_moid`, `q`, `e`, `i`.
-- `approach_risk_component`: distancia minima, distancia minima nominal, velocidad relativa, conteo de aproximaciones e inverso de distancia.
-- `sentry_risk_component`: `sentry_flag`, presencia Sentry, `sentry_ip`, Palermo acumulado/maximo, Torino maximo y numero de impactos virtuales.
-- `uncertainty_risk_component`: `condition_code`, `rms`, arco de observacion, numero de observaciones y proxy de incertidumbre.
-- `data_quality_component`: incompletitud de features, arco corto y bajo numero de observaciones.
+- `approach_risk_component`: minimum distance, nominal minimum distance, relative velocity, close-approach count, and inverse distance.
+- `sentry_risk_component`: `sentry_flag`, Sentry presence, `sentry_ip`, cumulative/maximum Palermo, maximum Torino, and number of virtual impacts.
+- `uncertainty_risk_component`: `condition_code`, `rms`, observation arc, number of observations, and uncertainty proxy.
+- `data_quality_component`: feature incompleteness, short arc, and low number of observations.
 
-Funciones auxiliares reales:
+Actual helper functions:
 
 ```text
 bounded(x) = min(max(x, 0), 1)
-weighted_available = promedio ponderado solo de senales disponibles
+weighted_available = weighted average of available signals only
 probability_signal(p) = bounded((log10(p) + 10) / 10)
 palermo_signal(x) = bounded((x + 8) / 10)
 ```
 
-Categorias reales en `src/neo_ange/risk/categories.py`:
+Actual categories in `src/neo_ange/risk/categories.py`:
 
-| Categoria | Rango |
+| Category | Range |
 | --- | --- |
 | `low` | `0 <= score < 20` |
 | `moderate` | `20 <= score < 40` |
@@ -227,13 +227,13 @@ Categorias reales en `src/neo_ange/risk/categories.py`:
 | `high` | `60 <= score < 80` |
 | `critical` | `score >= 80` |
 
-## Simulaciones
+## Simulations
 
 ### Score Simulation
 
-La Score Simulation esta en `src/neo_ange/simulation`. Perturba variables tabulares que alimentan el Risk Priority Score y vuelve a calcular el score muchas veces. No propaga orbitas y no estima probabilidad oficial de impacto.
+Score Simulation lives in `src/neo_ange/simulation`. It perturbs tabular variables that feed the Risk Priority Score and recalculates the score many times. It does not propagate orbits and does not estimate an official impact probability.
 
-Variables perturbadas reales:
+Actual perturbed variables:
 
 ```text
 diameter, h, moid, moid_ld,
@@ -243,21 +243,21 @@ sentry_ip, sentry_ps_cum,
 condition_code, rms, arc_length, n_obs_used
 ```
 
-Produce `base_score`, `mean_score`, `std_score`, `p05_score`, `median_score`, `p95_score`, `probability_score_above_60`, `probability_score_above_80` y `category_shift_probability`.
+It produces `base_score`, `mean_score`, `std_score`, `p05_score`, `median_score`, `p95_score`, `probability_score_above_60`, `probability_score_above_80`, and `category_shift_probability`.
 
 ### Orbital Simulation
 
-La Orbital Simulation esta en `src/neo_ange/orbital_simulation`. Genera clones orbitales aproximados desde elementos como `a`, `e`, `i`, `om`, `w`, `ma`, `n`, `per`, `moid`, `condition_code`, `arc_length`, `n_obs_used` y `rms`.
+Orbital Simulation lives in `src/neo_ange/orbital_simulation`. It generates approximate orbital clones from elements such as `a`, `e`, `i`, `om`, `w`, `ma`, `n`, `per`, `moid`, `condition_code`, `arc_length`, `n_obs_used`, and `rms`.
 
-Usa una propagacion heliocentrica simplificada de dos cuerpos, resuelve Kepler con iteraciones de Newton, aproxima la Tierra como orbita circular de 1 AU y resume distancias Tierra-objeto.
+It uses a simplified heliocentric two-body propagation, solves Kepler with Newton iterations, approximates Earth as a circular 1 AU orbit, and summarizes Earth-object distances.
 
-Produce `baseline_min_distance_au`, media y percentiles de distancia minima simulada, dia de maxima cercania, `dispersion_index`, `orbital_uncertainty_score` y categorias `stable`, `variable`, `needs_review`, `uncertain`.
+It produces `baseline_min_distance_au`, mean and percentiles of simulated minimum distance, day of closest approach, `dispersion_index`, `orbital_uncertainty_score`, and categories `stable`, `variable`, `needs_review`, `uncertain`.
 
-## Machine Learning y Model Evidence
+## Machine Learning and Model Evidence
 
-Los modelos no definen el ranking. Los modelos aportan evidencia secundaria para revisar consistencia, desacuerdos y posibles patrones. El ranking principal viene del Risk Priority Score.
+Models do not define the ranking. Models provide secondary evidence to review consistency, disagreements, and possible patterns. The main ranking comes from the Risk Priority Score.
 
-Modelos tabulares reales:
+Actual tabular models:
 
 - `dummy_most_frequent`
 - `logistic_regression`
@@ -265,21 +265,21 @@ Modelos tabulares reales:
 - `hist_gradient_boosting`
 - `rule_based_pha`
 
-Baselines del laboratorio GNN:
+GNN lab baselines:
 
 - `logistic_regression`
 - `random_forest`
 - `mlp`
 - `label_propagation`
 
-Modelos GNN opcionales:
+Optional GNN models:
 
 - `GraphSAGE`
 - `GCN`
 
-`torch` y `torch-geometric` son dependencias opcionales del extra `gnn`. `torchmetrics` no aparece como dependencia ni se usa para calcular metricas; las metricas se calculan con `scikit-learn` en `src/neo_ange/ml/metrics.py`.
+`torch` and `torch-geometric` are optional dependencies from the `gnn` extra. `torchmetrics` does not appear as a dependency and is not used to calculate metrics; metrics are calculated with `scikit-learn` in `src/neo_ange/ml/metrics.py`.
 
-Feature sets reales:
+Actual feature sets:
 
 - `full_features`
 - `definition_features_only`
@@ -287,38 +287,38 @@ Feature sets reales:
 - `orbital_only`
 - `approach_and_quality`
 - `sentry_related`
-- `graph_node_features` en el laboratorio GNN.
+- `graph_node_features` in the GNN lab.
 
-El sistema separa predicciones de evaluacion y de inferencia completa:
+The system separates evaluation predictions from full-inference predictions:
 
 - `reports/model_evidence/model_predictions_eval.parquet`
 - `reports/model_evidence/model_predictions_full.parquet`
 
-## Grafo orbital y GNN
+## Orbital Graph and GNN
 
-El grafo orbital conecta objetos por similitud k-nearest neighbors sobre features numericas orbitales y de contexto. Se excluyen identificadores y target directo. El grafo se guarda en:
+The orbital graph connects objects by k-nearest-neighbor similarity over numeric orbital and context features. Identifiers and the direct target are excluded. The graph is stored in:
 
 - `data/gold/gnn_graph/nodes.parquet`
 - `data/gold/gnn_graph/edges.parquet`
 - `reports/gnn/graph_summary.json`
 - `reports/gnn/gnn_metrics.csv`
 
-El diagrama fuente vive en [`docs/diagrams/gnn_orbital_graph_flow.mmd`](docs/diagrams/gnn_orbital_graph_flow.mmd).
+The source diagram lives in [`docs/diagrams/gnn_orbital_graph_flow.mmd`](docs/diagrams/gnn_orbital_graph_flow.mmd).
 
-## API y frontend
+## API and Frontend
 
-El backend esta en FastAPI y se importa como `neo_ange.api.main:app`. El frontend esta en `frontend`, usa React, TypeScript, Vite, TanStack Query, ECharts, Framer Motion, Lucide y Three.js.
+The backend is built with FastAPI and is imported as `neo_ange.api.main:app`. The frontend lives in `frontend` and uses React, TypeScript, Vite, TanStack Query, ECharts, Framer Motion, Lucide, and Three.js.
 
-Pantallas principales:
+Main screens:
 
-- Control Panel: estado general del sistema y telemetria.
-- Risk Ranking: objetos ordenados por Risk Priority Score.
-- Object Profile: perfil por objeto, componentes, evidencia y vecinos.
-- Score Simulation: estabilidad del score bajo perturbacion tabular.
-- Orbital Simulation: escenarios orbitales aproximados.
-- Orbital Graph: grafo, vecinos y metricas GNN/baselines.
-- Findings: hallazgos analiticos agregados.
-- Methodology: metodologia y notas tecnicas.
+- Control Panel: overall system status and telemetry.
+- Risk Ranking: objects ordered by Risk Priority Score.
+- Object Profile: per-object profile, components, evidence, and neighbors.
+- Score Simulation: score stability under tabular perturbation.
+- Orbital Simulation: approximate orbital scenarios.
+- Orbital Graph: graph, neighbors, and GNN/baseline metrics.
+- Findings: aggregated analytical findings.
+- Methodology: methodology and technical notes.
 
 ```mermaid
 sequenceDiagram
@@ -337,63 +337,63 @@ sequenceDiagram
     API-->>Frontend: Ranked objects
 ```
 
-Endpoints principales:
+Main endpoints:
 
-| Endpoint | Proposito |
+| Endpoint | Purpose |
 | --- | --- |
-| `GET /health` | Salud basica de API. |
-| `GET /status` | Estado de datos, reportes y manifiestos. |
-| `GET /objects` | Lista paginada de objetos. |
-| `GET /objects/{object_key}` | Perfil tabular de un objeto. |
-| `GET /rankings/top` | Ranking por Risk Priority Score. |
-| `GET /rankings/summary` | Estadisticas del ranking. |
-| `POST /risk/build` | Recalcula scores. |
-| `GET /risk/explain/{object_key}` | Explicacion de score por objeto. |
-| `POST /simulations/batch` | Propagacion de incertidumbre del score por lote. |
-| `GET /orbital-simulation/status` | Estado de simulacion orbital. |
-| `POST /orbital-simulation/batch` | Simulacion orbital por lote. |
-| `GET /gnn/status` | Estado de grafo y dependencias GNN. |
-| `GET /gnn/graph` | Nodos y aristas del grafo. |
-| `GET /findings/summary` | Hallazgos agregados. |
-| `GET /model-evidence/summary` | Resumen de evidencia de modelos. |
+| `GET /health` | Basic API health. |
+| `GET /status` | Data, report, and manifest status. |
+| `GET /objects` | Paginated object list. |
+| `GET /objects/{object_key}` | Tabular profile for one object. |
+| `GET /rankings/top` | Ranking by Risk Priority Score. |
+| `GET /rankings/summary` | Ranking statistics. |
+| `POST /risk/build` | Recalculate scores. |
+| `GET /risk/explain/{object_key}` | Per-object score explanation. |
+| `POST /simulations/batch` | Batch score uncertainty propagation. |
+| `GET /orbital-simulation/status` | Orbital simulation status. |
+| `POST /orbital-simulation/batch` | Batch orbital simulation. |
+| `GET /gnn/status` | Graph and GNN dependency status. |
+| `GET /gnn/graph` | Graph nodes and edges. |
+| `GET /findings/summary` | Aggregated findings. |
+| `GET /model-evidence/summary` | Model evidence summary. |
 
-## Resultados reales incluidos en este checkout
+## Actual Results Included in This Checkout
 
-Estos numeros se leyeron de archivos existentes en este repositorio. Cuando los reportes no coinciden entre si, se documenta la diferencia en la tabla.
+These numbers were read from existing files in this repository. When reports do not match each other, the difference is documented in the table.
 
-| Artefacto | Resultado observado |
+| Artifact | Observed result |
 | --- | --- |
-| `data/gold/neo_risk_features` | 1,000 filas; 280 `pha=true`; 720 `pha=false`. |
-| `data/gold/risk_scores/risk_scores.parquet` | 1,000 filas; `low=70`, `moderate=909`, `elevated=21`. |
-| `reports/risk/risk_scores_summary.json` | Score min 14.389905; media 28.766260; mediana 29.164740; max 47.271572. |
-| Top object del risk summary | `20152637`, `152637 (1997 NC1)`, score 47.271572, categoria `elevated`. |
-| `data/gold/simulation_results/monte_carlo_results.parquet` | 21 filas de Score Simulation. |
+| `data/gold/neo_risk_features` | 1,000 rows; 280 `pha=true`; 720 `pha=false`. |
+| `data/gold/risk_scores/risk_scores.parquet` | 1,000 rows; `low=70`, `moderate=909`, `elevated=21`. |
+| `reports/risk/risk_scores_summary.json` | Min score 14.389905; mean 28.766260; median 29.164740; max 47.271572. |
+| Top object from the risk summary | `20152637`, `152637 (1997 NC1)`, score 47.271572, category `elevated`. |
+| `data/gold/simulation_results/monte_carlo_results.parquet` | 21 Score Simulation rows. |
 | `reports/simulation/monte_carlo_summary.json` | `n_result_rows=21`, version `monte-carlo-v0.1.0`. |
-| `data/gold/orbital_simulation/orbital_monte_carlo_results.parquet` | 50 filas; `stable=16`, `variable=21`, `needs_review=8`, `uncertain=5`. |
-| `reports/orbital_simulation/orbital_simulation_summary.json` | Min p05 distance 0.020102 AU; dispersion media 0.617105. |
-| `data/gold/gnn_graph/nodes.parquet` | 1,000 nodos. |
-| `data/gold/gnn_graph/edges.parquet` | 6,955 aristas. |
-| `reports/gnn/graph_summary.json` | Densidad 0.0139239; estado `success`. |
-| `reports/gnn/gnn_metrics.csv` | 14 filas de metricas; GraphSAGE y GCN figuran como `skipped_missing_dependency` en este CSV. |
-| `reports/model_evidence/model_evidence_summary.json` | Reporta 20,000 predicciones full, 5,000 eval, coverage 1.0, 1,367 desacuerdos y mejor evidencia GraphSAGE; este reporte corresponde a una corrida de 4,000 objetos y no coincide con los Parquet actuales de 1,000 objetos. |
-| `reports/findings/findings_summary.json` | Tambien refleja una corrida de 4,000 objetos; debe regenerarse si se desea alinear con el estado actual de `data/gold`. |
+| `data/gold/orbital_simulation/orbital_monte_carlo_results.parquet` | 50 rows; `stable=16`, `variable=21`, `needs_review=8`, `uncertain=5`. |
+| `reports/orbital_simulation/orbital_simulation_summary.json` | Min p05 distance 0.020102 AU; mean dispersion 0.617105. |
+| `data/gold/gnn_graph/nodes.parquet` | 1,000 nodes. |
+| `data/gold/gnn_graph/edges.parquet` | 6,955 edges. |
+| `reports/gnn/graph_summary.json` | Density 0.0139239; status `success`. |
+| `reports/gnn/gnn_metrics.csv` | 14 metric rows; GraphSAGE and GCN appear as `skipped_missing_dependency` in this CSV. |
+| `reports/model_evidence/model_evidence_summary.json` | Reports 20,000 full predictions, 5,000 eval predictions, coverage 1.0, 1,367 disagreements, and best GraphSAGE evidence; this report corresponds to a 4,000-object run and does not match the current 1,000-object Parquet files. |
+| `reports/findings/findings_summary.json` | Also reflects a 4,000-object run; regenerate it if you want it aligned with the current `data/gold` state. |
 
-Limitacion importante: este checkout contiene artefactos de diferentes corridas. Para un cierre completamente coherente, ejecuta la regeneracion completa y luego `model-evidence build` y `findings build`.
+Important limitation: this checkout contains artifacts from different runs. For a fully coherent final snapshot, run the full regeneration and then `model-evidence build` and `findings build`.
 
-## Correr con Docker
+## Run with Docker
 
 ```bash
 docker compose up -d --build
 ```
 
-URLs locales:
+Local URLs:
 
 ```text
 API: http://127.0.0.1:8000
 Frontend: http://127.0.0.1:5174
 ```
 
-Validar:
+Validate:
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -403,9 +403,9 @@ curl http://127.0.0.1:8000/model-evidence/summary
 curl http://127.0.0.1:8000/orbital-simulation/status
 ```
 
-## Regenerar dataset y reportes
+## Regenerate Dataset and Reports
 
-Este flujo puede tardar de una a varias horas segun maquina, red y dependencias.
+This flow can take from one to several hours depending on the machine, network, and dependencies.
 
 ```bash
 docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
@@ -420,7 +420,7 @@ docker compose exec app python -m neo_ange.cli model-evidence build
 docker compose exec app python -m neo_ange.cli findings build
 ```
 
-## Validacion de desarrollo
+## Development Validation
 
 ```bash
 python -m pytest
@@ -428,30 +428,30 @@ python -m ruff check .
 python -m black --check .
 ```
 
-## Documento metodologico
+## Methodology Document
 
-La memoria tecnica esta en:
+The technical report is in:
 
 - [`docs/methodology/neo_ange_methodology.tex`](docs/methodology/neo_ange_methodology.tex)
 - [`docs/methodology/build_pdf.md`](docs/methodology/build_pdf.md)
 - [`docs/methodology/README.md`](docs/methodology/README.md)
 
-Si tienes LaTeX instalado:
+If you have LaTeX installed:
 
 ```bash
 cd docs/methodology
 pdflatex neo_ange_methodology.tex
 ```
 
-Tambien existe el script opcional:
+There is also an optional script:
 
 ```bash
 bash scripts/build_methodology_pdf.sh
 ```
 
-## Diagramas
+## Diagrams
 
-Los diagramas Mermaid creados para esta documentacion estan en:
+The Mermaid diagrams created for this documentation are in:
 
 - [`docs/diagrams/system_architecture.mmd`](docs/diagrams/system_architecture.mmd)
 - [`docs/diagrams/data_pipeline_bronze_silver_gold.mmd`](docs/diagrams/data_pipeline_bronze_silver_gold.mmd)
@@ -464,42 +464,42 @@ Los diagramas Mermaid creados para esta documentacion estan en:
 - [`docs/diagrams/api_frontend_sequence.mmd`](docs/diagrams/api_frontend_sequence.mmd)
 - [`docs/diagrams/final_app_navigation.mmd`](docs/diagrams/final_app_navigation.mmd)
 
-## Limitaciones honestas
+## Honest Limitations
 
-- El score es experimental y educativo.
-- Sentry ausente no significa riesgo cero; significa que no hay senal Sentry disponible en esa fila.
-- La simulacion orbital es aproximada y no sustituye propagacion profesional.
-- Los modelos pueden aprender definiciones de PHA cuando usan `h`, `moid`, diametro o proxies cercanos.
-- Algunos reportes de este checkout pertenecen a corridas distintas y deben regenerarse para una foto final unica.
-- La cobertura de datos depende de disponibilidad de las APIs publicas y de la ejecucion local.
+- The score is experimental and educational.
+- Missing Sentry data does not mean zero risk; it means no Sentry signal is available in that row.
+- Orbital simulation is approximate and does not replace professional propagation.
+- Models can learn PHA definitions when they use `h`, `moid`, diameter, or close proxies.
+- Some reports in this checkout belong to different runs and should be regenerated for a single final snapshot.
+- Data coverage depends on public API availability and local execution.
 
-## Roadmap minimo opcional
+## Minimal Optional Roadmap
 
-- Publicar un despliegue estable de solo lectura.
-- Regenerar todos los artefactos desde cero en una sola corrida auditada.
-- Mejorar performance del frontend para grafos grandes.
-- Agregar documentacion equivalente en ingles.
+- Publish a stable read-only deployment.
+- Regenerate all artifacts from scratch in a single audited run.
+- Improve frontend performance for large graphs.
+- Keep the English documentation aligned with future changes.
 
-## Guía de instalación desde cero
+## Installation Guide from Scratch
 
-Esta guia es practica y copiable. No asume que ya tengas Git, Docker o Docker Compose.
+This guide is practical and copyable. It does not assume you already have Git, Docker, or Docker Compose.
 
-### Instalación en Linux Ubuntu/Debian/Linux Mint
+### Installation on Linux Ubuntu/Debian/Linux Mint
 
-#### 1. Actualizar paquetes
+#### 1. Update Packages
 
 ```bash
 sudo apt update
 sudo apt upgrade -y
 ```
 
-#### 2. Instalar Git, curl y dependencias básicas
+#### 2. Install Git, curl, and Basic Dependencies
 
 ```bash
 sudo apt install -y git curl ca-certificates gnupg lsb-release
 ```
 
-#### 3. Instalar Docker
+#### 3. Install Docker
 
 ```bash
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -507,7 +507,7 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 ```
 
-Agregar repositorio Docker:
+Add the Docker repository:
 
 ```bash
 echo \
@@ -516,28 +516,28 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-Instalar Docker:
+Install Docker:
 
 ```bash
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-#### 4. Permitir usar Docker sin sudo
+#### 4. Allow Docker Usage Without sudo
 
 ```bash
 sudo usermod -aG docker $USER
 ```
 
-Cierra sesión y vuelve a entrar, o reinicia la computadora, para que el cambio del grupo `docker` tenga efecto.
+Sign out and back in, or restart the computer, so the `docker` group change takes effect.
 
-Comando alternativo temporal:
+Temporary alternative command:
 
 ```bash
 newgrp docker
 ```
 
-#### 5. Validar Docker
+#### 5. Validate Docker
 
 ```bash
 docker --version
@@ -545,52 +545,52 @@ docker compose version
 docker run hello-world
 ```
 
-#### 6. Clonar el repositorio
+#### 6. Clone the Repository
 
 ```bash
 git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
 cd NEO-Angele-Risk-Lab
 ```
 
-#### 7. Levantar la aplicación
+#### 7. Start the Application
 
 ```bash
 docker compose up -d --build
 ```
 
-#### 8. Validar que los contenedores están corriendo
+#### 8. Validate That Containers Are Running
 
 ```bash
 docker compose ps
 ```
 
-Deben verse servicios parecidos a:
+You should see services similar to:
 
 ```text
 neo_ange_api        Up
 neo_ange_frontend   Up
 ```
 
-#### 9. Validar API
+#### 9. Validate the API
 
 ```bash
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/status
 ```
 
-#### 10. Abrir la aplicación
+#### 10. Open the Application
 
-Abre tu navegador y escribe en la barra de direcciones:
+Open your browser and enter this in the address bar:
 
 ```text
 http://127.0.0.1:5174
 ```
 
-Esa es la interfaz web del proyecto.
+That is the project's web interface.
 
-### Regenerar dataset, modelos, simulaciones y hallazgos
+### Regenerate Dataset, Models, Simulations, and Findings
 
-Este paso puede tardar de una a varias horas, dependiendo de la computadora y la conexión a internet.
+This step can take from one to several hours depending on the computer and internet connection.
 
 ```bash
 docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
@@ -605,7 +605,7 @@ docker compose exec app python -m neo_ange.cli model-evidence build
 docker compose exec app python -m neo_ange.cli findings build
 ```
 
-#### 12. Validar resultados generados
+#### 12. Validate Generated Results
 
 ```bash
 curl http://127.0.0.1:8000/findings/summary
@@ -614,91 +614,91 @@ curl http://127.0.0.1:8000/orbital-simulation/status
 curl http://127.0.0.1:8000/gnn/status
 ```
 
-#### 13. Apagar la app
+#### 13. Shut Down the App
 
 ```bash
 docker compose down
 ```
 
-#### 14. Volver a prenderla después
+#### 14. Start It Again Later
 
 ```bash
 cd NEO-Angele-Risk-Lab
 docker compose up -d
 ```
 
-Abrir nuevamente:
+Open again:
 
 ```text
 http://127.0.0.1:5174
 ```
 
-### Instalación en macOS
+### Installation on macOS
 
-En macOS se recomienda usar Homebrew y Docker Desktop.
+On macOS, using Homebrew and Docker Desktop is recommended.
 
-#### 1. Instalar Homebrew si no existe
+#### 1. Install Homebrew if Needed
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-#### 2. Instalar Git
+#### 2. Install Git
 
 ```bash
 brew install git
 ```
 
-#### 3. Instalar Docker Desktop
+#### 3. Install Docker Desktop
 
 ```bash
 brew install --cask docker
 ```
 
-Después de instalar Docker Desktop, abre la aplicación Docker desde Launchpad o Applications y espera a que aparezca como “running”.
+After installing Docker Desktop, open the Docker app from Launchpad or Applications and wait until it appears as "running".
 
-#### 4. Validar Docker
+#### 4. Validate Docker
 
 ```bash
 docker --version
 docker compose version
 ```
 
-#### 5. Clonar el repositorio
+#### 5. Clone the Repository
 
 ```bash
 git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
 cd NEO-Angele-Risk-Lab
 ```
 
-#### 6. Levantar la aplicación
+#### 6. Start the Application
 
 ```bash
 docker compose up -d --build
 ```
 
-#### 7. Validar servicios
+#### 7. Validate Services
 
 ```bash
 docker compose ps
 ```
 
-#### 8. Validar API
+#### 8. Validate the API
 
 ```bash
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/status
 ```
 
-#### 9. Abrir la interfaz
+#### 9. Open the Interface
 
-Abre Safari, Chrome o Firefox y escribe:
+Open Safari, Chrome, or Firefox and enter:
 
 ```text
 http://127.0.0.1:5174
 ```
 
-#### 10. Regenerar datos
+#### 10. Regenerate Data
 
 ```bash
 docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
@@ -713,61 +713,61 @@ docker compose exec app python -m neo_ange.cli model-evidence build
 docker compose exec app python -m neo_ange.cli findings build
 ```
 
-#### 11. Apagar la app
+#### 11. Shut Down the App
 
 ```bash
 docker compose down
 ```
 
-### Problemas comunes
+### Common Problems
 
-#### Docker no está iniciado
+#### Docker Is Not Started
 
 ```text
 Error: Cannot connect to the Docker daemon
 ```
 
-En Linux:
+On Linux:
 
 ```bash
 sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-En macOS: abre Docker Desktop.
+On macOS: open Docker Desktop.
 
-#### Puerto ocupado
+#### Port in Use
 
-Si el puerto 5174 o 8000 está ocupado:
+If port 5174 or 8000 is in use:
 
 ```bash
 docker compose down
 docker compose up -d
 ```
 
-Si persiste:
+If it persists:
 
 ```bash
 sudo lsof -i :5174
 sudo lsof -i :8000
 ```
 
-#### Permiso denegado en Docker
+#### Permission Denied in Docker
 
 ```text
 permission denied while trying to connect to the Docker daemon
 ```
 
-Solución:
+Solution:
 
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-#### La app abre pero muestra pocos datos
+#### The App Opens but Shows Little Data
 
-Regenera los datos:
+Regenerate the data:
 
 ```bash
 docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
@@ -777,32 +777,32 @@ docker compose exec app python -m neo_ange.cli model-evidence build
 docker compose exec app python -m neo_ange.cli findings build
 ```
 
-#### El frontend no carga
+#### The Frontend Does Not Load
 
 ```bash
 docker compose ps
 curl -I http://127.0.0.1:5174
 ```
 
-#### La API no responde
+#### The API Does Not Respond
 
 ```bash
 docker compose logs app --tail=100
 ```
 
-#### El frontend no refleja cambios
+#### The Frontend Does Not Reflect Changes
 
 ```text
-Recarga con Ctrl + Shift + R.
+Reload with Ctrl + Shift + R.
 ```
 
-En macOS:
+On macOS:
 
 ```text
 Command + Shift + R.
 ```
 
-Si todo salió correctamente, la aplicación estará disponible en:
+If everything completed correctly, the application will be available at:
 
 ```text
 http://127.0.0.1:5174
