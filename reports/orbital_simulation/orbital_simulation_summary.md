@@ -4,12 +4,12 @@ Covariance-aware orbital scenario analysis using SBDB covariance when available 
 
 - status: success
 - row_count: 1
-- scenario_category_counts: {'variable': 1}
-- mean_dispersion_index: 0.47144274139189857
-- max_dispersion_index: 0.47144274139189857
-- min_p05_distance_au: 0.34935640117674716
+- scenario_category_counts: {'uncertain': 1}
+- mean_dispersion_index: 0.17932028432021346
+- max_dispersion_index: 0.17932028432021346
+- min_p05_distance_au: 0.41061269332682954
 - n_clones_median: 300.0
 - covariance_available_count: 0
 - heuristic_fallback_count: 1
 - horizon_days_median: 3650.0
-- top_uncertainty_objects: ['20089958']
+- top_uncertainty_objects: ['50012416']

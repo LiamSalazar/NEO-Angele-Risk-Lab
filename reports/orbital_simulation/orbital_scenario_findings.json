@@ -3,7 +3,7 @@
     {
       "importance": "medium",
       "related_objects": [
-        "20089958"
+        "50012416"
       ],
       "short_text": "These objects show the widest clone spread in approximate orbital simulations.",
       "source_module": "orbital_simulation",
@@ -14,7 +14,7 @@
       "caveat": "Approximate orbital scenario analysis based on available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "20089958"
+        "50012416"
       ],
       "short_text": "These objects have the smallest lower-tail simulated minimum distances.",
       "source_module": "orbital_simulation",
