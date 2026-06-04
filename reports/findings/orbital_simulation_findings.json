@@ -11,10 +11,10 @@
       "values": {
         "rows": 50,
         "scenario_categories": {
-          "needs_review": 8,
-          "stable": 16,
-          "uncertain": 5,
-          "variable": 21
+          "needs_review": 10,
+          "stable": 12,
+          "uncertain": 16,
+          "variable": 12
         }
       }
     },
@@ -22,11 +22,11 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20020425",
-        "20101869",
-        "20152685",
-        "20163067",
-        "20199801"
+        "50092141",
+        "20530520",
+        "50092158",
+        "50005900",
+        "50092127"
       ],
       "short_text": "Objects with the highest dispersion index deserve closer review in the orbital simulation view.",
       "source_module": "orbital_simulation",
@@ -34,10 +34,10 @@
       "title": "Orbital uncertainty varies across the priority set",
       "values": {
         "scenario_categories": {
-          "needs_review": 8,
-          "stable": 16,
-          "uncertain": 5,
-          "variable": 21
+          "needs_review": 10,
+          "stable": 12,
+          "uncertain": 16,
+          "variable": 12
         }
       }
     },
@@ -45,18 +45,18 @@
       "caveat": "The orbital simulation is approximate and uses available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "20020425",
-        "20163067",
-        "20101869",
-        "20031669",
-        "20199801"
+        "20530520",
+        "20443104",
+        "50008051",
+        "50092141",
+        "20031669"
       ],
       "short_text": "The lowest simulated p05 minimum-distance rows are useful as an inspection queue.",
       "source_module": "orbital_simulation",
       "technical_basis": "Objects are ranked by simulated_min_distance_p05_au.",
       "title": "Small p05 distance scenarios identify objects worth inspection",
       "values": {
-        "lowest_p05_au": 0.020102261677992648
+        "lowest_p05_au": 0.005778357177009687
       }
     }
   ],
