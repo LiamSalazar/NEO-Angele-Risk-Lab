@@ -1,0 +1,927 @@
+classDiagram
+    %% Full object-oriented backend view. FastAPI routers and frontend components are omitted because they are functions/components, not core OO classes.
+
+    class Asteroid {
+        +AsteroidIdentity identity
+        +Orbit orbit
+        +PhysicalProperties physical
+        +CloseApproachSummary close_approach_summary
+        +SentryRiskSignal sentry_signal
+        +bool neo
+        +bool pha
+        +object_key() str
+        +display_name() str
+        +has_risk_relevant_data() bool
+        +to_feature_dict() dict
+        +to_dict() dict
+    }
+
+    class AsteroidIdentity {
+        +str object_key
+        +str spkid
+        +str des
+        +str full_name
+        +str name
+        +str orbit_class_code
+        +str orbit_class_name
+        +best_identifier() str
+        +display_name() str
+        +to_dict() dict
+    }
+
+    class Orbit {
+        +float e
+        +float a
+        +float q
+        +float i
+        +float moid
+        +float moid_ld
+        +str condition_code
+        +float arc_length
+        +int n_obs_used
+        +float rms
+        +orbital_vector() list
+        +proximity_indicator() float
+        +uncertainty_indicator() float
+        +to_dict() dict
+    }
+
+    class PhysicalProperties {
+        +float h
+        +float diameter
+        +float albedo
+        +float log_diameter
+        +size_indicator() float
+        +has_size_information() bool
+        +to_dict() dict
+    }
+
+    class CloseApproach {
+        +str close_approach_datetime
+        +float dist
+        +float dist_min
+        +float dist_max
+        +float v_rel
+        +float v_inf
+        +str body
+        +distance_indicator() float
+        +velocity_indicator() float
+        +to_dict() dict
+    }
+
+    class CloseApproachSummary {
+        +float min_close_approach_dist
+        +float min_close_approach_dist_min
+        +float max_close_approach_v_rel
+        +str next_close_approach_datetime
+        +int close_approach_count
+        +has_close_approach_data() bool
+        +approach_priority_indicator() float
+        +to_dict() dict
+    }
+
+    class SentryRiskSignal {
+        +bool sentry_flag
+        +float sentry_ip
+        +float sentry_ps_cum
+        +float sentry_ps_max
+        +float sentry_ts_max
+        +int sentry_n_imp
+        +has_sentry_signal() bool
+        +sentry_priority_indicator() float
+        +to_dict() dict
+    }
+
+    class RiskScore {
+        +str object_key
+        +float risk_score
+        +float risk_score_0_100
+        +str risk_category
+        +float physical_risk_component
+        +float orbital_risk_component
+        +float approach_risk_component
+        +float sentry_risk_component
+        +float uncertainty_risk_component
+        +float data_quality_component
+        +component_breakdown() dict
+        +dominant_components(top_n) list
+        +to_dict() dict
+    }
+
+    class RiskExplanation {
+        +str object_key
+        +float risk_score_0_100
+        +str risk_category
+        +list main_drivers
+        +list protective_factors
+        +list data_limitations
+        +to_dict() dict
+        +as_markdown() str
+    }
+
+    class SimulationScenario {
+        +str object_key
+        +str simulation_id
+        +dict perturbed_values
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class MonteCarloResult {
+        +str object_key
+        +int n_simulations
+        +float base_score
+        +float mean_score
+        +float std_score
+        +float p05_score
+        +float median_score
+        +float p95_score
+        +float category_shift_probability
+        +stability_summary() dict
+        +to_dict() dict
+    }
+
+    class OrbitalGraphNode {
+        +int node_id
+        +str object_key
+        +dict features
+        +object label
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class OrbitalSimilarityEdge {
+        +int source
+        +int target
+        +float similarity
+        +float distance
+        +str edge_type
+        +to_dict() dict
+    }
+
+    class OrbitalGraph {
+        +list nodes
+        +list edges
+        +str graph_version
+        +node_count() int
+        +edge_count() int
+        +density() float
+        +to_networkx() Graph
+        +to_dict() dict
+    }
+
+    class GNNExperimentResult {
+        +str experiment_id
+        +str model_name
+        +str target
+        +str feature_set
+        +dict metrics
+        +dict baseline_metrics
+        +str status
+        +to_dict() dict
+        +summary() dict
+    }
+
+    class ModelCard {
+        +str model_name
+        +str model_family
+        +str feature_set
+        +str target
+        +dict metrics
+        +str leakage_risk
+        +str recommended_use
+        +str status
+        +to_dict() dict
+    }
+
+    class PredictionRecord {
+        +str object_key
+        +str designation
+        +int actual_label
+        +int predicted_label
+        +float predicted_probability
+        +str model_name
+        +str feature_set
+        +str model_family
+        +bool correct
+        +str confidence_bucket
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class OrbitalSimulationResult {
+        +str object_key
+        +int n_clones
+        +int horizon_days
+        +float baseline_min_distance_au
+        +float simulated_min_distance_p05_au
+        +float simulated_min_distance_p95_au
+        +float dispersion_index
+        +float orbital_uncertainty_score
+        +str scenario_category
+        +bool covariance_available
+        +str simulation_method
+        +to_dict() dict
+    }
+
+    class AnalyticalFinding {
+        +str title
+        +str short_text
+        +str technical_basis
+        +list related_objects
+        +str importance
+        +str source_module
+        +dict values
+        +to_dict() dict
+    }
+
+    class APIRequestInfo {
+        +dict query_params
+        +str object_id
+        +dict api_signature
+    }
+
+    class IngestionMetadata {
+        +str source
+        +str ingested_at_utc
+    }
+
+    class BronzeRecord {
+        +IngestionMetadata metadata
+        +dict data
+    }
+
+    class AsteroidFactory {
+        +from_gold_row(row) Asteroid
+        +from_risk_row(row) tuple
+        +many_from_dataframe(df) list
+        +risk_score_from_row(row) RiskScore
+        +monte_carlo_result_from_dict(data) MonteCarloResult
+    }
+
+    class GoldFeatureRepository {
+        +Path gold_root
+        +Path features_path
+        +load_dataframe() DataFrame
+        +load_asteroids() list
+        +get_by_object_key(object_key) Asteroid
+        +count() int
+    }
+
+    class RiskScoreRepository {
+        +Path gold_root
+        +Path risk_scores_path
+        +load_dataframe() DataFrame
+        +load_scores() list
+        +get_score(object_key) RiskScore
+        +top(limit) list
+    }
+
+    class SimulationResultRepository {
+        +Path gold_root
+        +Path simulation_results_path
+        +load_latest_results() list
+        +get_latest_for_object(object_key) MonteCarloResult
+        -_load_dataframe() DataFrame
+    }
+
+    class RiskScorer {
+        +dict weights
+        +RiskCategoryAssigner category_assigner
+        +score_dataframe(df) DataFrame
+        +score_row(row) dict
+        +component_columns() list
+        +score_version() str
+        -_physical_component(row) float
+        -_orbital_component(row) float
+        -_approach_component(row) float
+        -_sentry_component(row) float
+        -_uncertainty_component(row) float
+        -_data_quality_component(row) float
+    }
+
+    class RiskCategoryAssigner {
+        -dict _CATEGORIES
+        +assign(score_0_100) str
+        +describe(category) str
+        +all_categories() dict
+    }
+
+    class RiskExplanationService {
+        -dict _DRIVERS
+        +explain_row(row) dict
+        +identify_main_drivers(row) list
+        +identify_protective_factors(row) list
+        +identify_data_limitations(row) list
+        -_top_available_component(row) tuple
+    }
+
+    class RiskRankingService {
+        +rank(df, limit) DataFrame
+        +top_by_category(df, category, limit) DataFrame
+        +get_object(df, object_key) dict
+        +summarize_ranking(df) dict
+    }
+
+    class RiskReportWriter {
+        +Path score_output_dir
+        +Path report_dir
+        +RiskRankingService ranking
+        +score_path() Path
+        +save_outputs(scored_df, summary, weights, top_limit) dict
+        +write_methodology(weights) Path
+    }
+
+    class RiskValidationReporter {
+        +Path report_dir
+        +write_all(scored_df) dict
+        +write_component_formulas() Path
+        +write_detailed_methodology() Path
+        +write_component_sensitivity(scored_df) tuple
+        +write_ablation(scored_df) tuple
+    }
+
+    class PerturbationConfig {
+        +int n_simulations
+        +int random_state
+        +bool clip_values
+    }
+
+    class PerturbationEngine {
+        +list variables
+        +dict last_uncertainty_summary
+        +perturb_row(row, config, reference_df) DataFrame
+        +infer_scale(value, variable_name) float
+        +apply_bounds(df) DataFrame
+    }
+
+    class UncertaintySpec {
+        +str variable_name
+        +str distribution_type
+        +dict parameters
+        +str source
+        +str justification
+        +str mode
+        +bool is_formal_uncertainty
+        +to_dict() dict
+    }
+
+    class SensitivityAnalyzer {
+        +RiskScorer risk_scorer
+        +estimate_feature_sensitivity(row, variables, perturbation_pct) list
+        +top_sensitivity_factors(row, variables, perturbation_pct, limit) list
+    }
+
+    class MonteCarloEngine {
+        +RiskScorer risk_scorer
+        +PerturbationEngine perturbation_engine
+        +SensitivityAnalyzer sensitivity
+        +RiskCategoryAssigner categories
+        +RiskRankingService ranking
+        +simulate_object(row, n_simulations, random_state, reference_df) dict
+        +simulate_batch(df, limit, n_simulations, random_state) dict
+        +summarize_simulated_scores(simulated_df, base_row) dict
+        +simulation_version() str
+    }
+
+    class SimulationReportWriter {
+        +Path result_output_dir
+        +Path report_dir
+        +results_path() Path
+        +uncertainty_results_path() Path
+        +save_outputs(results, source_rows) dict
+        +write_methodology() Path
+        +write_sensitivity_reports(source_rows) dict
+    }
+
+    class OrbitalMonteCarloEngine {
+        +simulate_object(row, n_clones, horizon_days, time_step_days, random_state) dict
+    }
+
+    class OrbitalSimulationService {
+        +Path gold_root
+        +Path risk_scores_dir
+        +Path output_dir
+        +OrbitalMonteCarloEngine engine
+        +OrbitalSimulationReportWriter writer
+        +results_path() Path
+        +load_source_rows() DataFrame
+        +simulate_object(object_key, n_clones, horizon_days, time_step_days, random_state) dict
+        +simulate_batch(limit, n_clones, horizon_days, time_step_days, random_state) dict
+        +latest_for_object(object_key) dict
+        +findings() dict
+        +status() dict
+    }
+
+    class OrbitalSimulationReportWriter {
+        +Path output_dir
+        +Path report_dir
+        +results_path() Path
+        +save_outputs(results) dict
+    }
+
+    class OrbitalGraphBuilder {
+        +Path gold_root
+        +Path report_dir
+        +OrbitalSimilarityCalculator similarity
+        +build_graph_from_risk_scores(k, target, min_nodes, write_summary) OrbitalGraph
+        +build_networkx_graph(graph) Graph
+        +export_graph(graph, output_dir) dict
+        +graph_summary(graph, status, warnings) dict
+        -_build_nodes(df, target) list
+    }
+
+    class OrbitalSimilarityCalculator {
+        +list default_features
+        +list last_feature_names
+        +prepare_similarity_matrix(df, features) ndarray
+        +compute_knn_edges(df, k, metric) list
+        +compute_radius_edges(df, radius) list
+        +normalize_features(df, features) DataFrame
+    }
+
+    class GNNDatasetBuilder {
+        +build_node_feature_matrix(graph) tuple
+        +build_edge_index(graph) ndarray
+        +build_labels(graph, target) ndarray
+        +split_masks(y, train_ratio, val_ratio, random_state) dict
+        +to_torch_geometric_data(graph, target, random_state) object
+    }
+
+    class GraphBaselineRunner {
+        +int random_state
+        +FeatureSetRegistry feature_registry
+        +run_all(df, target, feature_sets) dict
+        +run_logistic_regression_baseline(df, target, feature_set) dict
+        +run_random_forest_baseline(df, target, feature_set) dict
+        +run_mlp_baseline(df, target, feature_set) dict
+        +run_label_propagation_baseline(df, target, feature_set) dict
+        -_fit_evaluate(df, model, target, feature_set) dict
+    }
+
+    class GNNTrainer {
+        +train_graphsage(data, epochs, patience, random_state) dict
+        +train_gcn(data, epochs, patience, random_state) dict
+        +evaluate(model, data, mask_name) dict
+        +predict_proba(model, data) ndarray
+        -_train_model(data, model_name, model_factory, epochs, patience, random_state) dict
+    }
+
+    class GraphSAGEModel {
+        +SAGEConv conv1
+        +SAGEConv conv2
+        +float dropout
+        +forward(x, edge_index) object
+    }
+
+    class GCNModel {
+        +GCNConv conv1
+        +GCNConv conv2
+        +float dropout
+        +forward(x, edge_index) object
+    }
+
+    class GNNExperimentRunner {
+        +Path gold_root
+        +Path graph_output_dir
+        +OrbitalGraphBuilder graph_builder
+        +GNNDatasetBuilder dataset_builder
+        +GraphBaselineRunner baselines
+        +GNNTrainer trainer
+        +GNNReportWriter report_writer
+        +run_graph_experiment(target, k, min_nodes) dict
+        +run_baseline_comparison(df, target) dict
+        +run_all(target, k, min_nodes) dict
+        +run_graph_k_ablation(target, min_nodes, k_values) dict
+    }
+
+    class GNNReportWriter {
+        +Path report_dir
+        +write_outputs(result) dict
+        -_write_k_ablation(payload) tuple
+        -_write_benchmark(rows) tuple
+    }
+
+    class FeatureSetDefinition {
+        +str name
+        +list features
+        +str description
+    }
+
+    class FeatureSetRegistry {
+        +list_feature_sets() list
+        +names() list
+        +get(name) FeatureSetDefinition
+        +resolve(df, feature_set_name, target) dict
+    }
+
+    class MLDatasetLoader {
+        +Path gold_root
+        +features_path() Path
+        +load_gold_features() DataFrame
+        +validate_target(df, target) dict
+        +prepare_training_frame(target, dropna_target) DataFrame
+    }
+
+    class RuleBasedPHABaseline {
+        +fit(X, y) RuleBasedPHABaseline
+        +predict(X) ndarray
+        +predict_proba(X) ndarray
+    }
+
+    class LeakageAuditor {
+        +inspect_feature_leakage(feature_names, target) dict
+        +compare_feature_sets(results) dict
+        +generate_leakage_report(results, output_dir) Path
+    }
+
+    class BaselineExperimentRunner {
+        +Path output_dir
+        +int random_state
+        +MLDatasetLoader loader
+        +FeatureSetRegistry feature_sets
+        +LeakageAuditor leakage_auditor
+        +run_experiment(df, target, feature_set_name, model_name) dict
+        +run_all_baselines(target, min_rows, min_positive) dict
+        -_save_model(model, feature_set_name, model_name) Path
+    }
+
+    class MLValidationReportBuilder {
+        +Path gold_root
+        +Path report_dir
+        +int random_state
+        +MLDatasetLoader loader
+        +FeatureSetRegistry feature_sets
+        +build(target) dict
+        -_write_curves(y, probabilities) dict
+        -_write_calibration(y, probabilities) dict
+        -_write_threshold_analysis(y, probabilities) dict
+        -_write_permutation_importance(X, y, features) dict
+    }
+
+    class ModelEvidenceBuilder {
+        +Path gold_root
+        +Path reports_root
+        +Path report_dir
+        +build(target, write) dict
+        +status() dict
+        +read_summary() dict
+        +read_cards() dict
+        +read_predictions(mode) dict
+        +read_disagreements() dict
+        +object_evidence(object_key, mode) dict
+        +write_outputs(payload, eval_predictions, full_predictions, disagreements, high_confidence, low_confidence, false_positives, false_negatives) dict
+    }
+
+    class FindingsBuilder {
+        +Path gold_root
+        +Path reports_root
+        +Path report_dir
+        +build_all(write) dict
+        +status() dict
+        +read_group(group_name) dict
+        +object_findings(object_key) dict
+        +write_outputs(payload) dict
+    }
+
+    class BronzeReader {
+        +SparkSession spark
+        +Path bronze_root
+        +read_source(source) DataFrame
+        +read_sbdb_object() DataFrame
+        +read_cad() DataFrame
+        +read_sentry() DataFrame
+        +read_sbdb_query() DataFrame
+        +source_exists(source) bool
+        +list_available_sources() list
+    }
+
+    class SilverTransformers {
+        +SparkSession spark
+        +transform_sbdb_objects(bronze_df) DataFrame
+        +transform_close_approaches(bronze_df) DataFrame
+        +transform_sentry_objects(bronze_df) DataFrame
+        +transform_sentry_virtual_impactors(bronze_df) DataFrame
+        +transform_ingestion_events(bronze_df) DataFrame
+    }
+
+    class GoldBuilder {
+        +SparkSession spark
+        +Path silver_root
+        +Path gold_root
+        +build_neo_risk_features() DataFrame
+        -_build_base_objects(availability) DataFrame
+        -_join_close_approaches(base, available) DataFrame
+        -_join_sentry(base, available) DataFrame
+        -_add_derived_features(df, source_availability_json) DataFrame
+    }
+
+    class DataQualityChecker {
+        +check_required_columns(df, required_columns) dict
+        +check_non_empty(df, dataset_name) dict
+        +check_null_ratio(df, columns) dict
+        +check_duplicate_keys(df, key_columns) dict
+        +check_numeric_ranges(df, rules) dict
+        +run_gold_quality_checks(df) dict
+        +write_quality_report(report, gold_root) Path
+    }
+
+    class ParquetTableWriter {
+        +write(df, output_path, mode, skip_empty) dict
+    }
+
+    class BronzeStorage {
+        +Path root_dir
+        +save_json(source, payload, query_params, object_id) Path
+        +list_files(source) list
+        +latest_file(source) Path
+        +object_exists(source, object_id) bool
+        +list_object_ids(source) set
+    }
+
+    class SilverStorage {
+        +Path root_dir
+        +table_path(table_name) Path
+        +list_tables() list
+    }
+
+    class GoldStorage {
+        +Path root_dir
+        +table_path(table_name) Path
+        +quality_reports_path() Path
+        +list_tables() list
+        +latest_quality_reports(limit) list
+    }
+
+    class BaseJPLClient {
+        +str base_url
+        +int timeout
+        +Session session
+        +bool validate_signature
+        +int max_retries
+        +dict last_request_params
+        +str last_request_url
+        +str last_error_type
+        +build_url(params) str
+        +get(params) dict
+        -_sleep_before_retry(attempt) None
+    }
+
+    class SBDBObjectClient {
+        +get_by_search_string(sstr, neo_only) dict
+        +get_by_designation(des, neo_only) dict
+        +get_by_spk(spk, neo_only) dict
+        +get_rich_object(designation_or_name, covariance_format) dict
+        +get_with_covariance(designation_or_name, covariance_format) dict
+    }
+
+    class SBDBQueryClient {
+        +get_count() dict
+        +get_fields() dict
+        +query_neos(limit, limit_from) dict
+        +query_custom(fields, limit, limit_from, sort, extra_params) dict
+        -_dedupe_fields(fields) list
+    }
+
+    class CloseApproachClient {
+        +query(date_min, date_max, dist_max, body, neo, pha, limit, sort, diameter, fullname, des, spk) dict
+        +query_by_designation(des, date_min, date_max, dist_max) dict
+        +query_upcoming_earth_approaches(limit) dict
+        +query_pha_approaches(limit) dict
+        -_bool_param(value) str
+    }
+
+    class SentryClient {
+        +get_summary() dict
+        +get_object_by_designation(des) dict
+        +get_object_by_spk(spk) dict
+        +get_virtual_impactors(ip_min) dict
+        +get_removed_objects() dict
+        +get_high_priority_summary(ip_min, ps_min, h_max) dict
+    }
+
+    class IngestionPipeline {
+        +SBDBQueryClient sbdb_query_client
+        +SBDBObjectClient sbdb_object_client
+        +CloseApproachClient close_approach_client
+        +SentryClient sentry_client
+        +BronzeStorage bronze_storage
+        +list last_failures
+        +ingest_sbdb_query_sample(limit) Path
+        +ingest_object(designation_or_name, rich) Path
+        +ingest_cad_sample(date_min, date_max, dist_max, limit) Path
+        +ingest_sentry_summary() Path
+        +ingest_sentry_virtual_impactors(ip_min) Path
+        +ingest_sample_bundle() list
+        +ingest_discovered_objects(strategy, limit, rich, skip_existing, request_delay_seconds) dict
+        +ingest_max_available_objects(target, rich, skip_existing, resume, batch_size, request_delay_seconds) dict
+    }
+
+    class ETLPipeline {
+        +SparkSession spark
+        +Path bronze_root
+        +Path silver_root
+        +Path gold_root
+        +BronzeReader reader
+        +SilverTransformers transformers
+        +ParquetTableWriter writer
+        +SilverStorage silver_storage
+        +GoldStorage gold_storage
+        +DataQualityChecker quality
+        +run_bronze_to_silver(source) dict
+        +run_gold(min_rows_for_ml, min_positive_class_count, target) dict
+        +run_all(min_rows_for_ml, min_positive_class_count, target) dict
+    }
+
+    class RiskPipeline {
+        +Path gold_root
+        +Path features_path
+        +Path risk_output_dir
+        +RiskScorer scorer
+        +RiskRankingService ranking
+        +RiskExplanationService explanations
+        +RiskReportWriter report_writer
+        +risk_scores_path() Path
+        +load_gold_features() DataFrame
+        +load_risk_scores() DataFrame
+        +build_scores() dict
+        +top(limit) list
+        +explain(object_key) dict
+        +status() dict
+        +categories() dict
+        +methodology() dict
+    }
+
+    class SimulationPipeline {
+        +Path gold_root
+        +Path risk_scores_dir
+        +Path simulation_output_dir
+        +MonteCarloEngine engine
+        +SimulationReportWriter report_writer
+        +risk_scores_path() Path
+        +simulation_results_path() Path
+        +load_risk_scores() DataFrame
+        +simulate_object(object_key, n_simulations, random_state) dict
+        +simulate_batch(limit, n_simulations, random_state) dict
+        +latest_for_object(object_key) dict
+        +methodology() dict
+    }
+
+    class MLPipeline {
+        +Path gold_root
+        +Path output_dir
+        +Path model_dir
+        +int random_state
+        +run_baselines(target, min_rows, min_positive) dict
+        +run_leakage_audit(target) dict
+        +run_all(target, min_rows, min_positive) dict
+    }
+
+    class RunManifest {
+        +str run_id
+        +str run_type
+        +str started_at_utc
+        +str ended_at_utc
+        +str status
+        +dict inputs
+        +dict outputs
+        +dict metrics
+        +list warnings
+        +list errors
+        +to_dict() dict
+    }
+
+    Asteroid *-- AsteroidIdentity : identity
+    Asteroid *-- Orbit : orbit
+    Asteroid *-- PhysicalProperties : physical
+    Asteroid *-- CloseApproachSummary : close_approach_summary
+    Asteroid *-- SentryRiskSignal : sentry_signal
+    RiskScore ..> Asteroid : object_key
+    RiskExplanation ..> RiskScore : explains
+    SimulationScenario ..> RiskScore : perturbed score
+    MonteCarloResult ..> RiskScore : score distribution
+    OrbitalGraph *-- OrbitalGraphNode : nodes
+    OrbitalGraph *-- OrbitalSimilarityEdge : edges
+    OrbitalSimilarityEdge ..> OrbitalGraphNode : source target ids
+    GNNExperimentResult ..> OrbitalGraph : summarizes
+    PredictionRecord ..> RiskScore : score context
+    PredictionRecord ..> ModelCard : model view
+    AnalyticalFinding ..> RiskScore : related objects
+
+    APIRequestInfo <|-- IngestionMetadata
+    BronzeRecord *-- IngestionMetadata : metadata
+
+    AsteroidFactory ..> Asteroid : creates
+    AsteroidFactory ..> RiskScore : creates
+    AsteroidFactory ..> MonteCarloResult : creates
+    GoldFeatureRepository *-- AsteroidFactory : maps rows
+    RiskScoreRepository *-- AsteroidFactory : maps rows
+    SimulationResultRepository *-- AsteroidFactory : maps rows
+    GoldFeatureRepository --> Asteroid : returns
+    RiskScoreRepository --> RiskScore : returns
+    SimulationResultRepository --> MonteCarloResult : returns
+
+    RiskScorer *-- RiskCategoryAssigner : category_assigner
+    RiskScorer ..> RiskExplanationService : builds explanation text
+    RiskScorer ..> RiskScore : derived fields
+    RiskExplanationService ..> Asteroid : accepts
+    RiskExplanationService ..> RiskScore : accepts
+    RiskExplanationService ..> RiskExplanation : payload shape
+    RiskRankingService ..> RiskScore : ranks scored rows
+    RiskReportWriter *-- RiskRankingService : ranking
+    RiskValidationReporter ..> RiskScorer : validates formula outputs
+
+    PerturbationEngine ..> PerturbationConfig : uses
+    PerturbationEngine ..> UncertaintySpec : uncertainty metadata
+    SensitivityAnalyzer *-- RiskScorer : risk_scorer
+    MonteCarloEngine *-- RiskScorer : risk_scorer
+    MonteCarloEngine *-- PerturbationEngine : perturbation_engine
+    MonteCarloEngine *-- SensitivityAnalyzer : sensitivity
+    MonteCarloEngine *-- RiskCategoryAssigner : categories
+    MonteCarloEngine *-- RiskRankingService : ranking
+    MonteCarloEngine ..> MonteCarloResult : summarizes
+    SimulationReportWriter ..> MonteCarloResult : persists
+
+    OrbitalMonteCarloEngine --> OrbitalSimulationResult : creates
+    OrbitalSimulationService *-- OrbitalMonteCarloEngine : engine
+    OrbitalSimulationService *-- OrbitalSimulationReportWriter : writer
+    OrbitalSimulationReportWriter ..> OrbitalSimulationResult : persists
+
+    OrbitalGraphBuilder *-- OrbitalSimilarityCalculator : similarity
+    OrbitalGraphBuilder --> OrbitalGraph : builds
+    OrbitalGraphBuilder --> OrbitalGraphNode : builds
+    OrbitalSimilarityCalculator --> OrbitalSimilarityEdge : computes
+    GNNDatasetBuilder --> OrbitalGraph : converts
+    GraphBaselineRunner *-- FeatureSetRegistry : feature_registry
+    GNNTrainer --> GraphSAGEModel : trains
+    GNNTrainer --> GCNModel : trains
+    GNNExperimentRunner *-- OrbitalGraphBuilder : graph_builder
+    GNNExperimentRunner *-- GNNDatasetBuilder : dataset_builder
+    GNNExperimentRunner *-- GraphBaselineRunner : baselines
+    GNNExperimentRunner *-- GNNTrainer : trainer
+    GNNExperimentRunner *-- GNNReportWriter : report_writer
+    GNNExperimentRunner ..> GNNExperimentResult : result envelope
+
+    FeatureSetRegistry *-- FeatureSetDefinition : definitions
+    MLDatasetLoader ..> GoldFeatureRepository : loads gold data
+    BaselineExperimentRunner *-- MLDatasetLoader : loader
+    BaselineExperimentRunner *-- FeatureSetRegistry : feature_sets
+    BaselineExperimentRunner *-- LeakageAuditor : leakage_auditor
+    BaselineExperimentRunner ..> RuleBasedPHABaseline : baseline option
+    MLValidationReportBuilder *-- MLDatasetLoader : loader
+    MLValidationReportBuilder *-- FeatureSetRegistry : feature_sets
+    ModelEvidenceBuilder ..> MLValidationReportBuilder : validation reports
+    ModelEvidenceBuilder --> ModelCard : writes
+    ModelEvidenceBuilder --> PredictionRecord : writes
+
+    FindingsBuilder --> AnalyticalFinding : writes
+    FindingsBuilder ..> RiskScore : reads score artifacts
+    FindingsBuilder ..> MonteCarloResult : reads score simulations
+    FindingsBuilder ..> OrbitalSimulationResult : reads orbital simulations
+    FindingsBuilder ..> OrbitalGraph : reads graph artifacts
+    FindingsBuilder ..> ModelEvidenceBuilder : reads evidence artifacts
+
+    BronzeStorage ..> BronzeRecord : writes JSON wrapper
+    BronzeReader ..> BronzeStorage : reads files
+    SilverTransformers ..> BronzeRecord : transforms payloads
+    GoldBuilder ..> SilverStorage : reads silver tables
+    DataQualityChecker ..> GoldBuilder : validates outputs
+    ParquetTableWriter ..> SilverStorage : writes tables
+    ParquetTableWriter ..> GoldStorage : writes tables
+
+    BaseJPLClient <|-- SBDBObjectClient
+    BaseJPLClient <|-- SBDBQueryClient
+    BaseJPLClient <|-- CloseApproachClient
+    BaseJPLClient <|-- SentryClient
+
+    IngestionPipeline *-- SBDBQueryClient : sbdb_query_client
+    IngestionPipeline *-- SBDBObjectClient : sbdb_object_client
+    IngestionPipeline *-- CloseApproachClient : close_approach_client
+    IngestionPipeline *-- SentryClient : sentry_client
+    IngestionPipeline *-- BronzeStorage : bronze_storage
+
+    ETLPipeline *-- BronzeReader : reader
+    ETLPipeline *-- SilverTransformers : transformers
+    ETLPipeline *-- ParquetTableWriter : writer
+    ETLPipeline *-- SilverStorage : silver_storage
+    ETLPipeline *-- GoldStorage : gold_storage
+    ETLPipeline *-- DataQualityChecker : quality
+    ETLPipeline *-- GoldBuilder : gold builder
+
+    RiskPipeline *-- RiskScorer : scorer
+    RiskPipeline *-- RiskRankingService : ranking
+    RiskPipeline *-- RiskExplanationService : explanations
+    RiskPipeline *-- RiskReportWriter : report_writer
+    RiskPipeline ..> RunManifest : saves
+
+    SimulationPipeline *-- MonteCarloEngine : engine
+    SimulationPipeline *-- SimulationReportWriter : report_writer
+    SimulationPipeline ..> RunManifest : saves
+    OrbitalSimulationService ..> RunManifest : saves
+    GNNExperimentRunner ..> RunManifest : saves
+    MLPipeline ..> BaselineExperimentRunner : runs
+    MLPipeline ..> LeakageAuditor : runs
+    MLPipeline ..> RunManifest : saves

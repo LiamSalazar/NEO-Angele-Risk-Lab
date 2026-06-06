@@ -1,0 +1,186 @@
+classDiagram
+    class Asteroid {
+        +AsteroidIdentity identity
+        +Orbit orbit
+        +PhysicalProperties physical
+        +CloseApproachSummary close_approach_summary
+        +SentryRiskSignal sentry_signal
+        +object_key() str
+        +to_feature_dict() dict
+    }
+
+    class AsteroidIdentity {
+        +str object_key
+        +str spkid
+        +str des
+        +best_identifier() str
+        +display_name() str
+    }
+
+    class Orbit {
+        +float e
+        +float a
+        +float q
+        +float i
+        +float moid
+        +float moid_ld
+        +orbital_vector() list
+        +proximity_indicator() float
+    }
+
+    class PhysicalProperties {
+        +float h
+        +float diameter
+        +float albedo
+        +size_indicator() float
+    }
+
+    class CloseApproachSummary {
+        +float min_close_approach_dist
+        +float max_close_approach_v_rel
+        +int close_approach_count
+        +approach_priority_indicator() float
+    }
+
+    class SentryRiskSignal {
+        +bool sentry_flag
+        +float sentry_ip
+        +float sentry_ps_max
+        +has_sentry_signal() bool
+    }
+
+    class RiskScore {
+        +str object_key
+        +float risk_score_0_100
+        +str risk_category
+        +component_breakdown() dict
+        +dominant_components(top_n) list
+    }
+
+    class MonteCarloResult {
+        +str object_key
+        +float mean_score
+        +float p95_score
+        +float category_shift_probability
+        +stability_summary() dict
+    }
+
+    class OrbitalSimulationResult {
+        +str object_key
+        +float simulated_min_distance_p05_au
+        +float dispersion_index
+        +str scenario_category
+        +to_dict() dict
+    }
+
+    class OrbitalGraph {
+        +list nodes
+        +list edges
+        +node_count() int
+        +edge_count() int
+        +density() float
+    }
+
+    class ModelCard {
+        +str model_name
+        +str feature_set
+        +str leakage_risk
+        +to_dict() dict
+    }
+
+    class PredictionRecord {
+        +str object_key
+        +int predicted_label
+        +float predicted_probability
+        +str confidence_bucket
+        +to_dict() dict
+    }
+
+    class AsteroidFactory {
+        +from_gold_row(row) Asteroid
+        +risk_score_from_row(row) RiskScore
+        +monte_carlo_result_from_dict(data) MonteCarloResult
+    }
+
+    class GoldFeatureRepository {
+        +load_dataframe() DataFrame
+        +load_asteroids() list
+        +get_by_object_key(object_key) Asteroid
+    }
+
+    class RiskScoreRepository {
+        +load_scores() list
+        +get_score(object_key) RiskScore
+        +top(limit) list
+    }
+
+    class RiskScorer {
+        +dict weights
+        +score_dataframe(df) DataFrame
+        +score_row(row) dict
+        +component_columns() list
+    }
+
+    class MonteCarloEngine {
+        +RiskScorer risk_scorer
+        +PerturbationEngine perturbation_engine
+        +simulate_object(row, n_simulations, random_state) dict
+        +simulate_batch(df, limit, n_simulations, random_state) dict
+    }
+
+    class OrbitalMonteCarloEngine {
+        +simulate_object(row, n_clones, horizon_days, time_step_days, random_state) dict
+    }
+
+    class ModelEvidenceBuilder {
+        +build(target, write) dict
+        +read_cards() dict
+        +read_predictions(mode) dict
+        +object_evidence(object_key, mode) dict
+    }
+
+    class OrbitalGraphBuilder {
+        +build_graph_from_risk_scores(k, target, min_nodes, write_summary) OrbitalGraph
+        +export_graph(graph, output_dir) dict
+        +graph_summary(graph, status, warnings) dict
+    }
+
+    class GNNExperimentRunner {
+        +run_graph_experiment(target, k, min_nodes) dict
+        +run_baseline_comparison(df, target) dict
+        +run_all(target, k, min_nodes) dict
+    }
+
+    class FindingsBuilder {
+        +build_all(write) dict
+        +read_group(group_name) dict
+        +object_findings(object_key) dict
+    }
+
+    AsteroidFactory --> Asteroid : creates
+    AsteroidFactory --> RiskScore : creates
+    GoldFeatureRepository *-- AsteroidFactory : maps rows
+    RiskScoreRepository *-- AsteroidFactory : maps rows
+
+    Asteroid *-- AsteroidIdentity : identity
+    Asteroid *-- Orbit : orbit
+    Asteroid *-- PhysicalProperties : physical
+    Asteroid *-- CloseApproachSummary : approach
+    Asteroid *-- SentryRiskSignal : sentry
+    RiskScore ..> Asteroid : object_key
+
+    RiskScorer ..> RiskScore : derived fields
+    MonteCarloEngine *-- RiskScorer : recalculates
+    MonteCarloEngine ..> MonteCarloResult : summarizes
+    OrbitalMonteCarloEngine --> OrbitalSimulationResult : creates
+
+    OrbitalGraphBuilder --> OrbitalGraph : builds
+    GNNExperimentRunner *-- OrbitalGraphBuilder : graph_builder
+    ModelEvidenceBuilder --> ModelCard : writes
+    ModelEvidenceBuilder --> PredictionRecord : writes
+    PredictionRecord ..> RiskScore : score context
+    FindingsBuilder ..> RiskScore : reads
+    FindingsBuilder ..> MonteCarloResult : reads
+    FindingsBuilder ..> OrbitalSimulationResult : reads
+    FindingsBuilder ..> OrbitalGraph : reads
+    FindingsBuilder ..> ModelEvidenceBuilder : reads

@@ -1,0 +1,294 @@
+classDiagram
+    %% Pure domain and analytical output entities only. No pipelines, services, builders, repositories, or API clients.
+
+    class Asteroid {
+        +AsteroidIdentity identity
+        +Orbit orbit
+        +PhysicalProperties physical
+        +CloseApproachSummary close_approach_summary
+        +SentryRiskSignal sentry_signal
+        +bool neo
+        +bool pha
+        +object_key() str
+        +display_name() str
+        +has_risk_relevant_data() bool
+        +to_feature_dict() dict
+        +to_dict() dict
+    }
+
+    class AsteroidIdentity {
+        +str object_key
+        +str spkid
+        +str des
+        +str full_name
+        +str name
+        +str orbit_class_code
+        +str orbit_class_name
+        +best_identifier() str
+        +display_name() str
+        +to_dict() dict
+    }
+
+    class Orbit {
+        +float e
+        +float a
+        +float q
+        +float i
+        +float om
+        +float w
+        +float ma
+        +float n
+        +float per
+        +float ad
+        +float moid
+        +float moid_ld
+        +str condition_code
+        +float arc_length
+        +int n_obs_used
+        +float rms
+        +has_minimum_orbital_data() bool
+        +orbital_vector() list
+        +proximity_indicator() float
+        +uncertainty_indicator() float
+        +to_dict() dict
+    }
+
+    class PhysicalProperties {
+        +float h
+        +float diameter
+        +float albedo
+        +float log_diameter
+        +size_indicator() float
+        +has_size_information() bool
+        +to_dict() dict
+    }
+
+    class CloseApproach {
+        +str close_approach_datetime
+        +float dist
+        +float dist_min
+        +float dist_max
+        +float v_rel
+        +float v_inf
+        +str body
+        +distance_indicator() float
+        +velocity_indicator() float
+        +to_dict() dict
+    }
+
+    class CloseApproachSummary {
+        +float min_close_approach_dist
+        +float min_close_approach_dist_min
+        +float max_close_approach_v_rel
+        +str next_close_approach_datetime
+        +int close_approach_count
+        +has_close_approach_data() bool
+        +approach_priority_indicator() float
+        +to_dict() dict
+    }
+
+    class SentryRiskSignal {
+        +bool sentry_flag
+        +float sentry_ip
+        +float sentry_ps_cum
+        +float sentry_ps_max
+        +float sentry_ts_max
+        +int sentry_n_imp
+        +has_sentry_signal() bool
+        +sentry_priority_indicator() float
+        +to_dict() dict
+    }
+
+    class RiskScore {
+        +str object_key
+        +float risk_score
+        +float risk_score_0_100
+        +str risk_category
+        +float physical_risk_component
+        +float orbital_risk_component
+        +float approach_risk_component
+        +float sentry_risk_component
+        +float uncertainty_risk_component
+        +float data_quality_component
+        +str score_version
+        +str scored_at_utc
+        +component_breakdown() dict
+        +dominant_components(top_n) list
+        +to_dict() dict
+    }
+
+    class RiskExplanation {
+        +str object_key
+        +float risk_score_0_100
+        +str risk_category
+        +list main_drivers
+        +list protective_factors
+        +list data_limitations
+        +str short_explanation
+        +str technical_explanation
+        +to_dict() dict
+        +as_markdown() str
+    }
+
+    class SimulationScenario {
+        +str object_key
+        +str simulation_id
+        +dict perturbed_values
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class MonteCarloResult {
+        +str object_key
+        +int n_simulations
+        +float base_score
+        +float mean_score
+        +float std_score
+        +float p05_score
+        +float median_score
+        +float p95_score
+        +float max_score
+        +float probability_score_above_60
+        +float probability_score_above_80
+        +float category_shift_probability
+        +str base_category
+        +str p95_category
+        +str simulation_version
+        +stability_summary() dict
+        +to_dict() dict
+    }
+
+    class OrbitalGraphNode {
+        +int node_id
+        +str object_key
+        +dict features
+        +object label
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class OrbitalSimilarityEdge {
+        +int source
+        +int target
+        +float similarity
+        +float distance
+        +str edge_type
+        +to_dict() dict
+    }
+
+    class OrbitalGraph {
+        +list nodes
+        +list edges
+        +str graph_version
+        +node_count() int
+        +edge_count() int
+        +density() float
+        +to_networkx() Graph
+        +to_dict() dict
+    }
+
+    class GNNExperimentResult {
+        +str experiment_id
+        +str model_name
+        +str target
+        +str feature_set
+        +int n_nodes
+        +int n_edges
+        +dict metrics
+        +dict baseline_metrics
+        +str status
+        +list warnings
+        +dict artifacts
+        +to_dict() dict
+        +summary() dict
+    }
+
+    class OrbitalSimulationResult {
+        +str object_key
+        +int n_clones
+        +int horizon_days
+        +int time_step_days
+        +float baseline_min_distance_au
+        +float simulated_min_distance_mean_au
+        +float simulated_min_distance_std_au
+        +float simulated_min_distance_p05_au
+        +float simulated_min_distance_p50_au
+        +float simulated_min_distance_p95_au
+        +float dispersion_index
+        +float orbital_uncertainty_score
+        +str scenario_category
+        +str interpretation
+        +bool covariance_available
+        +str simulation_method
+        +str propagator
+        +list warnings
+        +to_dict() dict
+    }
+
+    class ModelCard {
+        +str model_name
+        +str model_family
+        +str feature_set
+        +str target
+        +dict metrics
+        +list strengths
+        +list weaknesses
+        +str leakage_risk
+        +str recommended_use
+        +str not_recommended_use
+        +str interpretation
+        +str status
+        +to_dict() dict
+    }
+
+    class PredictionRecord {
+        +str object_key
+        +str designation
+        +int actual_label
+        +int predicted_label
+        +float predicted_probability
+        +str model_name
+        +str feature_set
+        +str model_family
+        +bool correct
+        +str confidence_bucket
+        +float risk_score_0_100
+        +str risk_category
+        +str notes
+        +to_dict() dict
+    }
+
+    class AnalyticalFinding {
+        +str title
+        +str short_text
+        +str technical_basis
+        +list related_objects
+        +str importance
+        +str source_module
+        +dict values
+        +str caveat
+        +to_dict() dict
+    }
+
+    Asteroid *-- AsteroidIdentity : identity
+    Asteroid *-- Orbit : orbit
+    Asteroid *-- PhysicalProperties : physical
+    Asteroid *-- CloseApproachSummary : close_approach_summary
+    Asteroid *-- SentryRiskSignal : sentry_signal
+
+    RiskScore ..> Asteroid : object_key
+    RiskExplanation ..> RiskScore : explains
+    SimulationScenario ..> RiskScore : perturbed score
+    MonteCarloResult ..> RiskScore : summarizes samples
+    OrbitalSimulationResult ..> Orbit : simulates orbital state
+
+    OrbitalGraph *-- OrbitalGraphNode : nodes
+    OrbitalGraph *-- OrbitalSimilarityEdge : edges
+    OrbitalSimilarityEdge ..> OrbitalGraphNode : source target ids
+    GNNExperimentResult ..> OrbitalGraph : experiment graph
+
+    PredictionRecord ..> ModelCard : emitted by model view
+    PredictionRecord ..> RiskScore : carries score context
+    AnalyticalFinding ..> RiskScore : may reference scored objects
