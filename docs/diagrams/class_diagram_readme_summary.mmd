@@ -1,4 +1,6 @@
 classDiagram
+    %% Readable README-level OO summary. See the full entity and system diagrams for detail.
+
     class Asteroid {
         +AsteroidIdentity identity
         +Orbit orbit
@@ -6,39 +8,47 @@ classDiagram
         +CloseApproachSummary close_approach_summary
         +SentryRiskSignal sentry_signal
         +object_key() str
+        +display_name() str
+        +has_risk_relevant_data() bool
         +to_feature_dict() dict
+        +to_dict() dict
     }
 
     class AsteroidIdentity {
         +str object_key
         +str spkid
         +str des
+        +str full_name
         +best_identifier() str
         +display_name() str
     }
 
     class Orbit {
-        +float e
         +float a
-        +float q
+        +float e
         +float i
         +float moid
         +float moid_ld
+        +str condition_code
         +orbital_vector() list
         +proximity_indicator() float
+        +uncertainty_indicator() float
     }
 
     class PhysicalProperties {
         +float h
         +float diameter
         +float albedo
+        +float log_diameter
         +size_indicator() float
+        +has_size_information() bool
     }
 
     class CloseApproachSummary {
         +float min_close_approach_dist
         +float max_close_approach_v_rel
         +int close_approach_count
+        +has_close_approach_data() bool
         +approach_priority_indicator() float
     }
 
@@ -46,7 +56,9 @@ classDiagram
         +bool sentry_flag
         +float sentry_ip
         +float sentry_ps_max
+        +int sentry_n_imp
         +has_sentry_signal() bool
+        +sentry_priority_indicator() float
     }
 
     class RiskScore {
@@ -70,6 +82,7 @@ classDiagram
         +float simulated_min_distance_p05_au
         +float dispersion_index
         +str scenario_category
+        +str simulation_method
         +to_dict() dict
     }
 
@@ -85,6 +98,7 @@ classDiagram
         +str model_name
         +str feature_set
         +str leakage_risk
+        +str recommended_use
         +to_dict() dict
     }
 
@@ -98,6 +112,7 @@ classDiagram
 
     class AsteroidFactory {
         +from_gold_row(row) Asteroid
+        +from_risk_row(row) tuple
         +risk_score_from_row(row) RiskScore
         +monte_carlo_result_from_dict(data) MonteCarloResult
     }
@@ -114,6 +129,11 @@ classDiagram
         +top(limit) list
     }
 
+    class SimulationResultRepository {
+        +load_latest_results() list
+        +get_latest_for_object(object_key) MonteCarloResult
+    }
+
     class RiskScorer {
         +dict weights
         +score_dataframe(df) DataFrame
@@ -128,8 +148,19 @@ classDiagram
         +simulate_batch(df, limit, n_simulations, random_state) dict
     }
 
-    class OrbitalMonteCarloEngine {
-        +simulate_object(row, n_clones, horizon_days, time_step_days, random_state) dict
+    class OrbitalSimulationService {
+        +OrbitalMonteCarloEngine engine
+        +OrbitalSimulationReportWriter writer
+        +simulate_object(object_key, n_clones, horizon_days, time_step_days, random_state) dict
+        +simulate_batch(limit, n_clones, horizon_days, time_step_days, random_state) dict
+        +latest_for_object(object_key) dict
+    }
+
+    class OrbitalGraphBuilder {
+        +OrbitalSimilarityCalculator similarity
+        +build_graph_from_risk_scores(k, target, min_nodes, write_summary) OrbitalGraph
+        +export_graph(graph, output_dir) dict
+        +graph_summary(graph, status, warnings) dict
     }
 
     class ModelEvidenceBuilder {
@@ -139,43 +170,38 @@ classDiagram
         +object_evidence(object_key, mode) dict
     }
 
-    class OrbitalGraphBuilder {
-        +build_graph_from_risk_scores(k, target, min_nodes, write_summary) OrbitalGraph
-        +export_graph(graph, output_dir) dict
-        +graph_summary(graph, status, warnings) dict
-    }
-
-    class GNNExperimentRunner {
-        +run_graph_experiment(target, k, min_nodes) dict
-        +run_baseline_comparison(df, target) dict
-        +run_all(target, k, min_nodes) dict
-    }
-
     class FindingsBuilder {
         +build_all(write) dict
         +read_group(group_name) dict
         +object_findings(object_key) dict
     }
 
-    AsteroidFactory --> Asteroid : creates
-    AsteroidFactory --> RiskScore : creates
-    GoldFeatureRepository *-- AsteroidFactory : maps rows
-    RiskScoreRepository *-- AsteroidFactory : maps rows
-
     Asteroid *-- AsteroidIdentity : identity
     Asteroid *-- Orbit : orbit
     Asteroid *-- PhysicalProperties : physical
-    Asteroid *-- CloseApproachSummary : approach
-    Asteroid *-- SentryRiskSignal : sentry
-    RiskScore ..> Asteroid : object_key
+    Asteroid o-- CloseApproachSummary : approach
+    Asteroid o-- SentryRiskSignal : sentry
 
-    RiskScorer ..> RiskScore : derived fields
-    MonteCarloEngine *-- RiskScorer : recalculates
+    AsteroidFactory --> Asteroid : creates
+    AsteroidFactory --> RiskScore : creates
+    AsteroidFactory --> MonteCarloResult : creates
+    GoldFeatureRepository ..> AsteroidFactory : maps rows
+    RiskScoreRepository ..> AsteroidFactory : maps rows
+    SimulationResultRepository ..> AsteroidFactory : maps rows
+
+    GoldFeatureRepository --> Asteroid : returns
+    RiskScoreRepository --> RiskScore : returns
+    SimulationResultRepository --> MonteCarloResult : returns
+
+    RiskScorer ..> Asteroid : accepts
+    RiskScorer ..> RiskScore : derives fields
+    RiskScore ..> Asteroid : object_key
+    MonteCarloEngine ..> RiskScore : recalculates samples
     MonteCarloEngine ..> MonteCarloResult : summarizes
-    OrbitalMonteCarloEngine --> OrbitalSimulationResult : creates
+    OrbitalSimulationService ..> OrbitalSimulationResult : produces
+    OrbitalSimulationResult ..> Orbit : simulates orbital state
 
     OrbitalGraphBuilder --> OrbitalGraph : builds
-    GNNExperimentRunner *-- OrbitalGraphBuilder : graph_builder
     ModelEvidenceBuilder --> ModelCard : writes
     ModelEvidenceBuilder --> PredictionRecord : writes
     PredictionRecord ..> RiskScore : score context
@@ -183,4 +209,4 @@ classDiagram
     FindingsBuilder ..> MonteCarloResult : reads
     FindingsBuilder ..> OrbitalSimulationResult : reads
     FindingsBuilder ..> OrbitalGraph : reads
-    FindingsBuilder ..> ModelEvidenceBuilder : reads
+    FindingsBuilder ..> ModelEvidenceBuilder : reads evidence artifacts

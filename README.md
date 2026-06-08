@@ -149,20 +149,30 @@ Private API keys are not required.
 
 ## Object-Oriented Programming
 
-The project has two useful object-oriented views:
+The project uses object-oriented design at two distinct levels. The first level is the domain model: classes that represent NEO concepts and analytical output records. The second level is the system model: factories, repositories, scorers, simulation engines, graph builders, evidence builders, clients, storage adapters, and pipelines that execute the workflow.
 
-- Domain entities: NEO concepts and analytical output records such as `Asteroid`, `Orbit`, `RiskScore`, `MonteCarloResult`, `OrbitalGraph`, `ModelCard`, and `PredictionRecord`.
-- Full system classes: factories, repositories, risk scoring, score simulation, orbital simulation, model evidence, GNN, findings, clients, services, and pipelines.
+The raw NASA/JPL sources arrive as API JSON payloads or tabular records. The backend does not treat those records only as loose columns. During ingestion and ETL, the data is preserved in bronze, normalized into silver tables, and joined into gold analytical rows. From there, `AsteroidFactory` translates processed rows into domain objects: identity, orbit, physical properties, close-approach context, Sentry signal, and analytical results. This creates a domain vocabulary that is independent from Spark, Pandas, FastAPI, and the React frontend.
 
-The summary diagram below keeps the README readable. The complete diagrams live in:
+`Asteroid` acts as the aggregate root for the core NEO concept. It groups `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, optional `CloseApproachSummary`, optional `SentryRiskSignal`, and flags such as `neo` and `pha`. Its methods provide a coherent interface over that aggregate: `object_key()` selects the stable lookup key, `display_name()` builds a human-readable label, `has_risk_relevant_data()` checks whether the object has useful analytical state, `to_feature_dict()` flattens the aggregate for scoring and modeling, and `to_dict()` serializes the nested domain representation.
 
-- [Full entity domain class diagram](docs/diagrams/class_diagram_entities.mmd)
-- [Full system class diagram](docs/diagrams/class_diagram_system.mmd)
+Several classes are value objects rather than processes. `Orbit` concentrates orbital elements and derived signals such as proximity and uncertainty indicators. `PhysicalProperties` concentrates magnitude, diameter, albedo, and size indicators. `CloseApproachSummary` summarizes close-approach context without owning every CAD row. `SentryRiskSignal` summarizes the Sentry-related fields when they are available. These objects keep domain behavior near the data it interprets.
+
+Factories and repositories separate transformation from access. `AsteroidFactory` converts gold, risk, and simulation rows into domain objects, so row-mapping rules are not repeated in repositories, API handlers, or services. `GoldFeatureRepository`, `RiskScoreRepository`, and `SimulationResultRepository` isolate Parquet/CSV access and return domain objects instead of forcing every caller to know file paths and tabular schemas.
+
+Process classes then operate over those objects and rows. `RiskScorer` calculates component scores and the Risk Priority Score. `MonteCarloEngine` perturbs score inputs and summarizes stability. `OrbitalSimulationService` coordinates clone-based orbital simulations. `OrbitalGraphBuilder` builds similarity neighborhoods. `ModelEvidenceBuilder` creates model cards, predictions, and disagreement artifacts. `FindingsBuilder` turns generated artifacts into interpretable findings. This separation gives the codebase traceability from raw NASA/JPL records to final analytical outputs, lowers coupling, improves reuse, and makes tests easier to target.
+
+The summary diagram below keeps the README readable. The complete object-oriented documentation lives in:
+
+- [Entity class diagram](docs/diagrams/class_diagram_entities.mmd)
+- [System class diagram](docs/diagrams/class_diagram_system.mmd)
+- [Object-oriented design document](docs/object_oriented_design.md)
 
 The source summary diagram lives in [`docs/diagrams/class_diagram_readme_summary.mmd`](docs/diagrams/class_diagram_readme_summary.mmd).
 
 ```mermaid
 classDiagram
+    %% Readable README-level OO summary. See the full entity and system diagrams for detail.
+
     class Asteroid {
         +AsteroidIdentity identity
         +Orbit orbit
@@ -170,39 +180,47 @@ classDiagram
         +CloseApproachSummary close_approach_summary
         +SentryRiskSignal sentry_signal
         +object_key() str
+        +display_name() str
+        +has_risk_relevant_data() bool
         +to_feature_dict() dict
+        +to_dict() dict
     }
 
     class AsteroidIdentity {
         +str object_key
         +str spkid
         +str des
+        +str full_name
         +best_identifier() str
         +display_name() str
     }
 
     class Orbit {
-        +float e
         +float a
-        +float q
+        +float e
         +float i
         +float moid
         +float moid_ld
+        +str condition_code
         +orbital_vector() list
         +proximity_indicator() float
+        +uncertainty_indicator() float
     }
 
     class PhysicalProperties {
         +float h
         +float diameter
         +float albedo
+        +float log_diameter
         +size_indicator() float
+        +has_size_information() bool
     }
 
     class CloseApproachSummary {
         +float min_close_approach_dist
         +float max_close_approach_v_rel
         +int close_approach_count
+        +has_close_approach_data() bool
         +approach_priority_indicator() float
     }
 
@@ -210,7 +228,9 @@ classDiagram
         +bool sentry_flag
         +float sentry_ip
         +float sentry_ps_max
+        +int sentry_n_imp
         +has_sentry_signal() bool
+        +sentry_priority_indicator() float
     }
 
     class RiskScore {
@@ -234,6 +254,7 @@ classDiagram
         +float simulated_min_distance_p05_au
         +float dispersion_index
         +str scenario_category
+        +str simulation_method
         +to_dict() dict
     }
 
@@ -249,6 +270,7 @@ classDiagram
         +str model_name
         +str feature_set
         +str leakage_risk
+        +str recommended_use
         +to_dict() dict
     }
 
@@ -262,6 +284,7 @@ classDiagram
 
     class AsteroidFactory {
         +from_gold_row(row) Asteroid
+        +from_risk_row(row) tuple
         +risk_score_from_row(row) RiskScore
         +monte_carlo_result_from_dict(data) MonteCarloResult
     }
@@ -278,6 +301,11 @@ classDiagram
         +top(limit) list
     }
 
+    class SimulationResultRepository {
+        +load_latest_results() list
+        +get_latest_for_object(object_key) MonteCarloResult
+    }
+
     class RiskScorer {
         +dict weights
         +score_dataframe(df) DataFrame
@@ -292,8 +320,12 @@ classDiagram
         +simulate_batch(df, limit, n_simulations, random_state) dict
     }
 
-    class OrbitalMonteCarloEngine {
-        +simulate_object(row, n_clones, horizon_days, time_step_days, random_state) dict
+    class OrbitalSimulationService {
+        +OrbitalMonteCarloEngine engine
+        +OrbitalSimulationReportWriter writer
+        +simulate_object(object_key, n_clones, horizon_days, time_step_days, random_state) dict
+        +simulate_batch(limit, n_clones, horizon_days, time_step_days, random_state) dict
+        +latest_for_object(object_key) dict
     }
 
     class ModelEvidenceBuilder {
@@ -309,37 +341,38 @@ classDiagram
         +graph_summary(graph, status, warnings) dict
     }
 
-    class GNNExperimentRunner {
-        +run_graph_experiment(target, k, min_nodes) dict
-        +run_baseline_comparison(df, target) dict
-        +run_all(target, k, min_nodes) dict
-    }
-
     class FindingsBuilder {
         +build_all(write) dict
         +read_group(group_name) dict
         +object_findings(object_key) dict
     }
 
-    AsteroidFactory --> Asteroid : creates
-    AsteroidFactory --> RiskScore : creates
-    GoldFeatureRepository *-- AsteroidFactory : maps rows
-    RiskScoreRepository *-- AsteroidFactory : maps rows
-
     Asteroid *-- AsteroidIdentity : identity
     Asteroid *-- Orbit : orbit
     Asteroid *-- PhysicalProperties : physical
-    Asteroid *-- CloseApproachSummary : approach
-    Asteroid *-- SentryRiskSignal : sentry
-    RiskScore ..> Asteroid : object_key
+    Asteroid o-- CloseApproachSummary : approach
+    Asteroid o-- SentryRiskSignal : sentry
 
-    RiskScorer ..> RiskScore : derived fields
-    MonteCarloEngine *-- RiskScorer : recalculates
+    AsteroidFactory --> Asteroid : creates
+    AsteroidFactory --> RiskScore : creates
+    AsteroidFactory --> MonteCarloResult : creates
+    GoldFeatureRepository ..> AsteroidFactory : maps rows
+    RiskScoreRepository ..> AsteroidFactory : maps rows
+    SimulationResultRepository ..> AsteroidFactory : maps rows
+
+    GoldFeatureRepository --> Asteroid : returns
+    RiskScoreRepository --> RiskScore : returns
+    SimulationResultRepository --> MonteCarloResult : returns
+
+    RiskScorer ..> Asteroid : accepts
+    RiskScorer ..> RiskScore : derives fields
+    RiskScore ..> Asteroid : object_key
+    MonteCarloEngine ..> RiskScore : recalculates samples
     MonteCarloEngine ..> MonteCarloResult : summarizes
-    OrbitalMonteCarloEngine --> OrbitalSimulationResult : creates
+    OrbitalSimulationService ..> OrbitalSimulationResult : produces
+    OrbitalSimulationResult ..> Orbit : simulates orbital state
 
     OrbitalGraphBuilder --> OrbitalGraph : builds
-    GNNExperimentRunner *-- OrbitalGraphBuilder : graph_builder
     ModelEvidenceBuilder --> ModelCard : writes
     ModelEvidenceBuilder --> PredictionRecord : writes
     PredictionRecord ..> RiskScore : score context

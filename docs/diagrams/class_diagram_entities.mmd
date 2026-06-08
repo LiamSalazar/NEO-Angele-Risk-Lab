@@ -1,6 +1,9 @@
 classDiagram
-    %% Pure domain and analytical output entities only. No pipelines, services, builders, repositories, or API clients.
+    %% Domain entities, value objects, and analytical result entities only.
+    %% This diagram intentionally excludes factories, repositories, services, builders,
+    %% API clients, ETL classes, pipelines, routers, trainers, and frontend components.
 
+    %% Core NEO domain entities.
     class Asteroid {
         +AsteroidIdentity identity
         +Orbit orbit
@@ -99,6 +102,7 @@ classDiagram
         +to_dict() dict
     }
 
+    %% Analytical output entities.
     class RiskScore {
         +str object_key
         +float risk_score
@@ -146,7 +150,9 @@ classDiagram
         +float mean_score
         +float std_score
         +float p05_score
+        +float p25_score
         +float median_score
+        +float p75_score
         +float p95_score
         +float max_score
         +float probability_score_above_60
@@ -159,6 +165,92 @@ classDiagram
         +to_dict() dict
     }
 
+    class OrbitalSimulationResult {
+        +str object_key
+        +int n_clones
+        +int horizon_days
+        +int time_step_days
+        +float baseline_min_distance_au
+        +float simulated_min_distance_mean_au
+        +float simulated_min_distance_std_au
+        +float simulated_min_distance_p05_au
+        +float simulated_min_distance_p50_au
+        +float simulated_min_distance_p95_au
+        +float closest_approach_day_mean
+        +float dispersion_index
+        +float orbital_uncertainty_score
+        +str scenario_category
+        +str interpretation
+        +int valid_clone_count
+        +int invalid_clone_count
+        +bool covariance_available
+        +str simulation_method
+        +int covariance_dimension
+        +str covariance_epoch
+        +str covariance_method
+        +str fallback_reason
+        +str uncertainty_quality
+        +str propagator
+        +bool cad_validation_available
+        +float cad_validation_error_au
+        +list warnings
+        +str simulated_at_utc
+        +str simulation_version
+        +str designation
+        +float risk_score_0_100
+        +str risk_category
+        +to_dict() dict
+    }
+
+    class ModelCard {
+        +str model_name
+        +str model_family
+        +str feature_set
+        +str target
+        +dict metrics
+        +list strengths
+        +list weaknesses
+        +str leakage_risk
+        +str recommended_use
+        +str not_recommended_use
+        +str interpretation
+        +str status
+        +to_dict() dict
+    }
+
+    class PredictionRecord {
+        +str object_key
+        +str designation
+        +int actual_label
+        +int predicted_label
+        +float predicted_probability
+        +str model_name
+        +str feature_set
+        +str model_family
+        +bool correct
+        +str confidence_bucket
+        +float risk_score_0_100
+        +str risk_category
+        +str notes
+        +str graph_model_name
+        +int node_embedding_dimension
+        +bool neighbor_context_used
+        +to_dict() dict
+    }
+
+    class AnalyticalFinding {
+        +str title
+        +str short_text
+        +str technical_basis
+        +list related_objects
+        +str importance
+        +str source_module
+        +dict values
+        +str caveat
+        +to_dict() dict
+    }
+
+    %% Graph/result entities.
     class OrbitalGraphNode {
         +int node_id
         +str object_key
@@ -205,90 +297,30 @@ classDiagram
         +summary() dict
     }
 
-    class OrbitalSimulationResult {
-        +str object_key
-        +int n_clones
-        +int horizon_days
-        +int time_step_days
-        +float baseline_min_distance_au
-        +float simulated_min_distance_mean_au
-        +float simulated_min_distance_std_au
-        +float simulated_min_distance_p05_au
-        +float simulated_min_distance_p50_au
-        +float simulated_min_distance_p95_au
-        +float dispersion_index
-        +float orbital_uncertainty_score
-        +str scenario_category
-        +str interpretation
-        +bool covariance_available
-        +str simulation_method
-        +str propagator
-        +list warnings
-        +to_dict() dict
-    }
-
-    class ModelCard {
-        +str model_name
-        +str model_family
-        +str feature_set
-        +str target
-        +dict metrics
-        +list strengths
-        +list weaknesses
-        +str leakage_risk
-        +str recommended_use
-        +str not_recommended_use
-        +str interpretation
-        +str status
-        +to_dict() dict
-    }
-
-    class PredictionRecord {
-        +str object_key
-        +str designation
-        +int actual_label
-        +int predicted_label
-        +float predicted_probability
-        +str model_name
-        +str feature_set
-        +str model_family
-        +bool correct
-        +str confidence_bucket
-        +float risk_score_0_100
-        +str risk_category
-        +str notes
-        +to_dict() dict
-    }
-
-    class AnalyticalFinding {
-        +str title
-        +str short_text
-        +str technical_basis
-        +list related_objects
-        +str importance
-        +str source_module
-        +dict values
-        +str caveat
-        +to_dict() dict
-    }
-
     Asteroid *-- AsteroidIdentity : identity
     Asteroid *-- Orbit : orbit
     Asteroid *-- PhysicalProperties : physical
-    Asteroid *-- CloseApproachSummary : close_approach_summary
-    Asteroid *-- SentryRiskSignal : sentry_signal
+    Asteroid o-- CloseApproachSummary : close_approach_summary
+    Asteroid o-- SentryRiskSignal : sentry_signal
+
+    CloseApproachSummary ..> CloseApproach : summarizes CAD records
 
     RiskScore ..> Asteroid : object_key
     RiskExplanation ..> RiskScore : explains
-    SimulationScenario ..> RiskScore : perturbed score
-    MonteCarloResult ..> RiskScore : summarizes samples
+    SimulationScenario ..> RiskScore : perturbed score snapshot
+    MonteCarloResult ..> RiskScore : summarizes score distribution
     OrbitalSimulationResult ..> Orbit : simulates orbital state
+    OrbitalSimulationResult ..> RiskScore : carries score context
+
+    PredictionRecord ..> ModelCard : model context
+    PredictionRecord ..> RiskScore : carries score context
+    AnalyticalFinding ..> RiskScore : may reference scored objects
+    AnalyticalFinding ..> MonteCarloResult : may cite stability
+    AnalyticalFinding ..> OrbitalSimulationResult : may cite scenarios
+    AnalyticalFinding ..> OrbitalGraph : may cite neighborhoods
+    AnalyticalFinding ..> ModelCard : may cite evidence
 
     OrbitalGraph *-- OrbitalGraphNode : nodes
     OrbitalGraph *-- OrbitalSimilarityEdge : edges
     OrbitalSimilarityEdge ..> OrbitalGraphNode : source target ids
     GNNExperimentResult ..> OrbitalGraph : experiment graph
-
-    PredictionRecord ..> ModelCard : emitted by model view
-    PredictionRecord ..> RiskScore : carries score context
-    AnalyticalFinding ..> RiskScore : may reference scored objects
