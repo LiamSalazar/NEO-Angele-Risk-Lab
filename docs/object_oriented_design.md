@@ -25,6 +25,18 @@ The first part of the flow is data-engineering oriented. API clients retrieve SB
 
 The second part of the flow is object-oriented. `AsteroidFactory` reads processed rows and builds domain objects. Services such as `RiskScorer`, `MonteCarloEngine`, `OrbitalSimulationService`, `OrbitalGraphBuilder`, `ModelEvidenceBuilder`, and `FindingsBuilder` operate over rows, domain objects, and generated artifacts while keeping their responsibilities separate.
 
+## Pure domain model
+
+The PNG integrated in the README is the pure domain class diagram. It corresponds to the source Mermaid file at [`diagrams/class_diagram_entities.mmd`](diagrams/class_diagram_entities.mmd) and is rendered as:
+
+![Pure domain class diagram](../artifacts/figures/class_diagram_entities.png)
+
+This diagram focuses on the domain abstraction: the NEO aggregate, its component value objects, and the main analytical result entities associated by `object_key`. It shows `Asteroid` as the aggregate root, with `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, optional `CloseApproachSummary`, and optional `SentryRiskSignal` as the object model used to interpret NASA/JPL records.
+
+`CloseApproachSummary` is related to `CloseApproach` through a conceptual dependency because it summarizes CAD-derived records. The current code does not store a list of `CloseApproach` instances inside the summary, so the UML relationship is not strong composition.
+
+The complete system view is intentionally separate in the [System class diagram](diagrams/class_diagram_system.mmd). That diagram covers process and infrastructure classes: factories, repositories, scoring services, simulations, ML/GNN components, findings, API clients, storage adapters, and pipelines. Keeping these concerns separate makes it clear which classes represent the domain and which classes execute the workflow.
+
 ## 3. Domain Abstraction
 
 ### Asteroid
@@ -204,11 +216,14 @@ The ingestion and ETL classes form the lower system layer. `BaseJPLClient` is th
 
 ## 9. UML Diagrams
 
+- [Pure domain class diagram image](../artifacts/figures/class_diagram_entities.png)
 - [Entity class diagram](diagrams/class_diagram_entities.mmd)
 - [System class diagram](diagrams/class_diagram_system.mmd)
 - [README summary class diagram](diagrams/class_diagram_readme_summary.mmd)
 
 The entity diagram contains only domain entities, value objects, and analytical result entities. It deliberately excludes factories, repositories, clients, builders, services, trainers, pipelines, routers, and frontend components.
+
+The system diagram expands the view to include factories, repositories, scoring services, simulations, ML/GNN components, findings, API clients, storage adapters, and pipelines. Those classes are part of the object-oriented system design, but they are process or infrastructure classes rather than pure domain entities.
 
 The system diagram includes process and infrastructure classes and uses UML relationship types carefully:
 

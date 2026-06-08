@@ -149,239 +149,32 @@ Private API keys are not required.
 
 ## Object-Oriented Programming
 
-The project uses object-oriented design at two distinct levels. The first level is the domain model: classes that represent NEO concepts and analytical output records. The second level is the system model: factories, repositories, scorers, simulation engines, graph builders, evidence builders, clients, storage adapters, and pipelines that execute the workflow.
+Neo Angele Risk Lab uses object-oriented design to transform NASA/JPL data into explicit domain concepts. The project does not treat the dataset only as isolated columns; instead, it interprets the incoming records as a structured representation of a Near-Earth Object and its analytical context.
 
-The raw NASA/JPL sources arrive as API JSON payloads or tabular records. The backend does not treat those records only as loose columns. During ingestion and ETL, the data is preserved in bronze, normalized into silver tables, and joined into gold analytical rows. From there, `AsteroidFactory` translates processed rows into domain objects: identity, orbit, physical properties, close-approach context, Sentry signal, and analytical results. This creates a domain vocabulary that is independent from Spark, Pandas, FastAPI, and the React frontend.
+The core abstraction is `Asteroid`, which acts as the aggregate root. It groups the identity of the object, its orbital elements, physical properties, close-approach context, and Sentry-related risk signal. This makes the domain model easier to read, test, and extend because each part of the asteroid is represented by a focused object with its own attributes and behavior.
 
-`Asteroid` acts as the aggregate root for the core NEO concept. It groups `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, optional `CloseApproachSummary`, optional `SentryRiskSignal`, and flags such as `neo` and `pha`. Its methods provide a coherent interface over that aggregate: `object_key()` selects the stable lookup key, `display_name()` builds a human-readable label, `has_risk_relevant_data()` checks whether the object has useful analytical state, `to_feature_dict()` flattens the aggregate for scoring and modeling, and `to_dict()` serializes the nested domain representation.
+The pure domain model separates responsibilities as follows:
 
-Several classes are value objects rather than processes. `Orbit` concentrates orbital elements and derived signals such as proximity and uncertainty indicators. `PhysicalProperties` concentrates magnitude, diameter, albedo, and size indicators. `CloseApproachSummary` summarizes close-approach context without owning every CAD row. `SentryRiskSignal` summarizes the Sentry-related fields when they are available. These objects keep domain behavior near the data it interprets.
+- `AsteroidIdentity` stores stable identifiers, designations, orbit-class labels, and display names.
+- `Orbit` encapsulates orbital elements and indicators such as proximity and uncertainty.
+- `PhysicalProperties` encapsulates magnitude, diameter, albedo, and size-related indicators.
+- `CloseApproachSummary` summarizes close-approach records derived from CAD data.
+- `SentryRiskSignal` groups Sentry-related probability, Palermo, Torino, and virtual-impactor signals when available.
 
-Factories and repositories separate transformation from access. `AsteroidFactory` converts gold, risk, and simulation rows into domain objects, so row-mapping rules are not repeated in repositories, API handlers, or services. `GoldFeatureRepository`, `RiskScoreRepository`, and `SimulationResultRepository` isolate Parquet/CSV access and return domain objects instead of forcing every caller to know file paths and tabular schemas.
+`CloseApproachSummary` is intentionally modeled as a summary object. It is related conceptually to individual `CloseApproach` records because it summarizes CAD observations, but it does not strongly compose a stored list of those records in the current code.
 
-Process classes then operate over those objects and rows. `RiskScorer` calculates component scores and the Risk Priority Score. `MonteCarloEngine` perturbs score inputs and summarizes stability. `OrbitalSimulationService` coordinates clone-based orbital simulations. `OrbitalGraphBuilder` builds similarity neighborhoods. `ModelEvidenceBuilder` creates model cards, predictions, and disagreement artifacts. `FindingsBuilder` turns generated artifacts into interpretable findings. This separation gives the codebase traceability from raw NASA/JPL records to final analytical outputs, lowers coupling, improves reuse, and makes tests easier to target.
+The following UML image shows the pure domain abstraction. It focuses on domain entities, value objects, and analytical result entities. Process classes such as factories, repositories, scorers, simulations, builders, pipelines, API clients, ML/GNN components, and reporters are documented separately because they describe how the system processes the domain objects, not the domain abstraction itself.
 
-The summary diagram below keeps the README readable. The complete object-oriented documentation lives in:
+![Pure domain class diagram](artifacts/figures/class_diagram_entities.png)
 
-- [Entity class diagram](docs/diagrams/class_diagram_entities.mmd)
+Source: [`docs/diagrams/class_diagram_entities.mmd`](docs/diagrams/class_diagram_entities.mmd)
+
+Additional UML documentation:
+
+- [Pure domain class diagram](docs/diagrams/class_diagram_entities.mmd)
 - [System class diagram](docs/diagrams/class_diagram_system.mmd)
-- [Object-oriented design document](docs/object_oriented_design.md)
-
-The source summary diagram lives in [`docs/diagrams/class_diagram_readme_summary.mmd`](docs/diagrams/class_diagram_readme_summary.mmd).
-
-```mermaid
-classDiagram
-    %% Readable README-level OO summary. See the full entity and system diagrams for detail.
-
-    class Asteroid {
-        +AsteroidIdentity identity
-        +Orbit orbit
-        +PhysicalProperties physical
-        +CloseApproachSummary close_approach_summary
-        +SentryRiskSignal sentry_signal
-        +object_key() str
-        +display_name() str
-        +has_risk_relevant_data() bool
-        +to_feature_dict() dict
-        +to_dict() dict
-    }
-
-    class AsteroidIdentity {
-        +str object_key
-        +str spkid
-        +str des
-        +str full_name
-        +best_identifier() str
-        +display_name() str
-    }
-
-    class Orbit {
-        +float a
-        +float e
-        +float i
-        +float moid
-        +float moid_ld
-        +str condition_code
-        +orbital_vector() list
-        +proximity_indicator() float
-        +uncertainty_indicator() float
-    }
-
-    class PhysicalProperties {
-        +float h
-        +float diameter
-        +float albedo
-        +float log_diameter
-        +size_indicator() float
-        +has_size_information() bool
-    }
-
-    class CloseApproachSummary {
-        +float min_close_approach_dist
-        +float max_close_approach_v_rel
-        +int close_approach_count
-        +has_close_approach_data() bool
-        +approach_priority_indicator() float
-    }
-
-    class SentryRiskSignal {
-        +bool sentry_flag
-        +float sentry_ip
-        +float sentry_ps_max
-        +int sentry_n_imp
-        +has_sentry_signal() bool
-        +sentry_priority_indicator() float
-    }
-
-    class RiskScore {
-        +str object_key
-        +float risk_score_0_100
-        +str risk_category
-        +component_breakdown() dict
-        +dominant_components(top_n) list
-    }
-
-    class MonteCarloResult {
-        +str object_key
-        +float mean_score
-        +float p95_score
-        +float category_shift_probability
-        +stability_summary() dict
-    }
-
-    class OrbitalSimulationResult {
-        +str object_key
-        +float simulated_min_distance_p05_au
-        +float dispersion_index
-        +str scenario_category
-        +str simulation_method
-        +to_dict() dict
-    }
-
-    class OrbitalGraph {
-        +list nodes
-        +list edges
-        +node_count() int
-        +edge_count() int
-        +density() float
-    }
-
-    class ModelCard {
-        +str model_name
-        +str feature_set
-        +str leakage_risk
-        +str recommended_use
-        +to_dict() dict
-    }
-
-    class PredictionRecord {
-        +str object_key
-        +int predicted_label
-        +float predicted_probability
-        +str confidence_bucket
-        +to_dict() dict
-    }
-
-    class AsteroidFactory {
-        +from_gold_row(row) Asteroid
-        +from_risk_row(row) tuple
-        +risk_score_from_row(row) RiskScore
-        +monte_carlo_result_from_dict(data) MonteCarloResult
-    }
-
-    class GoldFeatureRepository {
-        +load_dataframe() DataFrame
-        +load_asteroids() list
-        +get_by_object_key(object_key) Asteroid
-    }
-
-    class RiskScoreRepository {
-        +load_scores() list
-        +get_score(object_key) RiskScore
-        +top(limit) list
-    }
-
-    class SimulationResultRepository {
-        +load_latest_results() list
-        +get_latest_for_object(object_key) MonteCarloResult
-    }
-
-    class RiskScorer {
-        +dict weights
-        +score_dataframe(df) DataFrame
-        +score_row(row) dict
-        +component_columns() list
-    }
-
-    class MonteCarloEngine {
-        +RiskScorer risk_scorer
-        +PerturbationEngine perturbation_engine
-        +simulate_object(row, n_simulations, random_state) dict
-        +simulate_batch(df, limit, n_simulations, random_state) dict
-    }
-
-    class OrbitalSimulationService {
-        +OrbitalMonteCarloEngine engine
-        +OrbitalSimulationReportWriter writer
-        +simulate_object(object_key, n_clones, horizon_days, time_step_days, random_state) dict
-        +simulate_batch(limit, n_clones, horizon_days, time_step_days, random_state) dict
-        +latest_for_object(object_key) dict
-    }
-
-    class ModelEvidenceBuilder {
-        +build(target, write) dict
-        +read_cards() dict
-        +read_predictions(mode) dict
-        +object_evidence(object_key, mode) dict
-    }
-
-    class OrbitalGraphBuilder {
-        +build_graph_from_risk_scores(k, target, min_nodes, write_summary) OrbitalGraph
-        +export_graph(graph, output_dir) dict
-        +graph_summary(graph, status, warnings) dict
-    }
-
-    class FindingsBuilder {
-        +build_all(write) dict
-        +read_group(group_name) dict
-        +object_findings(object_key) dict
-    }
-
-    Asteroid *-- AsteroidIdentity : identity
-    Asteroid *-- Orbit : orbit
-    Asteroid *-- PhysicalProperties : physical
-    Asteroid o-- CloseApproachSummary : approach
-    Asteroid o-- SentryRiskSignal : sentry
-
-    AsteroidFactory --> Asteroid : creates
-    AsteroidFactory --> RiskScore : creates
-    AsteroidFactory --> MonteCarloResult : creates
-    GoldFeatureRepository ..> AsteroidFactory : maps rows
-    RiskScoreRepository ..> AsteroidFactory : maps rows
-    SimulationResultRepository ..> AsteroidFactory : maps rows
-
-    GoldFeatureRepository --> Asteroid : returns
-    RiskScoreRepository --> RiskScore : returns
-    SimulationResultRepository --> MonteCarloResult : returns
-
-    RiskScorer ..> Asteroid : accepts
-    RiskScorer ..> RiskScore : derives fields
-    RiskScore ..> Asteroid : object_key
-    MonteCarloEngine ..> RiskScore : recalculates samples
-    MonteCarloEngine ..> MonteCarloResult : summarizes
-    OrbitalSimulationService ..> OrbitalSimulationResult : produces
-    OrbitalSimulationResult ..> Orbit : simulates orbital state
-
-    OrbitalGraphBuilder --> OrbitalGraph : builds
-    ModelEvidenceBuilder --> ModelCard : writes
-    ModelEvidenceBuilder --> PredictionRecord : writes
-    PredictionRecord ..> RiskScore : score context
-    FindingsBuilder ..> RiskScore : reads
-    FindingsBuilder ..> MonteCarloResult : reads
-    FindingsBuilder ..> OrbitalSimulationResult : reads
-    FindingsBuilder ..> OrbitalGraph : reads
-    FindingsBuilder ..> ModelEvidenceBuilder : reads
-```
+- [README summary class diagram](docs/diagrams/class_diagram_readme_summary.mmd)
+- [Object-oriented design notes](docs/object_oriented_design.md)
 
 ## Risk Priority Score
 
