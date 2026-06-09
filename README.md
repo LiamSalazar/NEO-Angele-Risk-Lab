@@ -149,21 +149,21 @@ Private API keys are not required.
 
 ## Object-Oriented Programming
 
-Neo Angele Risk Lab uses object-oriented design to transform NASA/JPL data into explicit domain concepts. The project does not treat the dataset only as isolated columns; instead, it interprets the incoming records as a structured representation of a Near-Earth Object and its analytical context.
+Neo Angele Risk Lab uses object-oriented design to transform NASA/JPL records into explicit domain concepts. The domain model was not created by simply splitting a CSV or copying dataset columns into classes. Instead, the project interprets the incoming NASA/JPL data as a structured representation of a Near-Earth Object and separates that representation into cohesive objects with clear responsibilities.
 
-The core abstraction is `Asteroid`, which acts as the aggregate root. It groups the identity of the object, its orbital elements, physical properties, close-approach context, and Sentry-related risk signal. This makes the domain model easier to read, test, and extend because each part of the asteroid is represented by a focused object with its own attributes and behavior.
+The central abstraction is `Asteroid`, which acts as the aggregate root of the pure domain model. It groups the object identity, orbital elements, physical properties, close-approach context and Sentry-related signal into a single coherent representation. Each component encapsulates data and behavior related to one part of the domain:
 
-The pure domain model separates responsibilities as follows:
-
-- `AsteroidIdentity` stores stable identifiers, designations, orbit-class labels, and display names.
-- `Orbit` encapsulates orbital elements and indicators such as proximity and uncertainty.
-- `PhysicalProperties` encapsulates magnitude, diameter, albedo, and size-related indicators.
+- `AsteroidIdentity` stores stable identifiers, designations, display names and orbit-class labels.
+- `Orbit` encapsulates orbital elements and provides orbital indicators such as proximity and uncertainty.
+- `PhysicalProperties` encapsulates magnitude, diameter, albedo and size-related indicators.
 - `CloseApproachSummary` summarizes close-approach records derived from CAD data.
-- `SentryRiskSignal` groups Sentry-related probability, Palermo, Torino, and virtual-impactor signals when available.
+- `SentryRiskSignal` groups Sentry-related impact-probability and Palermo/Torino-style signals when available.
 
 `CloseApproachSummary` is intentionally modeled as a summary object. It is related conceptually to individual `CloseApproach` records because it summarizes CAD observations, but it does not strongly compose a stored list of those records in the current code.
 
-The following UML image shows the pure domain abstraction. It focuses on domain entities, value objects, and analytical result entities. Process classes such as factories, repositories, scorers, simulations, builders, pipelines, API clients, ML/GNN components, and reporters are documented separately because they describe how the system processes the domain objects, not the domain abstraction itself.
+This design keeps the domain language explicit. The project can still use tabular processing for performance in the ETL pipeline, but the object-oriented layer provides a clearer conceptual model for interpretation, testing, API responses, documentation and extension.
+
+The following UML image shows only the pure domain abstraction. It intentionally excludes process classes such as factories, repositories, scorers, simulations, builders, pipelines, API clients, ML/GNN components and reporters. Those classes are documented separately because they describe how the system processes the domain objects, not the domain abstraction itself.
 
 ![Pure domain class diagram](artifacts/figures/class_diagram_entities.png)
 

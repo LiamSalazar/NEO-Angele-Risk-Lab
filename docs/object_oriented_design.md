@@ -4,7 +4,7 @@
 
 The object-oriented design in Neo Angele Risk Lab converts astronomical and analytical data into objects with explicit meaning. NASA/JPL APIs expose valuable records, but those records arrive as JSON payloads, nested fields, and tabular columns. The project uses classes to name the relevant concepts, group related values, and keep behavior close to the data it interprets.
 
-The design is intentionally split into two levels. Domain classes describe NEO concepts and analytical results. Process classes describe how data is loaded, transformed, scored, simulated, compared, and reported.
+The design is intentionally split into three levels. The pure domain model describes the NEO itself. Analytical result objects describe outputs derived from that domain. Process and system classes describe how data is loaded, transformed, scored, simulated, compared, and reported.
 
 ## 2. From API Data to Domain Model
 
@@ -23,7 +23,7 @@ NASA/JPL API JSON
 
 The first part of the flow is data-engineering oriented. API clients retrieve SBDB Object, SBDB Query, CAD, and Sentry payloads. `BronzeStorage` wraps raw responses with metadata. `BronzeReader` and `SilverTransformers` normalize the records into silver tables. `GoldBuilder` joins and enriches those tables into `data/gold/neo_risk_features`.
 
-The second part of the flow is object-oriented. `AsteroidFactory` reads processed rows and builds domain objects. Services such as `RiskScorer`, `MonteCarloEngine`, `OrbitalSimulationService`, `OrbitalGraphBuilder`, `ModelEvidenceBuilder`, and `FindingsBuilder` operate over rows, domain objects, and generated artifacts while keeping their responsibilities separate.
+The second part of the flow is object-oriented. `AsteroidFactory` reads processed rows and builds pure domain objects. Analytical services such as `RiskScorer`, `MonteCarloEngine`, `OrbitalSimulationService`, `OrbitalGraphBuilder`, `ModelEvidenceBuilder`, and `FindingsBuilder` then operate over rows, domain objects, and generated artifacts while keeping their responsibilities separate.
 
 ## Pure domain model
 
@@ -31,13 +31,13 @@ The PNG integrated in the README is the pure domain class diagram. It correspond
 
 ![Pure domain class diagram](../artifacts/figures/class_diagram_entities.png)
 
-This diagram focuses on the domain abstraction: the NEO aggregate, its component value objects, and the main analytical result entities associated by `object_key`. It shows `Asteroid` as the aggregate root, with `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, optional `CloseApproachSummary`, and optional `SentryRiskSignal` as the object model used to interpret NASA/JPL records.
+This diagram focuses only on the domain abstraction: the NEO aggregate and its component value objects. It shows `Asteroid` as the aggregate root, with `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, optional `CloseApproachSummary`, and optional `SentryRiskSignal` as the object model used to interpret NASA/JPL records.
 
 `CloseApproachSummary` is related to `CloseApproach` through a conceptual dependency because it summarizes CAD-derived records. The current code does not store a list of `CloseApproach` instances inside the summary, so the UML relationship is not strong composition.
 
-The complete system view is intentionally separate in the [System class diagram](diagrams/class_diagram_system.mmd). That diagram covers process and infrastructure classes: factories, repositories, scoring services, simulations, ML/GNN components, findings, API clients, storage adapters, and pipelines. Keeping these concerns separate makes it clear which classes represent the domain and which classes execute the workflow.
+The complete system view is intentionally separate in the [System class diagram](diagrams/class_diagram_system.mmd). That diagram covers analytical results and process/infrastructure classes: factories, repositories, scoring services, simulations, ML/GNN components, findings, API clients, storage adapters, and pipelines. Keeping these concerns separate makes it clear which classes represent the pure domain and which classes execute or report on the workflow.
 
-## 3. Domain Abstraction
+## 3. Pure Domain Object Reference
 
 ### Asteroid
 
@@ -88,6 +88,12 @@ Its methods are `has_close_approach_data()`, `approach_priority_indicator()`, an
 `SentryRiskSignal` represents Sentry-derived signals when they are available. It includes `sentry_flag`, `sentry_ip`, `sentry_ps_cum`, `sentry_ps_max`, `sentry_ts_max`, and `sentry_n_imp`.
 
 Its methods are `has_sentry_signal()`, `sentry_priority_indicator()`, and `to_dict()`. It is optional inside `Asteroid`. Missing Sentry data means no Sentry signal is available in the row; it does not mean zero official risk.
+
+## Analytical result objects
+
+Analytical result objects are separate from the pure domain model. They describe outputs produced after the NEO domain objects and tabular features have been scored, simulated, modeled, compared, or summarized. They are not shown in the pure domain class diagram because they do not define the NEO abstraction itself.
+
+Classes such as `RiskScore`, `RiskExplanation`, `SimulationScenario`, `MonteCarloResult`, `OrbitalSimulationResult`, `ModelCard`, `PredictionRecord`, `AnalyticalFinding`, `OrbitalGraph`, and `GNNExperimentResult` belong to this analytical-output level. Most of them reference an asteroid by `object_key` instead of owning an `Asteroid` instance. This keeps the domain model focused while still documenting the result objects used by the application, reports, and API.
 
 ### RiskScore
 
@@ -194,9 +200,9 @@ The domain repositories isolate processed artifact access:
 
 This shields callers from path details and Parquet layout. It also creates a clean seam between file-based persistence and domain-oriented access.
 
-## 8. Analytical Services
+## Process and system classes
 
-Process classes express how the system runs.
+Process and system classes express how the project executes the workflow around the domain model. They are not part of the pure domain diagram, but they are part of the complete object-oriented architecture.
 
 `RiskScorer` calculates the Risk Priority Score from gold features or an `Asteroid` aggregate. It owns a `RiskCategoryAssigner`, uses `RiskExplanationService` to build explanatory text, and returns derived score fields.
 
@@ -221,7 +227,7 @@ The ingestion and ETL classes form the lower system layer. `BaseJPLClient` is th
 - [System class diagram](diagrams/class_diagram_system.mmd)
 - [README summary class diagram](diagrams/class_diagram_readme_summary.mmd)
 
-The entity diagram contains only domain entities, value objects, and analytical result entities. It deliberately excludes factories, repositories, clients, builders, services, trainers, pipelines, routers, and frontend components.
+The pure domain diagram contains only the NEO aggregate and its domain component objects. It deliberately excludes analytical result objects, factories, repositories, clients, builders, services, trainers, pipelines, routers, and frontend components.
 
 The system diagram expands the view to include factories, repositories, scoring services, simulations, ML/GNN components, findings, API clients, storage adapters, and pipelines. Those classes are part of the object-oriented system design, but they are process or infrastructure classes rather than pure domain entities.
 

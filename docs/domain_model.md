@@ -2,11 +2,12 @@
 
 Neo Angele Risk Lab has a dedicated domain layer under `src/neo_ange/domain`. Its purpose is to translate processed NASA/JPL data into objects that carry domain meaning instead of leaving every layer to work directly with loose table columns.
 
-## Two Class Levels
+## Three Class Levels
 
-The documentation separates two object-oriented levels:
+The documentation separates three object-oriented levels:
 
-- Domain entities and value objects: concepts from the NEO problem space and analytical outputs, such as `Asteroid`, `Orbit`, `PhysicalProperties`, `RiskScore`, `MonteCarloResult`, `OrbitalGraph`, `ModelCard`, `PredictionRecord`, and `AnalyticalFinding`.
+- Pure domain entities and value objects: concepts from the NEO problem space, such as `Asteroid`, `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, `CloseApproach`, `CloseApproachSummary`, and `SentryRiskSignal`.
+- Analytical result objects: outputs derived from scoring, simulation, graph, model-evidence, and findings workflows, such as `RiskScore`, `MonteCarloResult`, `OrbitalGraph`, `ModelCard`, `PredictionRecord`, and `AnalyticalFinding`.
 - Process and system classes: factories, repositories, scorers, simulation engines, graph builders, evidence builders, clients, storage adapters, and pipelines.
 
 These levels are related, but they are not the same kind of abstraction. `Asteroid` represents a near-Earth object. `RiskScorer` represents a scoring process. `AsteroidFactory` represents a mapping rule from rows to objects. `GoldFeatureRepository` represents a read adapter over processed artifacts.
@@ -81,6 +82,8 @@ This is a dependency, not composition. The repositories isolate Parquet access a
 - [System class diagram](diagrams/class_diagram_system.mmd)
 - [README summary class diagram](diagrams/class_diagram_readme_summary.mmd)
 - [Object-oriented design document](object_oriented_design.md)
+
+The entity class diagram is the pure domain diagram. It contains only `Asteroid`, `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, `CloseApproach`, `CloseApproachSummary`, and `SentryRiskSignal`. Analytical results and process/system classes are documented separately.
 
 ## Limitations
 
