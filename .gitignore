@@ -65,6 +65,7 @@ artifacts/models/*
 !artifacts/models/.gitkeep
 artifacts/figures/*
 !artifacts/figures/.gitkeep
+!artifacts/figures/class_diagram_entities.png
 artifacts/gnn_models/*
 !artifacts/gnn_models/.gitkeep
 artifacts/graph_exports/*
