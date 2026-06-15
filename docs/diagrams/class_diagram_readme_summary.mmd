@@ -1,0 +1,42 @@
+classDiagram
+    class Asteroid {
+        <<Aggregate Root>>
+        +object_key()
+        +display_name()
+        +to_feature_dict()
+    }
+    class AsteroidIdentity {
+        <<Value Object>>
+    }
+    class Orbit {
+        <<Value Object>>
+    }
+    class PhysicalProperties {
+        <<Value Object>>
+    }
+    class CloseApproachHistory {
+        <<Domain Component>>
+        +summarize()
+    }
+    class CloseApproachSummary {
+        <<Derived Summary>>
+    }
+    class SentryRiskSignal {
+        <<Value Object>>
+    }
+    class AsteroidFactory {
+        <<Factory>>
+    }
+    class GoldFeatureRepository {
+        <<Repository>>
+    }
+
+    AsteroidFactory --> Asteroid : builds
+    GoldFeatureRepository --> AsteroidFactory
+    Asteroid *-- AsteroidIdentity
+    Asteroid *-- Orbit
+    Asteroid *-- PhysicalProperties
+    Asteroid o-- CloseApproachHistory
+    CloseApproachHistory --> CloseApproachSummary : derives
+    Asteroid o-- CloseApproachSummary
+    Asteroid o-- SentryRiskSignal

@@ -1,0 +1,36 @@
+classDiagram
+    class SerializableDomainObject {
+        <<Protocol>>
+        +to_dict() dict
+    }
+    class FeatureExportable {
+        <<Protocol>>
+        +to_feature_dict() dict
+    }
+    class IdentifiableDomainObject {
+        <<Protocol>>
+        +object_key() str
+        +display_name() str
+    }
+    class Summarizable {
+        <<Protocol>>
+        +summarize()
+    }
+    class Asteroid
+    class AsteroidIdentity
+    class Orbit
+    class PhysicalProperties
+    class CloseApproachHistory
+    class CloseApproachSummary
+    class SentryRiskSignal
+
+    SerializableDomainObject <|.. Asteroid
+    FeatureExportable <|.. Asteroid
+    IdentifiableDomainObject <|.. Asteroid
+    SerializableDomainObject <|.. AsteroidIdentity
+    SerializableDomainObject <|.. Orbit
+    SerializableDomainObject <|.. PhysicalProperties
+    SerializableDomainObject <|.. CloseApproachHistory
+    Summarizable <|.. CloseApproachHistory
+    SerializableDomainObject <|.. CloseApproachSummary
+    SerializableDomainObject <|.. SentryRiskSignal

@@ -1,0 +1,70 @@
+classDiagram
+    namespace Pure_Domain_Model {
+        class Asteroid
+        class AsteroidIdentity
+        class Orbit
+        class PhysicalProperties
+        class CloseApproachHistory
+        class CloseApproachSummary
+        class SentryRiskSignal
+        class RiskScore
+        class MonteCarloResult
+        class SimulationScenario
+        class OrbitalGraph
+        class GNNExperimentResult
+    }
+    namespace Application_and_Infrastructure {
+        class AsteroidFactory
+        class GoldFeatureRepository
+        class RiskScoreRepository
+        class SimulationResultRepository
+        class RiskScorer
+        class MonteCarloEngine
+        class OrbitalMonteCarloEngine
+        class OrbitalGraphBuilder
+        class GNNExperimentRunner
+        class ModelEvidenceBuilder
+        class FindingsBuilder
+        class IngestionPipeline
+        class ETLPipeline
+        class GoldBuilder
+        class SBDBObjectClient
+        class SBDBQueryClient
+        class CloseApproachClient
+        class SentryClient
+        class FastAPIApp
+    }
+
+    Asteroid *-- AsteroidIdentity
+    Asteroid *-- Orbit
+    Asteroid *-- PhysicalProperties
+    Asteroid o-- CloseApproachHistory
+    Asteroid o-- CloseApproachSummary
+    Asteroid o-- SentryRiskSignal
+
+    AsteroidFactory --> Asteroid : builds aggregate
+    GoldFeatureRepository --> AsteroidFactory
+    RiskScoreRepository --> RiskScore
+    SimulationResultRepository --> MonteCarloResult
+
+    RiskScorer --> RiskScore : produces
+    RiskScorer --> Asteroid : interprets features
+    MonteCarloEngine --> RiskScorer : rescores perturbations
+    MonteCarloEngine --> MonteCarloResult
+    OrbitalMonteCarloEngine --> SimulationScenario
+    OrbitalMonteCarloEngine --> Orbit
+    OrbitalGraphBuilder --> OrbitalGraph
+    GNNExperimentRunner --> OrbitalGraphBuilder
+    GNNExperimentRunner --> GNNExperimentResult
+    ModelEvidenceBuilder --> RiskScore
+    FindingsBuilder --> ModelEvidenceBuilder
+
+    IngestionPipeline --> SBDBObjectClient
+    IngestionPipeline --> SBDBQueryClient
+    IngestionPipeline --> CloseApproachClient
+    IngestionPipeline --> SentryClient
+    ETLPipeline --> GoldBuilder
+    GoldBuilder --> AsteroidFactory
+    FastAPIApp --> GoldFeatureRepository
+    FastAPIApp --> RiskScoreRepository
+    FastAPIApp --> SimulationResultRepository

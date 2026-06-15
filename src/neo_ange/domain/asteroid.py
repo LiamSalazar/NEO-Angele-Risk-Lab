@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from neo_ange.domain.approach import CloseApproachSummary
+from neo_ange.domain.approach import CloseApproachHistory, CloseApproachSummary
 from neo_ange.domain.identity import AsteroidIdentity
 from neo_ange.domain.orbit import Orbit
 from neo_ange.domain.physical import PhysicalProperties
@@ -23,6 +23,7 @@ class Asteroid:
     sentry_signal: SentryRiskSignal | None = None
     neo: bool | None = None
     pha: bool | None = None
+    close_approach_history: CloseApproachHistory | None = None
 
     def object_key(self) -> str:
         """Return the stable lookup key used across layers."""
@@ -40,6 +41,8 @@ class Asteroid:
                 self.physical.has_size_information(),
                 self.close_approach_summary is not None
                 and self.close_approach_summary.has_close_approach_data(),
+                self.close_approach_history is not None
+                and self.close_approach_history.has_approaches(),
                 self.sentry_signal is not None and self.sentry_signal.has_sentry_signal(),
                 self.neo is not None,
                 self.pha is not None,
@@ -77,6 +80,11 @@ class Asteroid:
             "close_approach_summary": (
                 self.close_approach_summary.to_dict()
                 if self.close_approach_summary is not None
+                else None
+            ),
+            "close_approach_history": (
+                self.close_approach_history.to_dict()
+                if self.close_approach_history is not None
                 else None
             ),
             "sentry_signal": (

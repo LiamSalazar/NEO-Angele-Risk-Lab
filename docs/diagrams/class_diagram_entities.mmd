@@ -1,0 +1,58 @@
+classDiagram
+    class Asteroid {
+        +object_key() str
+        +display_name() str
+        +has_risk_relevant_data() bool
+        +to_feature_dict() dict
+        +to_dict() dict
+    }
+    class AsteroidIdentity {
+        +best_identifier() str
+        +display_name() str
+        +to_dict() dict
+    }
+    class Orbit {
+        +has_minimum_orbital_data() bool
+        +orbital_vector() list
+        +proximity_indicator() float
+        +uncertainty_indicator() float
+        +to_dict() dict
+    }
+    class PhysicalProperties {
+        +has_size_information() bool
+        +size_indicator() float
+        +to_dict() dict
+    }
+    class CloseApproach {
+        +distance_indicator() float
+        +velocity_indicator() float
+        +to_dict() dict
+    }
+    class CloseApproachHistory {
+        +count() int
+        +has_approaches() bool
+        +closest() CloseApproach
+        +fastest() CloseApproach
+        +next_approach() CloseApproach
+        +summarize() CloseApproachSummary
+        +to_dict() dict
+    }
+    class CloseApproachSummary {
+        +has_close_approach_data() bool
+        +approach_priority_indicator() float
+        +to_dict() dict
+    }
+    class SentryRiskSignal {
+        +has_sentry_signal() bool
+        +sentry_priority_indicator() float
+        +to_dict() dict
+    }
+
+    Asteroid *-- AsteroidIdentity
+    Asteroid *-- Orbit
+    Asteroid *-- PhysicalProperties
+    Asteroid o-- CloseApproachHistory
+    CloseApproachHistory *-- CloseApproach
+    CloseApproachHistory --> CloseApproachSummary : summarizes
+    Asteroid o-- CloseApproachSummary
+    Asteroid o-- SentryRiskSignal

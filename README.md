@@ -147,32 +147,70 @@ Private API keys are not required.
 | `docs` | Technical documentation and diagrams. |
 | `tests` | Unit tests and local integration tests. |
 
-## Object-Oriented Programming
+## Object-Oriented Domain Model
 
-The main domain lives in `src/neo_ange/domain`. The classes convert tabular rows into readable concepts: `Asteroid`, `AsteroidIdentity`, `Orbit`, `PhysicalProperties`, `CloseApproachSummary`, `SentryRiskSignal`, `RiskScore`, `MonteCarloResult`, and `OrbitalGraph`.
+The main domain model lives in `src/neo_ange/domain`. It is not a mechanical split of CSV columns into classes. NASA/JPL sources arrive as JSON payloads and tabular records from SBDB, CAD, and Sentry. The ETL flow preserves raw data in bronze, normalizes source-specific structures in silver, and builds analytical gold rows. `AsteroidFactory` then translates those rows into domain objects that represent NEO concepts: identity, orbital elements, physical properties, close-approach history or summary, and Sentry risk signals.
+
+### How the domain abstraction was built
+
+`Asteroid` is the aggregate root. It owns the risk-relevant state for one Near-Earth Object and delegates focused behavior to component objects:
+
+- `AsteroidIdentity`: stable identifiers, designation, display name, and orbit class labels.
+- `Orbit` / conceptual `OrbitalElements`: classical orbital elements plus observation-quality metadata.
+- `PhysicalProperties`: size measurements and proxies such as diameter, albedo, and absolute magnitude.
+- `CloseApproachHistory`: the real one-object-to-many-approaches relationship when detailed CAD records are available.
+- `CloseApproachSummary`: the derived aggregate view used by scoring, API responses, reports, and the frontend.
+- `SentryRiskSignal`: impact-monitoring fields from Sentry when present.
+
+The system still uses tabular processing where it is efficient: ETL, scoring, ML, GNN feature building, and batch simulations operate on dataframes and Parquet outputs. POO is used where interpretation matters: domain behavior, traceability, API-facing object construction, documentation, and extension points. Process classes such as scorers, simulation engines, graph builders, API clients, pipelines, evidence builders, and findings builders are documented as system/application classes rather than pure domain entities.
+
+Protocols in `src/neo_ange/domain/protocols.py` formalize expected behavior without forcing inheritance. Examples include `SerializableDomainObject`, `FeatureExportable`, `IdentifiableDomainObject`, `Summarizable`, `RiskScoringStrategy`, and `SimulationStrategy`.
+
+The pure entity diagram source lives in [`docs/diagrams/class_diagram_entities.mmd`](docs/diagrams/class_diagram_entities.mmd). The broader system diagram lives in [`docs/diagrams/class_diagram_system.mmd`](docs/diagrams/class_diagram_system.mmd), and the contracts diagram lives in [`docs/diagrams/class_diagram_domain_contracts.mmd`](docs/diagrams/class_diagram_domain_contracts.mmd).
 
 ```mermaid
 classDiagram
-    class Asteroid
-    class AsteroidIdentity
-    class Orbit
-    class PhysicalProperties
-    class CloseApproachSummary
-    class SentryRiskSignal
-    class RiskScore
-    class RiskScorer
-    class MonteCarloEngine
-    class OrbitalGraphBuilder
-    class ModelEvidenceBuilder
+    class Asteroid {
+        <<Aggregate Root>>
+        +object_key()
+        +display_name()
+        +to_feature_dict()
+    }
+    class AsteroidIdentity {
+        <<Value Object>>
+    }
+    class Orbit {
+        <<Value Object>>
+    }
+    class PhysicalProperties {
+        <<Value Object>>
+    }
+    class CloseApproachHistory {
+        <<Domain Component>>
+        +summarize()
+    }
+    class CloseApproachSummary {
+        <<Derived Summary>>
+    }
+    class SentryRiskSignal {
+        <<Value Object>>
+    }
+    class AsteroidFactory {
+        <<Factory>>
+    }
+    class GoldFeatureRepository {
+        <<Repository>>
+    }
+
+    AsteroidFactory --> Asteroid : builds
+    GoldFeatureRepository --> AsteroidFactory
     Asteroid *-- AsteroidIdentity
     Asteroid *-- Orbit
     Asteroid *-- PhysicalProperties
-    Asteroid *-- CloseApproachSummary
-    Asteroid *-- SentryRiskSignal
-    RiskScorer --> RiskScore
-    MonteCarloEngine --> RiskScorer
-    OrbitalGraphBuilder --> Asteroid
-    ModelEvidenceBuilder --> RiskScore
+    Asteroid o-- CloseApproachHistory
+    CloseApproachHistory --> CloseApproachSummary : derives
+    Asteroid o-- CloseApproachSummary
+    Asteroid o-- SentryRiskSignal
 ```
 
 ## Risk Priority Score

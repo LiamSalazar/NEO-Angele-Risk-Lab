@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import math
 from typing import Any
 
 import pandas as pd
 
-from neo_ange.domain.approach import CloseApproachSummary
+from neo_ange.domain.approach import CloseApproach, CloseApproachHistory, CloseApproachSummary
 from neo_ange.domain.asteroid import Asteroid
 from neo_ange.domain.identity import AsteroidIdentity
 from neo_ange.domain.orbit import Orbit
@@ -71,6 +72,9 @@ class AsteroidFactory:
             next_close_approach_datetime=_string_or_none(data.get("next_close_approach_datetime")),
             close_approach_count=_int_or_none(data.get("close_approach_count")),
         )
+        approach_history = _close_approach_history_from_row(data)
+        if not approach.has_close_approach_data() and approach_history is not None:
+            approach = approach_history.summarize()
         sentry = SentryRiskSignal(
             sentry_flag=_bool_or_none(data.get("sentry_flag")),
             sentry_ip=_float_or_none(data.get("sentry_ip")),
@@ -87,6 +91,7 @@ class AsteroidFactory:
             sentry_signal=sentry if sentry.has_sentry_signal() else None,
             neo=_bool_or_none(data.get("neo")),
             pha=_bool_or_none(data.get("pha")),
+            close_approach_history=approach_history,
         )
 
     @classmethod
@@ -159,6 +164,58 @@ class AsteroidFactory:
 def _clean_row(row: dict[str, Any] | pd.Series) -> dict[str, Any]:
     values = row.to_dict() if isinstance(row, pd.Series) else dict(row)
     return {key: _none_if_missing(value) for key, value in values.items()}
+
+
+def _close_approach_history_from_row(data: dict[str, Any]) -> CloseApproachHistory | None:
+    approaches = _approaches_from_collection(data.get("close_approaches"))
+    detail = _approach_from_detail_columns(data)
+    if detail is not None:
+        approaches.append(detail)
+    if not approaches:
+        return None
+    return CloseApproachHistory(tuple(approaches))
+
+
+def _approaches_from_collection(value: Any) -> list[CloseApproach]:
+    value = _none_if_missing(value)
+    if value is None:
+        return []
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+    if isinstance(value, dict):
+        value = [value]
+    if not isinstance(value, (list, tuple)):
+        return []
+    approaches: list[CloseApproach] = []
+    for item in value:
+        if isinstance(item, CloseApproach):
+            approaches.append(item)
+            continue
+        if isinstance(item, dict):
+            approach = _approach_from_detail_columns(item)
+            if approach is not None:
+                approaches.append(approach)
+    return approaches
+
+
+def _approach_from_detail_columns(data: dict[str, Any]) -> CloseApproach | None:
+    approach = CloseApproach(
+        close_approach_datetime=_string_or_none(
+            data.get("close_approach_datetime") or data.get("cd")
+        ),
+        dist=_float_or_none(data.get("dist")),
+        dist_min=_float_or_none(data.get("dist_min")),
+        dist_max=_float_or_none(data.get("dist_max")),
+        v_rel=_float_or_none(data.get("v_rel")),
+        v_inf=_float_or_none(data.get("v_inf")),
+        body=_string_or_none(data.get("body")),
+    )
+    if any(value is not None for value in approach.to_dict().values()):
+        return approach
+    return None
 
 
 def _none_if_missing(value: Any) -> Any:
