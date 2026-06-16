@@ -4,17 +4,17 @@
       "caveat": null,
       "importance": "high",
       "related_objects": [],
-      "short_text": "50 objects have saved orbital perturbation results.",
+      "short_text": "10 objects have saved orbital perturbation results.",
       "source_module": "orbital_simulation",
       "technical_basis": "Rows are read from orbital_monte_carlo_results.parquet.",
       "title": "Approximate orbital scenarios are available for priority objects",
       "values": {
-        "rows": 50,
+        "rows": 10,
         "scenario_categories": {
-          "needs_review": 10,
-          "stable": 12,
-          "uncertain": 16,
-          "variable": 12
+          "needs_review": 3,
+          "stable": 1,
+          "uncertain": 5,
+          "variable": 1
         }
       }
     },
@@ -23,10 +23,10 @@
       "importance": "medium",
       "related_objects": [
         "50092141",
-        "20530520",
         "50092158",
-        "50005900",
-        "50092127"
+        "50092174",
+        "50092146",
+        "20152637"
       ],
       "short_text": "Objects with the highest dispersion index deserve closer review in the orbital simulation view.",
       "source_module": "orbital_simulation",
@@ -34,10 +34,10 @@
       "title": "Orbital uncertainty varies across the priority set",
       "values": {
         "scenario_categories": {
-          "needs_review": 10,
-          "stable": 12,
-          "uncertain": 16,
-          "variable": 12
+          "needs_review": 3,
+          "stable": 1,
+          "uncertain": 5,
+          "variable": 1
         }
       }
     },
@@ -45,18 +45,18 @@
       "caveat": "The orbital simulation is approximate and uses available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "20530520",
-        "20443104",
-        "50008051",
+        "50092158",
         "50092141",
-        "20031669"
+        "50092174",
+        "50092146",
+        "20152637"
       ],
       "short_text": "The lowest simulated p05 minimum-distance rows are useful as an inspection queue.",
       "source_module": "orbital_simulation",
       "technical_basis": "Objects are ranked by simulated_min_distance_p05_au.",
       "title": "Small p05 distance scenarios identify objects worth inspection",
       "values": {
-        "lowest_p05_au": 0.005778357177009687
+        "lowest_p05_au": 0.043028289885468
       }
     }
   ],

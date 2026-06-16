@@ -10,31 +10,31 @@
         "20002329",
         "20004450"
       ],
-      "short_text": "230 of 315 simulated objects have category-shift probability at or below 20%.",
+      "short_text": "239 of 335 simulated objects have category-shift probability at or below 20%.",
       "source_module": "score_simulation",
       "technical_basis": "Category-shift probability is read from score Monte Carlo results.",
       "title": "Most simulated top objects retain their priority band",
       "values": {
-        "simulation_rows": 315,
-        "stable_count": 230
+        "simulation_rows": 335,
+        "stable_count": 239
       }
     },
     {
       "caveat": null,
       "importance": "medium",
       "related_objects": [
-        "20741491",
-        "20741491",
-        "20415029",
-        "20415029",
-        "20023187"
+        "50092156",
+        "50005900",
+        "50007948",
+        "50092141",
+        "50092127"
       ],
       "short_text": "The highest shift-probability objects should be inspected before treating their category as stable.",
       "source_module": "score_simulation",
       "technical_basis": "Objects are ranked by category_shift_probability.",
       "title": "Some objects show score sensitivity near category thresholds",
       "values": {
-        "max_category_shift_probability": 0.574,
+        "max_category_shift_probability": 0.97,
         "max_p95_score": 56.5209247
       }
     },

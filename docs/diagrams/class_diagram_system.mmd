@@ -1,6 +1,10 @@
 classDiagram
     namespace Pure_Domain_Entities {
-        class Asteroid
+        class Asteroid {
+            +object_key()
+            +display_name()
+            +to_feature_dict()
+        }
         class AsteroidIdentity
         class Orbit
         class PhysicalProperties
@@ -9,30 +13,69 @@ classDiagram
         class CloseApproachSummary
         class SentryRiskSignal
     }
-    namespace Analytical_Result_Objects {
-        class RiskScore
-        class RiskExplanation
-        class MonteCarloResult
-        class SimulationScenario
-        class OrbitalGraph
-        class OrbitalGraphNode
-        class OrbitalSimilarityEdge
-        class GNNExperimentResult
+
+    namespace Factories_Repositories {
+        class AsteroidFactory {
+            +from_gold_row()
+            +from_risk_row()
+            +many_from_dataframe()
+            +risk_score_from_row()
+        }
+        class GoldFeatureRepository {
+            +load_dataframe()
+            +load_asteroids()
+            +get_by_object_key()
+        }
+        class RiskScoreRepository {
+            +load_dataframe()
+            +load_scores()
+            +top()
+        }
+        class SimulationResultRepository {
+            +load_latest_results()
+            +get_latest_for_object()
+        }
     }
-    namespace Process_System_Classes {
-        class AsteroidFactory
-        class GoldFeatureRepository
-        class RiskScoreRepository
-        class SimulationResultRepository
-        class RiskScorer
-        class MonteCarloEngine
-        class OrbitalMonteCarloEngine
-        class OrbitalGraphBuilder
-        class GNNExperimentRunner
+
+    namespace Risk_Scoring {
+        class RiskScorer {
+            +score_row()
+            +score_dataframe()
+            +component_columns()
+        }
+        class RiskRankingService
+        class RiskExplanationService
+        class RiskPipeline
+    }
+
+    namespace Simulations {
+        class MonteCarloEngine {
+            +simulate_object()
+            +simulate_batch()
+        }
+        class SensitivityAnalyzer
+        class PerturbationEngine
+        class OrbitalMonteCarloEngine {
+            +simulate_object()
+        }
+        class OrbitalSimulationService
+    }
+
+    namespace ML_GNN_Evidence {
+        class BaselineExperimentRunner
         class ModelEvidenceBuilder
+        class OrbitalGraphBuilder
+        class OrbitalSimilarityCalculator
+        class GNNExperimentRunner
+        class GNNTrainer
+    }
+
+    namespace Findings_API_Pipelines {
         class FindingsBuilder
         class IngestionPipeline
         class ETLPipeline
+        class BronzeReader
+        class SilverTransformers
         class GoldBuilder
         class SBDBObjectClient
         class SBDBQueryClient
@@ -41,41 +84,70 @@ classDiagram
         class FastAPIApp
     }
 
-    Asteroid *-- AsteroidIdentity
-    Asteroid *-- Orbit
-    Asteroid *-- PhysicalProperties
-    Asteroid o-- CloseApproachHistory
-    CloseApproachHistory *-- CloseApproach
+    namespace Analytical_Result_Objects {
+        class RiskScore
+        class RiskExplanation
+        class SimulationScenario
+        class MonteCarloResult
+        class OrbitalSimulationResult
+        class OrbitalGraph
+        class OrbitalGraphNode
+        class OrbitalSimilarityEdge
+        class GNNExperimentResult
+        class ModelCard
+        class PredictionRecord
+        class AnalyticalFinding
+    }
+
+    Asteroid *-- AsteroidIdentity : identity
+    Asteroid *-- Orbit : orbit
+    Asteroid *-- PhysicalProperties : physical
+    Asteroid o-- CloseApproachHistory : history
+    CloseApproachHistory *-- CloseApproach : approaches
     CloseApproachHistory --> CloseApproachSummary : summarizes
-    Asteroid o-- CloseApproachSummary
-    Asteroid o-- SentryRiskSignal
+    Asteroid o-- CloseApproachSummary : summary
+    Asteroid o-- SentryRiskSignal : sentry
 
-    AsteroidFactory --> Asteroid : builds aggregate
-    GoldFeatureRepository --> AsteroidFactory
-    RiskScoreRepository --> RiskScore
-    SimulationResultRepository --> MonteCarloResult
+    AsteroidFactory --> Asteroid : builds
+    GoldFeatureRepository --> AsteroidFactory : maps rows
+    RiskScoreRepository --> RiskScore : loads
+    SimulationResultRepository --> MonteCarloResult : loads
 
+    RiskPipeline --> RiskScorer : orchestrates
     RiskScorer --> RiskScore : produces
     RiskScorer --> RiskExplanation : explains
-    RiskScorer --> Asteroid : interprets features
-    MonteCarloEngine --> RiskScorer : rescores perturbations
-    MonteCarloEngine --> MonteCarloResult
-    OrbitalMonteCarloEngine --> SimulationScenario
-    OrbitalMonteCarloEngine --> Orbit
-    OrbitalGraphBuilder --> OrbitalGraph
-    OrbitalGraph *-- OrbitalGraphNode
-    OrbitalGraph *-- OrbitalSimilarityEdge
-    GNNExperimentRunner --> OrbitalGraphBuilder
-    GNNExperimentRunner --> GNNExperimentResult
-    ModelEvidenceBuilder --> RiskScore
-    FindingsBuilder --> ModelEvidenceBuilder
+    RiskRankingService --> RiskScore : ranks
 
-    IngestionPipeline --> SBDBObjectClient
-    IngestionPipeline --> SBDBQueryClient
-    IngestionPipeline --> CloseApproachClient
-    IngestionPipeline --> SentryClient
-    ETLPipeline --> GoldBuilder
-    GoldBuilder --> AsteroidFactory
-    FastAPIApp --> GoldFeatureRepository
-    FastAPIApp --> RiskScoreRepository
-    FastAPIApp --> SimulationResultRepository
+    MonteCarloEngine --> RiskScorer : rescores perturbations
+    MonteCarloEngine --> MonteCarloResult : summarizes
+    PerturbationEngine --> MonteCarloEngine : samples score inputs
+    SensitivityAnalyzer --> RiskScorer : one-variable deltas
+    OrbitalSimulationService --> OrbitalMonteCarloEngine : runs batches
+    OrbitalMonteCarloEngine --> OrbitalSimulationResult : produces
+    OrbitalMonteCarloEngine --> Orbit : uses elements
+
+    BaselineExperimentRunner --> RiskScore : uses labels and features
+    ModelEvidenceBuilder --> PredictionRecord : writes predictions
+    ModelEvidenceBuilder --> ModelCard : writes cards
+    OrbitalGraphBuilder --> OrbitalGraph : builds
+    OrbitalGraph *-- OrbitalGraphNode : nodes
+    OrbitalGraph *-- OrbitalSimilarityEdge : edges
+    OrbitalSimilarityCalculator --> OrbitalSimilarityEdge : kNN edges
+    GNNExperimentRunner --> OrbitalGraphBuilder : builds graph
+    GNNExperimentRunner --> GNNTrainer : optional GNN training
+    GNNExperimentRunner --> GNNExperimentResult : writes reports
+
+    IngestionPipeline --> SBDBObjectClient : SBDB Object
+    IngestionPipeline --> SBDBQueryClient : SBDB Query
+    IngestionPipeline --> CloseApproachClient : CAD
+    IngestionPipeline --> SentryClient : Sentry
+    ETLPipeline --> BronzeReader : reads bronze
+    ETLPipeline --> SilverTransformers : normalizes
+    ETLPipeline --> GoldBuilder : builds features
+    GoldBuilder --> AsteroidFactory : compatible rows
+    FindingsBuilder --> AnalyticalFinding : writes findings
+    FindingsBuilder --> RiskScoreRepository : reads risk
+    FindingsBuilder --> ModelEvidenceBuilder : reads evidence
+    FastAPIApp --> GoldFeatureRepository : domain objects
+    FastAPIApp --> RiskScoreRepository : rankings
+    FastAPIApp --> SimulationResultRepository : simulation results

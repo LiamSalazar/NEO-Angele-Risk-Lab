@@ -115,7 +115,7 @@
     ],
     "metrics": {
       "accuracy": 0.996,
-      "brier_score": 0.0028707101831065758,
+      "brier_score": 0.0028707101831065753,
       "confusion_matrix": [
         [
           751,

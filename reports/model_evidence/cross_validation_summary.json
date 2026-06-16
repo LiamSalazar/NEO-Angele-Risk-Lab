@@ -17,7 +17,7 @@
     "false_negative_rate_std": null,
     "folds": 5,
     "n_samples": 4000,
-    "pr_auc_mean": 0.6818371542055629,
+    "pr_auc_mean": 0.6818378384123407,
     "pr_auc_std": null,
     "precision_mean": 0.574173712528824,
     "precision_std": null,

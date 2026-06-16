@@ -1,25 +1,34 @@
 # Object-Oriented Design
 
-## 1. Purpose
+## Purpose
 
-Neo Angele Risk Lab uses object-oriented design to make the Near-Earth Object domain explicit. The project still uses dataframe and Parquet processing for efficient analytics, but the domain layer gives names and behavior to the concepts that the API, reports, ranking, simulations, and documentation interpret.
+Neo Angele Risk Lab uses object-oriented design to make the Near-Earth Object domain explicit without replacing the dataframe pipeline that makes ingestion, scoring, ML, GNN, and reporting efficient.
 
-The goal is not to wrap every column in a class. The goal is to represent a NEO as an aggregate with identity, orbit, physical properties, close-approach context, and Sentry signals.
+The goal is not to wrap every CSV or Parquet column in a class. NASA/JPL sources arrive as heterogeneous JSON payloads and tabular records from SBDB, CAD, and Sentry APIs. The project first preserves raw data in bronze, normalizes source-specific structures in silver, and builds analytical gold rows. `AsteroidFactory` then translates those rows into domain objects that represent real NEO concepts.
 
-## 2. From NASA/JPL records to domain objects
+## From NASA/JPL records to domain objects
 
-NASA/JPL data arrives as JSON responses and tabular records from SBDB, CAD, and Sentry APIs. The bronze layer stores raw wrapped payloads. The silver layer normalizes source-specific fields, including SBDB object details, CAD close approaches, and Sentry records. The gold layer builds analytical rows used by scoring, ML, GNN, simulation, and API workflows.
+The data path is:
 
-`AsteroidFactory` is the boundary between analytical rows and domain objects. It converts gold or risk-score rows into an `Asteroid` aggregate and its component objects while preserving the existing flattened feature contract.
+```text
+NASA/JPL APIs
+-> bronze raw wrappers
+-> silver source-normalized tables
+-> gold analytical features
+-> AsteroidFactory
+-> Asteroid aggregate and component objects
+```
 
-## 3. Pure domain model
+The factory boundary is important. It lets the project keep vectorized Parquet and pandas/Spark operations for batch work while still exposing a coherent domain model to the API, documentation, object profile views, and future extension points.
 
-The pure domain model is:
+## Pure domain model
+
+The pure domain model is intentionally small:
 
 ```text
 Asteroid
 |-- AsteroidIdentity
-|-- Orbit / OrbitalElements
+|-- Orbit
 |-- PhysicalProperties
 |-- CloseApproachHistory
 |   `-- CloseApproach
@@ -27,82 +36,142 @@ Asteroid
 `-- SentryRiskSignal
 ```
 
-`Orbit` is the concrete class name used by the codebase. `OrbitalElements` is a conceptual alias for documentation and import clarity.
+`Orbit` is the concrete class name in the codebase. `OrbitalElements` is only a documentation/import alias defined in `src/neo_ange/domain/orbit.py`.
 
-## 4. Asteroid as aggregate root
+Pure entity source files:
 
-`Asteroid` is the aggregate root because it represents one NEO as the rest of the system understands it. It exposes stable behaviors such as `object_key()`, `display_name()`, `has_risk_relevant_data()`, `to_feature_dict()`, and `to_dict()`.
+- `src/neo_ange/domain/asteroid.py`
+- `src/neo_ange/domain/identity.py`
+- `src/neo_ange/domain/orbit.py`
+- `src/neo_ange/domain/physical.py`
+- `src/neo_ange/domain/approach.py`
+- `src/neo_ange/domain/sentry.py`
 
-The aggregate owns references to component objects and decides how to export flattened features without exposing callers to the internal composition. This preserves compatibility with scoring, frontend, reports, ML, GNN, and simulations.
+## Asteroid as aggregate root
 
-## 5. Value objects and domain components
+`Asteroid` is the aggregate root because it represents one NEO as the rest of the system interprets it. It owns references to identity, orbit, physical properties, close-approach context, optional Sentry signal, and source flags.
 
-`AsteroidIdentity` is separated from `Asteroid` because identifiers have their own rules. The best stable key and display name are not always the same field, and the priority order is domain behavior rather than raw storage.
+Main methods:
 
-`Orbit` is separated because orbital elements and observation-quality metadata have their own behavior: minimum orbital completeness, fixed-width orbital vectors, MOID proximity signals, and uncertainty indicators.
+- `object_key()` delegates to `AsteroidIdentity.best_identifier()`.
+- `display_name()` delegates to `AsteroidIdentity.display_name()`.
+- `has_risk_relevant_data()` checks whether any orbit, physical, approach, Sentry, `neo`, or `pha` data is available.
+- `to_feature_dict()` exports a flattened feature representation compatible with scoring, reports, API, ML, GNN, and simulations.
+- `to_dict()` exports the nested domain representation.
 
-`PhysicalProperties` is separated because size-related evidence may come from direct diameter, logarithmic diameter, albedo, or absolute magnitude. It encapsulates size availability and size-priority signals.
+## Identity separation
 
-`SentryRiskSignal` is separated because Sentry evidence is optional and has specialized behavior around impact probability, Palermo/Torino scales, and virtual impact counts.
+`AsteroidIdentity` is separate from `Asteroid` because an object can have several identifiers and labels. NASA/JPL records can contain `spkid`, `des`, `full_name`, `name`, and a local `object_key`. The "best lookup key" and the "best display label" are domain rules, not raw storage details.
 
-## 6. CloseApproachHistory and CloseApproachSummary
+`best_identifier()` chooses the first available stable identifier in priority order. `display_name()` prefers the most readable label for UI and reports.
 
-`CloseApproachHistory` models the real CAD relationship: one object can have many close-approach records. It contains `CloseApproach` objects and can answer domain questions such as count, closest approach, fastest approach, next known approach, and summary derivation.
+## Orbit and physical value objects
 
-`CloseApproachSummary` remains in the model because it is the stable analytical view already used by risk scoring, API responses, reports, frontend panels, and simulations. When detailed CAD records are available, `CloseApproachHistory.summarize()` can derive a `CloseApproachSummary`. When the gold dataset only contains aggregate fields, `AsteroidFactory` keeps using `CloseApproachSummary` directly and leaves `close_approach_history` as `None`.
+`Orbit` owns classical orbital elements and observation-quality metadata:
 
-This keeps the current outputs stable while preparing the domain model for richer CAD detail.
+- elements: `e`, `a`, `q`, `i`, `om`, `w`, `ma`, `n`, `per`, `ad`;
+- proximity fields: `moid`, `moid_ld`;
+- quality fields: `condition_code`, `arc_length`, `n_obs_used`, `rms`.
 
-## 7. Protocols and interfaces
+Its methods check minimum data completeness, export a fixed-width vector, compute a bounded proximity indicator, and compute an uncertainty indicator from orbit-quality fields.
+
+`PhysicalProperties` owns `h`, `diameter`, `albedo`, and `log_diameter`. It exposes size availability and a bounded size indicator that uses diameter first, then log diameter, then absolute magnitude.
+
+## CloseApproachHistory and CloseApproachSummary
+
+`CloseApproachHistory` models the real CAD relationship: one object can have many close-approach records. It can count records, select the closest approach, select the fastest approach, select the next comparable approach date, and derive a `CloseApproachSummary`.
+
+`CloseApproachSummary` remains in the model because it is the stable analytical contract used by scoring, API responses, reports, frontend panels, and current gold rows. It carries:
+
+- `min_close_approach_dist`
+- `min_close_approach_dist_min`
+- `max_close_approach_v_rel`
+- `next_close_approach_datetime`
+- `close_approach_count`
+
+When detailed CAD records are available, `CloseApproachHistory.summarize()` can derive the summary. When gold only stores aggregates, `AsteroidFactory` sets the summary directly and leaves `close_approach_history` absent.
+
+## SentryRiskSignal
+
+`SentryRiskSignal` is optional because Sentry coverage is sparse. It contains `sentry_flag`, `sentry_ip`, `sentry_ps_cum`, `sentry_ps_max`, `sentry_ts_max`, and `sentry_n_imp`.
+
+`has_sentry_signal()` checks explicit or numeric Sentry evidence. `sentry_priority_indicator()` combines Sentry fields into a bounded indicator used for interpretation, not as an official impact probability.
+
+## Protocols and interfaces
 
 `src/neo_ange/domain/protocols.py` defines structural contracts:
 
-- `SerializableDomainObject`
-- `FeatureExportable`
-- `IdentifiableDomainObject`
-- `Summarizable`
-- `RiskScoringStrategy`
-- `SimulationStrategy`
+- `SerializableDomainObject`: requires `to_dict()`.
+- `FeatureExportable`: requires `to_feature_dict()`.
+- `IdentifiableDomainObject`: requires `object_key()` and `display_name()`.
+- `Summarizable`: requires `summarize()`.
+- `RiskScoringStrategy`: requires `score_row()` and `score_dataframe()`.
+- `SimulationStrategy`: requires `simulate_object()`.
 
-These protocols document behavior without requiring artificial inheritance. The project intentionally avoids base classes for every domain object because structural typing is enough for the current coupling points and keeps existing classes simple.
+The project uses protocols instead of a shared base-class hierarchy because structural typing documents expectations without forcing artificial inheritance across simple dataclasses.
 
-## 8. Factories
+## Factories and repositories
 
-Factories are not domain entities. `AsteroidFactory` is an application boundary that translates gold, risk, and simulation records into domain objects. It handles missing values, type coercion, optional Sentry data, aggregate close-approach summaries, and detailed close-approach histories when present.
+Factories and repositories are not pure domain entities.
 
-## 9. Repositories
+`AsteroidFactory` in `src/neo_ange/domain/factories.py` is an application boundary. It handles missing values, type coercion, optional Sentry fields, aggregate close-approach summaries, detailed close-approach histories when present, risk-score objects, and simulation result objects.
 
-Repositories are infrastructure-facing readers. `GoldFeatureRepository`, `RiskScoreRepository`, and `SimulationResultRepository` load Parquet outputs and return domain entities or analytical result objects. They isolate storage layout from callers and preserve the public data paths.
+Repositories in `src/neo_ange/domain/repositories.py` read Parquet/report outputs and return domain or analytical objects:
 
-## 10. Domain services and process classes
+- `GoldFeatureRepository`
+- `RiskScoreRepository`
+- `SimulationResultRepository`
 
-Scorers, simulations, graph builders, model-evidence builders, pipelines, API clients, and findings builders are process or application classes. They use domain objects and domain concepts, but they are not pure entities because they coordinate workflows, IO, batch processing, or external systems.
+These classes isolate storage layout from callers.
 
-This distinction keeps the pure domain diagram small and prevents mixing NEO concepts with orchestration mechanics.
+## Process and infrastructure classes
 
-## 11. Analytical result objects
+Process classes coordinate workflows. They are domain-aware, but they are not pure domain entities:
 
-Objects such as `RiskScore`, `RiskExplanation`, `MonteCarloResult`, `SimulationScenario`, `OrbitalGraph`, `OrbitalGraphNode`, `OrbitalSimilarityEdge`, and `GNNExperimentResult` represent analytical outputs or experiment structures. They are important domain-adjacent objects, but they are documented separately from the pure asteroid aggregate because they describe computations over the domain rather than the NEO itself.
+- scoring: `RiskScorer`, `RiskRankingService`, `RiskExplanationService`, `RiskPipeline`;
+- score simulation: `MonteCarloEngine`, `PerturbationEngine`, `SensitivityAnalyzer`;
+- orbital simulation: `OrbitalMonteCarloEngine`, `OrbitalSimulationService`;
+- ML/evidence: `BaselineExperimentRunner`, `ModelEvidenceBuilder`;
+- GNN: `OrbitalGraphBuilder`, `OrbitalSimilarityCalculator`, `GNNExperimentRunner`, `GNNTrainer`;
+- findings: `FindingsBuilder`.
 
-## 12. UML diagrams
+Infrastructure classes connect to external or storage systems:
+
+- clients: `SBDBObjectClient`, `SBDBQueryClient`, `CloseApproachClient`, `SentryClient`;
+- ETL: `BronzeReader`, `SilverTransformers`, `GoldBuilder`, `ETLPipeline`;
+- API: FastAPI routers under `src/neo_ange/api/routers/`.
+
+## Analytical result objects
+
+Objects such as `RiskScore`, `RiskExplanation`, `SimulationScenario`, `MonteCarloResult`, `OrbitalSimulationResult`, `OrbitalGraph`, `OrbitalGraphNode`, `OrbitalSimilarityEdge`, `GNNExperimentResult`, `ModelCard`, `PredictionRecord`, and findings payloads represent results of computations over the domain.
+
+They are intentionally excluded from the pure entity diagram because they describe analyses, experiments, or report records rather than the NEO aggregate itself.
+
+## UML diagrams
 
 Diagram sources:
 
 - Pure domain entities: [`docs/diagrams/class_diagram_entities.mmd`](diagrams/class_diagram_entities.mmd)
 - Domain contracts: [`docs/diagrams/class_diagram_domain_contracts.mmd`](diagrams/class_diagram_domain_contracts.mmd)
-- README summary: [`docs/diagrams/class_diagram_readme_summary.mmd`](diagrams/class_diagram_readme_summary.mmd)
 - System architecture classes: [`docs/diagrams/class_diagram_system.mmd`](diagrams/class_diagram_system.mmd)
+- README summary: [`docs/diagrams/class_diagram_readme_summary.mmd`](diagrams/class_diagram_readme_summary.mmd)
 
-The pure entity diagram intentionally excludes factories, repositories, scorers, simulations, builders, pipelines, API clients, ML/GNN classes, evidence, and findings.
+The pure entity diagram intentionally excludes factories, repositories, scorers, simulations, builders, pipelines, API clients, ML/GNN classes, evidence builders, findings builders, and analytical result objects.
 
-## 13. Design benefits
+## Design benefits
 
-This architecture improves testability because each component has focused behavior that can be tested without running the full ETL or API stack. It improves extensibility because richer CAD histories, alternate scoring strategies, and simulation engines can be added behind existing contracts. It improves traceability because the path from NASA/JPL records to domain concepts and analytical outputs is explicit.
+This design gives the project three useful boundaries:
 
-The model also improves presentation quality: a reviewer can see aggregate root, value objects, domain components, protocols, factories, repositories, and process classes as separate responsibilities.
+- Domain: stable NEO concepts and behavior.
+- Process: scoring, simulation, graph, evidence, findings, and orchestration.
+- Infrastructure: APIs, storage, reports, Docker, and FastAPI.
 
-## 14. Limitations
+The separation improves reviewability because a reader can see which classes represent the problem domain and which classes operate on the domain. It also keeps batch analytics efficient: the pipeline remains tabular where vectorized processing is the right tool, while POO is used for interpretation, API representation, documentation, and extensibility.
 
-The current gold dataset stores close-approach aggregates for scoring efficiency. It does not always preserve multiple CAD records per object in the domain construction path. `CloseApproachHistory` is therefore populated when detailed close-approach records or a serialized `close_approaches` collection are available, and `CloseApproachSummary` remains the compatibility path for existing gold rows.
+## Limitations
 
-The project uses protocols instead of a shared domain base-class hierarchy. This is intentional: the current model benefits more from structural contracts than from inheritance that would add coupling without adding behavior.
+The current gold table stores close-approach aggregates for scoring efficiency. It does not always preserve every CAD row in the domain construction path. `CloseApproachHistory` is therefore populated when detailed close-approach records or a serialized `close_approaches` collection are available; otherwise `CloseApproachSummary` is the compatibility path.
+
+The model uses structural protocols rather than a deep inheritance tree. This is intentional and keeps the simple value objects decoupled.
+
+The domain model does not claim to be an official astronomical object model. It is an engineering model for this repository's ingestion, scoring, simulation, evidence, API, and presentation workflows.

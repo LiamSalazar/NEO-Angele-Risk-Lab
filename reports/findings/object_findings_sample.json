@@ -49,7 +49,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092158 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.2,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 10,
         "orbital_scenario_category": "needs_review",
@@ -68,7 +68,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092174 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.33,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 10,
         "orbital_scenario_category": "needs_review",
@@ -87,7 +87,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092184 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.6,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 11,
         "orbital_scenario_category": "uncertain",
@@ -106,7 +106,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092186 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.7,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 12,
         "orbital_scenario_category": "uncertain",
@@ -125,7 +125,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092148 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.1,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 11,
         "orbital_scenario_category": "uncertain",
@@ -144,7 +144,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "50092141 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.84,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 15,
         "orbital_scenario_category": "needs_review",
@@ -163,7 +163,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "20152637 is prioritized mainly by physical size",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.04,
         "dominant_driver": "physical size",
         "graph_neighbor_count": 10,
         "orbital_scenario_category": "variable",
@@ -182,7 +182,7 @@
       "technical_basis": "Dominant driver is the largest weighted risk component for this object.",
       "title": "20620100 is prioritized mainly by orbital proximity",
       "values": {
-        "category_shift_probability": 0.0,
+        "category_shift_probability": 0.37,
         "dominant_driver": "orbital proximity",
         "graph_neighbor_count": 11,
         "orbital_scenario_category": "stable",

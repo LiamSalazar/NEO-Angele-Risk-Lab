@@ -5,8 +5,8 @@
 - finding_count: 19
 - dataset_rows: 4000
 - risk_rows: 4000
-- score_simulation_rows: 315
-- orbital_simulation_rows: 50
+- score_simulation_rows: 335
+- orbital_simulation_rows: 10
 - graph_nodes: 4000
 - graph_edges: 27829
 
@@ -57,7 +57,7 @@ Among the highest-ranked objects, physical size and orbital proximity are the do
 
 ### Most simulated top objects retain their priority band
 
-230 of 315 simulated objects have category-shift probability at or below 20%.
+239 of 335 simulated objects have category-shift probability at or below 20%.
 
 - Basis: Category-shift probability is read from score Monte Carlo results.
 - Importance: medium
@@ -71,11 +71,11 @@ The highest shift-probability objects should be inspected before treating their 
 - Basis: Objects are ranked by category_shift_probability.
 - Importance: medium
 - Source: score_simulation
-- Related objects: 20741491, 20741491, 20415029, 20415029, 20023187
+- Related objects: 50092156, 50005900, 50007948, 50092141, 50092127
 
 ### Approximate orbital scenarios are available for priority objects
 
-50 objects have saved orbital perturbation results.
+10 objects have saved orbital perturbation results.
 
 - Basis: Rows are read from orbital_monte_carlo_results.parquet.
 - Importance: high
@@ -88,7 +88,7 @@ Objects with the highest dispersion index deserve closer review in the orbital s
 - Basis: Objects are ranked by dispersion_index.
 - Importance: medium
 - Source: orbital_simulation
-- Related objects: 50092141, 20530520, 50092158, 50005900, 50092127
+- Related objects: 50092141, 50092158, 50092174, 50092146, 20152637
 
 ### The orbital graph forms an analytical neighborhood
 

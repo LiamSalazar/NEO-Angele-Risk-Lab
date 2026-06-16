@@ -3,28 +3,34 @@ classDiagram
         <<Protocol>>
         +to_dict() dict
     }
+
     class FeatureExportable {
         <<Protocol>>
         +to_feature_dict() dict
     }
+
     class IdentifiableDomainObject {
         <<Protocol>>
         +object_key() str
         +display_name() str
     }
+
     class Summarizable {
         <<Protocol>>
-        +summarize()
+        +summarize() Any
     }
+
     class RiskScoringStrategy {
         <<Protocol>>
-        +score_row(row)
-        +score_dataframe(df)
+        +score_row(row) Any
+        +score_dataframe(df) Any
     }
+
     class SimulationStrategy {
         <<Protocol>>
-        +simulate_object()
+        +simulate_object(args, kwargs) Any
     }
+
     class Asteroid
     class AsteroidIdentity
     class Orbit
