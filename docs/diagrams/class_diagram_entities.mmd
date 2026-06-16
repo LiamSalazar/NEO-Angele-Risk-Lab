@@ -48,11 +48,11 @@ classDiagram
         +to_dict() dict
     }
 
-    Asteroid *-- AsteroidIdentity
-    Asteroid *-- Orbit
-    Asteroid *-- PhysicalProperties
-    Asteroid o-- CloseApproachHistory
-    CloseApproachHistory *-- CloseApproach
+    Asteroid *-- AsteroidIdentity : identity
+    Asteroid *-- Orbit : orbit
+    Asteroid *-- PhysicalProperties : physical
+    Asteroid o-- CloseApproachHistory : close approach history
+    CloseApproachHistory *-- CloseApproach : approaches
     CloseApproachHistory --> CloseApproachSummary : summarizes
-    Asteroid o-- CloseApproachSummary
-    Asteroid o-- SentryRiskSignal
+    Asteroid o-- CloseApproachSummary : close approach summary
+    Asteroid o-- SentryRiskSignal : sentry signal

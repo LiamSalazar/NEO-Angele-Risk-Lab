@@ -5,31 +5,31 @@
       "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
       "leakage_risk": "low",
       "metrics": {
-        "accuracy": 0.828,
-        "brier_score": 0.12130365527256735,
+        "accuracy": 0.8,
+        "brier_score": 0.12842650307688872,
         "confusion_matrix": [
           [
-            687,
-            68
+            620,
+            135
           ],
           [
-            104,
-            141
+            65,
+            180
           ]
         ],
-        "f1": 0.6211453744493393,
-        "false_negative_rate": 0.42448979591836733,
+        "f1": 0.6428571428571429,
+        "false_negative_rate": 0.2653061224489796,
         "n_samples": 1000,
         "negative_support": 755,
         "positive_support": 245,
-        "pr_auc": 0.6976277884851336,
-        "precision": 0.6746411483253588,
-        "recall": 0.5755102040816327,
-        "roc_auc": 0.8750101365049331,
+        "pr_auc": 0.7063369751407491,
+        "precision": 0.5714285714285714,
+        "recall": 0.7346938775510204,
+        "roc_auc": 0.8816975266927963,
         "top_k_recall": {
           "10": 0.04081632653061224,
           "25": 0.09387755102040816,
-          "50": 0.17959183673469387
+          "50": 0.17551020408163265
         },
         "warnings": []
       },
@@ -101,31 +101,31 @@
       "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
       "leakage_risk": "low",
       "metrics": {
-        "accuracy": 0.824,
-        "brier_score": 0.11567938194920833,
+        "accuracy": 0.798,
+        "brier_score": 0.12602667407852527,
         "confusion_matrix": [
           [
-            684,
-            71
+            606,
+            149
           ],
           [
-            105,
-            140
+            53,
+            192
           ]
         ],
-        "f1": 0.6140350877192983,
-        "false_negative_rate": 0.42857142857142855,
+        "f1": 0.6552901023890785,
+        "false_negative_rate": 0.2163265306122449,
         "n_samples": 1000,
         "negative_support": 755,
         "positive_support": 245,
-        "pr_auc": 0.7011729603996197,
-        "precision": 0.6635071090047393,
-        "recall": 0.5714285714285714,
-        "roc_auc": 0.8898553858629544,
+        "pr_auc": 0.7017265538692008,
+        "precision": 0.5630498533724341,
+        "recall": 0.7836734693877551,
+        "roc_auc": 0.8901851601567778,
         "top_k_recall": {
           "10": 0.04081632653061224,
-          "25": 0.09795918367346938,
-          "50": 0.17551020408163265
+          "25": 0.08979591836734693,
+          "50": 0.17142857142857143
         },
         "warnings": []
       },
@@ -150,7 +150,7 @@
       "leakage_risk": "high",
       "metrics": {
         "accuracy": 0.996,
-        "brier_score": 0.0028024268932087654,
+        "brier_score": 0.004010557635519933,
         "confusion_matrix": [
           [
             751,
@@ -166,10 +166,10 @@
         "n_samples": 1000,
         "negative_support": 755,
         "positive_support": 245,
-        "pr_auc": 1.0,
+        "pr_auc": 0.9999834079973454,
         "precision": 0.9839357429718876,
         "recall": 1.0,
-        "roc_auc": 1.0,
+        "roc_auc": 0.9999945938640357,
         "top_k_recall": {
           "10": 0.04081632653061224,
           "25": 0.10204081632653061,
@@ -197,7 +197,7 @@
       "leakage_risk": "high",
       "metrics": {
         "accuracy": 0.996,
-        "brier_score": 0.002192730545003799,
+        "brier_score": 0.0028707101831065758,
         "confusion_matrix": [
           [
             751,
@@ -213,10 +213,10 @@
         "n_samples": 1000,
         "negative_support": 755,
         "positive_support": 245,
-        "pr_auc": 0.9999834079973453,
+        "pr_auc": 1.0,
         "precision": 0.9839357429718876,
         "recall": 1.0,
-        "roc_auc": 0.9999945938640357,
+        "roc_auc": 1.0,
         "top_k_recall": {
           "10": 0.04081632653061224,
           "25": 0.10204081632653061,

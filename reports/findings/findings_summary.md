@@ -117,7 +117,7 @@ graphsage on graph is the current defensible model-evidence view.
 
 ### Model disagreements create an inspection queue
 
-1,367 objects are flagged in disagreement outputs.
+1,363 objects are flagged in disagreement outputs.
 
 - Basis: Disagreements compare high-confidence predictions against observed labels or model families and remain secondary to the Risk Priority Score.
 - Importance: medium

@@ -253,12 +253,12 @@
       "caveat": null,
       "importance": "medium",
       "related_objects": [],
-      "short_text": "1,367 objects are flagged in disagreement outputs.",
+      "short_text": "1,363 objects are flagged in disagreement outputs.",
       "source_module": "model_evidence",
       "technical_basis": "Disagreements compare high-confidence predictions against observed labels or model families and remain secondary to the Risk Priority Score.",
       "title": "Model disagreements create an inspection queue",
       "values": {
-        "disagreement_count": 1367
+        "disagreement_count": 1363
       }
     }
   ],

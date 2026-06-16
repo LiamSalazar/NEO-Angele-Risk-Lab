@@ -107,6 +107,22 @@ def test_asteroid_risk_relevance_and_feature_dict_are_backward_compatible() -> N
     assert asteroid.to_dict()["close_approach_history"]["close_approach_count"] == 1
 
 
+def test_asteroid_recognizes_close_approach_history_as_risk_relevant_data() -> None:
+    asteroid = Asteroid(
+        identity=AsteroidIdentity(object_key="history-only"),
+        orbit=Orbit(),
+        physical=PhysicalProperties(),
+        close_approach_history=CloseApproachHistory(
+            (CloseApproach(close_approach_datetime="2030-Jan-01 00:00", dist=0.02),)
+        ),
+    )
+
+    assert asteroid.has_risk_relevant_data()
+    assert asteroid.close_approach_summary is None
+    assert asteroid.to_feature_dict()["object_key"] == "history-only"
+    assert "close_approach_count" not in asteroid.to_feature_dict()
+
+
 def test_close_approach_summary_priority_indicator() -> None:
     summary = CloseApproachSummary(
         min_close_approach_dist=0.03,

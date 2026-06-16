@@ -16,13 +16,26 @@ classDiagram
         <<Protocol>>
         +summarize()
     }
+    class RiskScoringStrategy {
+        <<Protocol>>
+        +score_row(row)
+        +score_dataframe(df)
+    }
+    class SimulationStrategy {
+        <<Protocol>>
+        +simulate_object()
+    }
     class Asteroid
     class AsteroidIdentity
     class Orbit
     class PhysicalProperties
+    class CloseApproach
     class CloseApproachHistory
     class CloseApproachSummary
     class SentryRiskSignal
+    class RiskScorer
+    class MonteCarloEngine
+    class OrbitalMonteCarloEngine
 
     SerializableDomainObject <|.. Asteroid
     FeatureExportable <|.. Asteroid
@@ -30,7 +43,11 @@ classDiagram
     SerializableDomainObject <|.. AsteroidIdentity
     SerializableDomainObject <|.. Orbit
     SerializableDomainObject <|.. PhysicalProperties
+    SerializableDomainObject <|.. CloseApproach
     SerializableDomainObject <|.. CloseApproachHistory
     Summarizable <|.. CloseApproachHistory
     SerializableDomainObject <|.. CloseApproachSummary
     SerializableDomainObject <|.. SentryRiskSignal
+    RiskScoringStrategy <|.. RiskScorer
+    SimulationStrategy <|.. MonteCarloEngine
+    SimulationStrategy <|.. OrbitalMonteCarloEngine

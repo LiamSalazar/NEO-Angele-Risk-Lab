@@ -62,3 +62,17 @@ def test_close_approach_history_summarizes_to_existing_summary_object() -> None:
     assert summary.close_approach_count == 2
     assert summary.approach_priority_indicator() is not None
     assert history.to_dict()["close_approach_count"] == 2
+
+
+def test_empty_close_approach_history_summarizes_safely() -> None:
+    history = CloseApproachHistory()
+
+    summary = history.summarize()
+
+    assert history.count() == 0
+    assert not history.has_approaches()
+    assert history.closest() is None
+    assert history.fastest() is None
+    assert history.next_approach() is None
+    assert isinstance(summary, CloseApproachSummary)
+    assert not summary.has_close_approach_data()

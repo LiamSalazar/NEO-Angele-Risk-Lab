@@ -1,19 +1,25 @@
 classDiagram
-    namespace Pure_Domain_Model {
+    namespace Pure_Domain_Entities {
         class Asteroid
         class AsteroidIdentity
         class Orbit
         class PhysicalProperties
+        class CloseApproach
         class CloseApproachHistory
         class CloseApproachSummary
         class SentryRiskSignal
+    }
+    namespace Analytical_Result_Objects {
         class RiskScore
+        class RiskExplanation
         class MonteCarloResult
         class SimulationScenario
         class OrbitalGraph
+        class OrbitalGraphNode
+        class OrbitalSimilarityEdge
         class GNNExperimentResult
     }
-    namespace Application_and_Infrastructure {
+    namespace Process_System_Classes {
         class AsteroidFactory
         class GoldFeatureRepository
         class RiskScoreRepository
@@ -39,6 +45,8 @@ classDiagram
     Asteroid *-- Orbit
     Asteroid *-- PhysicalProperties
     Asteroid o-- CloseApproachHistory
+    CloseApproachHistory *-- CloseApproach
+    CloseApproachHistory --> CloseApproachSummary : summarizes
     Asteroid o-- CloseApproachSummary
     Asteroid o-- SentryRiskSignal
 
@@ -48,12 +56,15 @@ classDiagram
     SimulationResultRepository --> MonteCarloResult
 
     RiskScorer --> RiskScore : produces
+    RiskScorer --> RiskExplanation : explains
     RiskScorer --> Asteroid : interprets features
     MonteCarloEngine --> RiskScorer : rescores perturbations
     MonteCarloEngine --> MonteCarloResult
     OrbitalMonteCarloEngine --> SimulationScenario
     OrbitalMonteCarloEngine --> Orbit
     OrbitalGraphBuilder --> OrbitalGraph
+    OrbitalGraph *-- OrbitalGraphNode
+    OrbitalGraph *-- OrbitalSimilarityEdge
     GNNExperimentRunner --> OrbitalGraphBuilder
     GNNExperimentRunner --> GNNExperimentResult
     ModelEvidenceBuilder --> RiskScore
