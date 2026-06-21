@@ -2,9 +2,9 @@
 
 Esta carpeta contiene la entrega académica en LaTeX lista para subirse a Overleaf. Es autocontenida: las figuras usadas por el documento están en `figures/`, las tablas externas están en `tables/`, la bibliografía está en `references.bib` y el archivo principal es `main.tex`.
 
-## Compilar en Overleaf
+## Uso en Overleaf
 
-1. Comprimir la carpeta `latex_doc/` como archivo ZIP.
+1. Comprimir únicamente la carpeta `latex_doc/` como archivo ZIP.
 2. Crear un proyecto nuevo en Overleaf.
 3. Subir el ZIP al proyecto.
 4. Seleccionar `main.tex` como archivo principal.
@@ -12,6 +12,8 @@ Esta carpeta contiene la entrega académica en LaTeX lista para subirse a Overle
 6. Compilar.
 
 Si Overleaf no detecta `main.tex` automáticamente, abrir el menú del proyecto, entrar a la configuración del documento principal y seleccionar `main.tex`.
+
+No es necesario subir `artifacts/`: el documento no depende de esa carpeta. Todas las figuras necesarias están en `latex_doc/figures/` y todas las tablas necesarias están en `latex_doc/tables/`.
 
 ## Compatibilidad
 

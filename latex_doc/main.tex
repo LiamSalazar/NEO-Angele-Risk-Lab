@@ -23,7 +23,6 @@
 \usepackage{float}
 \usepackage{placeins}
 \usepackage{pdflscape}
-\usepackage{seqsplit}
 \usepackage{xcolor}
 
 \geometry{margin=2.5cm}
@@ -69,7 +68,9 @@
 \lstset{style=neoange}
 
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\codepath}[1]{\texttt{\seqsplit{#1}}}
+\DeclareRobustCommand{\codeid}[1]{\texttt{\detokenize{#1}}}
+\DeclareRobustCommand{\codepath}[1]{\texttt{\detokenize{#1}}}
+\DeclareRobustCommand{\filepath}[1]{\nolinkurl{#1}}
 \newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
 
 \begin{document}
@@ -101,7 +102,7 @@ Neo Angele Risk Lab es una plataforma académica de ingeniería de datos, analí
 
 El problema que resuelve no es la predicción oficial de impactos. El sistema organiza fuentes públicas heterogéneas, hace trazable el flujo de datos, convierte campos astronómicos técnicos en indicadores interpretables y ofrece una interfaz para priorizar revisión experimental. El score principal es un ranking analítico interno de 0 a 100. La evidencia de machine learning y GNN se trata como evidencia secundaria, no como criterio oficial de riesgo ni como sustituto de NASA/JPL, CNEOS o Sentry.
 
-La inspección del repositorio actual verificó código Python, pruebas, documentación, reportes, artefactos Parquet, diagramas Mermaid, una figura UML en \codepath{artifacts/figures/class\_diagram\_entities.png}, backend FastAPI, frontend React/TypeScript/Vite y configuración Docker Compose. La validación local encontró que Docker no está disponible en la computadora usada para preparar esta entrega, por lo que no se compiló PDF ni se levantaron servicios; el repositorio sí contiene \codepath{docker-compose.yml}, \codepath{Dockerfile} y \codepath{Dockerfile.frontend}.
+La inspección del repositorio actual verificó código Python, pruebas, documentación, reportes, artefactos Parquet, diagramas Mermaid, una figura UML en \filepath{artifacts/figures/class_diagram_entities.png}, backend FastAPI, frontend React/TypeScript/Vite y configuración Docker Compose. La validación local encontró que Docker no está disponible en la computadora usada para preparar esta entrega, por lo que no se compiló PDF ni se levantaron servicios; el repositorio sí contiene \filepath{docker-compose.yml}, \filepath{Dockerfile} y \filepath{Dockerfile.frontend}.
 
 \chapter{Introducción}
 
@@ -161,7 +162,7 @@ La escala de Palermo y la escala de Torino son formas de comunicar riesgo de imp
 
 \chapter{Fuentes de Datos}
 
-El proyecto usa fuentes públicas NASA/JPL documentadas oficialmente \cite{jpl_sbdb,jpl_sbdb_query,jpl_cad,jpl_sentry}. La conexión con el pipeline aparece en \codepath{src/neo\_ange/clients} y \codepath{src/neo\_ange/pipelines/ingestion.py}.
+El proyecto usa fuentes públicas NASA/JPL documentadas oficialmente \cite{jpl_sbdb,jpl_sbdb_query,jpl_cad,jpl_sentry}. La conexión con el pipeline aparece en \filepath{src/neo_ange/clients} y \filepath{src/neo_ange/pipelines/ingestion.py}.
 
 \begin{longtable}{>{\RaggedRight\arraybackslash}p{0.20\linewidth}>{\RaggedRight\arraybackslash}p{0.26\linewidth}>{\RaggedRight\arraybackslash}p{0.26\linewidth}>{\RaggedRight\arraybackslash}p{0.18\linewidth}}
 \caption{Fuentes de datos usadas por el proyecto.}\\
@@ -182,7 +183,7 @@ Sentry API & Señales de riesgo Sentry, probabilidades y campos Palermo/Torino c
 
 \chapter{Diccionario de Datos}
 
-El diccionario siguiente agrupa los campos principales que aparecen en el dataset gold y en los reportes. No inventa columnas: los nombres fueron verificados en \codepath{data/gold/neo\_risk\_features}, \codepath{data/gold/risk\_scores}, \codepath{reports/model\_evidence} y módulos de código.
+El diccionario siguiente agrupa los campos principales que aparecen en el dataset gold y en los reportes. No inventa columnas: los nombres fueron verificados en \filepath{data/gold/neo_risk_features}, \filepath{data/gold/risk_scores}, \filepath{reports/model_evidence} y módulos de código.
 
 \begin{longtable}{>{\RaggedRight\arraybackslash}p{0.18\linewidth}>{\RaggedRight\arraybackslash}p{0.27\linewidth}>{\RaggedRight\arraybackslash}p{0.17\linewidth}>{\RaggedRight\arraybackslash}p{0.28\linewidth}}
 \caption{Diccionario de datos resumido por grupo.}\\
@@ -226,7 +227,7 @@ El flujo real del proyecto sigue la cadena:
 \rightarrow \text{reports/artifacts}.
 \]
 
-El diagrama fuente está en \codepath{docs/diagrams/system\_architecture.mmd}. El repositorio también contiene diagramas Mermaid de scoring, Monte Carlo, simulación orbital, ML evidence, grafo GNN, navegación final, pipeline de datos y clases. El documento incluye el diagrama UML de entidades puras renderizado desde el repositorio.
+El diagrama fuente está en \filepath{docs/diagrams/system_architecture.mmd}. El repositorio también contiene diagramas Mermaid de scoring, Monte Carlo, simulación orbital, ML evidence, grafo GNN, navegación final, pipeline de datos y clases. El documento incluye el diagrama UML de entidades puras renderizado desde el repositorio.
 
 \section{Estructura del Repositorio}
 
@@ -234,22 +235,22 @@ El diagrama fuente está en \codepath{docs/diagrams/system\_architecture.mmd}. E
 \toprule
 Ruta & Propósito\\
 \midrule
-\codepath{src/neo\_ange/clients} & Clientes HTTP para fuentes NASA/JPL.\\
-\codepath{src/neo\_ange/etl} & Lectura bronze, transformaciones silver y construcción gold.\\
-\codepath{src/neo\_ange/domain} & Clases de dominio, factories, repositories y objetos analíticos.\\
-\codepath{src/neo\_ange/risk} & Score, categorías, explicaciones, ranking, validación y reportes.\\
-\codepath{src/neo\_ange/simulation} & Monte Carlo del score, incertidumbre y sensibilidad.\\
-\codepath{src/neo\_ange/orbital\_simulation} & Elementos orbitales, covarianza, perturbación, propagación, métricas y servicio.\\
-\codepath{src/neo\_ange/ml} & Datasets, feature sets, baselines, métricas, validación y leakage.\\
-\codepath{src/neo\_ange/gnn} & Construcción de grafo, similitud, datasets, baselines, modelos GCN/GraphSAGE y reportes.\\
-\codepath{src/neo\_ange/evidence} & Evidencia de modelos, predicciones, tarjetas y desacuerdos.\\
-\codepath{src/neo\_ange/findings} & Hallazgos analíticos por módulo.\\
-\codepath{src/neo\_ange/api} & Aplicación FastAPI y routers.\\
-\codepath{frontend} & Aplicación React/TypeScript/Vite.\\
-\codepath{data} & Capas bronze, silver, gold y resultados Parquet.\\
-\codepath{reports} & Reportes JSON, CSV y Markdown generados.\\
-\codepath{docs} & Documentación técnica y diagramas Mermaid.\\
-\codepath{artifacts} & Figuras, capturas y exportaciones.\\
+\filepath{src/neo_ange/clients} & Clientes HTTP para fuentes NASA/JPL.\\
+\filepath{src/neo_ange/etl} & Lectura bronze, transformaciones silver y construcción gold.\\
+\filepath{src/neo_ange/domain} & Clases de dominio, factories, repositories y objetos analíticos.\\
+\filepath{src/neo_ange/risk} & Score, categorías, explicaciones, ranking, validación y reportes.\\
+\filepath{src/neo_ange/simulation} & Monte Carlo del score, incertidumbre y sensibilidad.\\
+\filepath{src/neo_ange/orbital_simulation} & Elementos orbitales, covarianza, perturbación, propagación, métricas y servicio.\\
+\filepath{src/neo_ange/ml} & Datasets, feature sets, baselines, métricas, validación y leakage.\\
+\filepath{src/neo_ange/gnn} & Construcción de grafo, similitud, datasets, baselines, modelos GCN/GraphSAGE y reportes.\\
+\filepath{src/neo_ange/evidence} & Evidencia de modelos, predicciones, tarjetas y desacuerdos.\\
+\filepath{src/neo_ange/findings} & Hallazgos analíticos por módulo.\\
+\filepath{src/neo_ange/api} & Aplicación FastAPI y routers.\\
+\filepath{frontend} & Aplicación React/TypeScript/Vite.\\
+\filepath{data} & Capas bronze, silver, gold y resultados Parquet.\\
+\filepath{reports} & Reportes JSON, CSV y Markdown generados.\\
+\filepath{docs} & Documentación técnica y diagramas Mermaid.\\
+\filepath{artifacts} & Figuras, capturas y exportaciones.\\
 \bottomrule
 \end{tabularx}
 
@@ -263,7 +264,7 @@ ETL significa extracción, transformación y carga. En este proyecto la extracci
   \item Gold construye features analíticas listas para score, ML, API y frontend.
 \end{itemize}
 
-\codepath{src/neo\_ange/pipelines/ingestion.py} coordina clientes y \code{BronzeStorage}. \codepath{src/neo\_ange/etl/bronze\_reader.py} lee wrappers JSON. \codepath{src/neo\_ange/etl/silver\_transformers.py} transforma SBDB Object, CAD y Sentry. \codepath{src/neo\_ange/etl/gold\_builder.py} une tablas, calcula features derivadas y produce \codepath{data/gold/neo\_risk\_features}. \codepath{src/neo\_ange/spark/session.py} crea una sesión local de Spark.
+\filepath{src/neo_ange/pipelines/ingestion.py} coordina clientes y \code{BronzeStorage}. \filepath{src/neo_ange/etl/bronze_reader.py} lee wrappers JSON. \filepath{src/neo_ange/etl/silver_transformers.py} transforma SBDB Object, CAD y Sentry. \filepath{src/neo_ange/etl/gold_builder.py} une tablas, calcula features derivadas y produce \filepath{data/gold/neo_risk_features}. \filepath{src/neo_ange/spark/session.py} crea una sesión local de Spark.
 
 Spark es un motor de procesamiento distribuido; PySpark permite usarlo desde Python \cite{spark_docs}. Un DataFrame es una tabla lógica con columnas tipadas. Un schema define nombres y tipos. Parquet es un formato columnar eficiente \cite{parquet_docs}; reduce tamaño, conserva tipos y permite leer subconjuntos de columnas con buen rendimiento. Aunque el dataset local verificado no es enorme, el patrón prepara el proyecto para crecimiento y enseña prácticas profesionales de ingeniería de datos.
 
@@ -283,8 +284,8 @@ El polimorfismo aparece en servicios que aceptan filas, diccionarios o entidades
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/class_diagram_entities.png}
-\caption{Diagrama UML de entidades puras del dominio, copiado desde \codepath{artifacts/figures/class\_diagram\_entities.png}.}
+\includegraphics[width=0.95\linewidth]{figures/class-diagram-entities.png}
+\caption{Diagrama UML de entidades puras del dominio incluido dentro de \filepath{latex_doc/figures}.}
 \end{figure}
 
 El diagrama muestra \code{Asteroid} como agregado y sus componentes. \code{AsteroidIdentity} está separado porque los identificadores tienen reglas propias de selección: \code{object\_key}, \code{spkid}, \code{des}, \code{full\_name} y \code{name} no tienen la misma estabilidad. \code{CloseApproachHistory} y \code{CloseApproachSummary} coexisten conceptualmente porque un acercamiento individual y un resumen agregado responden a necesidades distintas; el código actual usa \code{CloseApproach} para un registro y \code{CloseApproachSummary} para el resumen usado en score y frontend. \code{SentryRiskSignal} es opcional porque la mayoría de objetos no tiene señal Sentry en el snapshot local.
@@ -301,21 +302,21 @@ Clase & Archivo & Responsabilidad & Métodos principales\\
 Clase & Archivo & Responsabilidad & Métodos principales\\
 \midrule
 \endhead
-\code{Asteroid} & \codepath{src/neo\_ange/domain/asteroid.py} & Agregado raíz con identidad, órbita, propiedades físicas, acercamientos, Sentry y etiquetas. & \code{object\_key}, \code{display\_name}, \code{has\_risk\_relevant\_data}, \code{to\_feature\_dict}, \code{to\_dict}.\\
-\code{AsteroidIdentity} & \codepath{src/neo\_ange/domain/identity.py} & Identificadores estables y nombre legible. & \code{best\_identifier}, \code{display\_name}, \code{to\_dict}.\\
-\code{Orbit} & \codepath{src/neo\_ange/domain/orbit.py} & Elementos orbitales y señales de calidad. & \code{has\_minimum\_orbital\_data}, \code{orbital\_vector}, \code{proximity\_indicator}, \code{uncertainty\_indicator}.\\
-\code{PhysicalProperties} & \codepath{src/neo\_ange/domain/physical.py} & Magnitud absoluta, diámetro, albedo y log diámetro. & \code{size\_indicator}, \code{has\_size\_information}, \code{to\_dict}.\\
-\code{CloseApproach} & \codepath{src/neo\_ange/domain/approach.py} & Un acercamiento individual. & \code{distance\_indicator}, \code{velocity\_indicator}, \code{to\_dict}.\\
-\code{CloseApproachSummary} & \codepath{src/neo\_ange/domain/approach.py} & Resumen CAD por objeto. & \code{has\_close\_approach\_data}, \code{approach\_priority\_indicator}.\\
-\code{SentryRiskSignal} & \codepath{src/neo\_ange/domain/sentry.py} & Señales Sentry disponibles. & \code{has\_sentry\_signal}, \code{sentry\_priority\_indicator}, \code{to\_dict}.\\
-\code{AsteroidFactory} & \codepath{src/neo\_ange/domain/factories.py} & Construye entidades desde filas gold, risk y simulación. & \code{from\_gold\_row}, \code{from\_risk\_row}, \code{many\_from\_dataframe}, \code{risk\_score\_from\_row}.\\
-\code{GoldFeatureRepository}, \code{RiskScoreRepository}, \code{SimulationResultRepository} & \codepath{src/neo\_ange/domain/repositories.py} & Aíslan lectura de Parquet y devuelven entidades. & \code{load\_dataframe}, \code{load\_asteroids}, \code{get\_by\_object\_key}, \code{top}.\\
+\code{Asteroid} & \filepath{src/neo_ange/domain/asteroid.py} & Agregado raíz con identidad, órbita, propiedades físicas, acercamientos, Sentry y etiquetas. & \code{object\_key}, \code{display\_name}, \code{has\_risk\_relevant\_data}, \code{to\_feature\_dict}, \code{to\_dict}.\\
+\code{AsteroidIdentity} & \filepath{src/neo_ange/domain/identity.py} & Identificadores estables y nombre legible. & \code{best\_identifier}, \code{display\_name}, \code{to\_dict}.\\
+\code{Orbit} & \filepath{src/neo_ange/domain/orbit.py} & Elementos orbitales y señales de calidad. & \code{has\_minimum\_orbital\_data}, \code{orbital\_vector}, \code{proximity\_indicator}, \code{uncertainty\_indicator}.\\
+\code{PhysicalProperties} & \filepath{src/neo_ange/domain/physical.py} & Magnitud absoluta, diámetro, albedo y log diámetro. & \code{size\_indicator}, \code{has\_size\_information}, \code{to\_dict}.\\
+\code{CloseApproach} & \filepath{src/neo_ange/domain/approach.py} & Un acercamiento individual. & \code{distance\_indicator}, \code{velocity\_indicator}, \code{to\_dict}.\\
+\code{CloseApproachSummary} & \filepath{src/neo_ange/domain/approach.py} & Resumen CAD por objeto. & \code{has\_close\_approach\_data}, \code{approach\_priority\_indicator}.\\
+\code{SentryRiskSignal} & \filepath{src/neo_ange/domain/sentry.py} & Señales Sentry disponibles. & \code{has\_sentry\_signal}, \code{sentry\_priority\_indicator}, \code{to\_dict}.\\
+\code{AsteroidFactory} & \filepath{src/neo_ange/domain/factories.py} & Construye entidades desde filas gold, risk y simulación. & \code{from\_gold\_row}, \code{from\_risk\_row}, \code{many\_from\_dataframe}, \code{risk\_score\_from\_row}.\\
+\code{GoldFeatureRepository}, \code{RiskScoreRepository}, \code{SimulationResultRepository} & \filepath{src/neo_ange/domain/repositories.py} & Aíslan lectura de Parquet y devuelven entidades. & \code{load\_dataframe}, \code{load\_asteroids}, \code{get\_by\_object\_key}, \code{top}.\\
 \bottomrule
 \end{longtable}
 
 \section{Extractos Exactos}
 
-\begin{lstlisting}[language=Python,caption={Extracto de src/neo_ange/domain/asteroid.py}]
+\begin{lstlisting}[language=Python,caption={Extracto de asteroid.py}]
 @dataclass(slots=True)
 class Asteroid:
     """Domain aggregate containing risk-relevant asteroid state."""
@@ -329,7 +330,7 @@ class Asteroid:
     pha: bool | None = None
 \end{lstlisting}
 
-\begin{lstlisting}[language=Python,caption={Extracto de src/neo_ange/domain/factories.py}]
+\begin{lstlisting}[language=Python,caption={Extracto de factories.py}]
 class AsteroidFactory:
     """Build domain objects from gold, risk-score, and simulation records."""
 
@@ -348,13 +349,13 @@ El inventario sintético se generó por inspección de archivos Python y se resu
 
 El patrón Factory centraliza creación de objetos. En lugar de repetir conversiones de \code{NaN}, strings vacíos, booleanos y floats en cada router, \code{AsteroidFactory} recibe filas limpias y produce entidades coherentes. Esto evita duplicación y permite modificar reglas de mapeo en un solo lugar.
 
-El patrón Repository aísla persistencia. \code{GoldFeatureRepository} sabe dónde está \codepath{data/gold/neo\_risk\_features}; \code{RiskScoreRepository} sabe que la ruta preferida es \codepath{data/gold/risk\_scores/risk\_scores.parquet}; \code{SimulationResultRepository} sabe cómo leer resultados Monte Carlo. Los routers y servicios no manipulan rutas Parquet directamente cuando trabajan con dominio.
+El patrón Repository aísla persistencia. \code{GoldFeatureRepository} sabe dónde está \filepath{data/gold/neo_risk_features}; \code{RiskScoreRepository} sabe que la ruta preferida es \filepath{data/gold/risk_scores/risk_scores.parquet}; \code{SimulationResultRepository} sabe cómo leer resultados Monte Carlo. Los routers y servicios no manipulan rutas Parquet directamente cuando trabajan con dominio.
 
 La capa de servicios coordina flujos: \code{RiskPipeline} calcula score, \code{SimulationPipeline} ejecuta Monte Carlo de score, \code{OrbitalSimulationService} ejecuta clones orbitales, \code{GNNExperimentRunner} construye grafo y modelos, y \code{ModelEvidenceBuilder} integra evidencia secundaria. Esta separación reduce acoplamiento entre ingestión, scoring, simulación, modelado, API y frontend.
 
 \chapter{Risk Priority Score}
 
-El \emph{Risk Priority Score} es un score experimental, reproducible y explicable. No es probabilidad oficial de impacto. Se implementa en \codepath{src/neo\_ange/risk/scoring.py} y usa constantes de \codepath{src/neo\_ange/risk/schemas.py}. La versión actual verificada es \code{risk-score-v0.1.0}.
+El \emph{Risk Priority Score} es un score experimental, reproducible y explicable. No es probabilidad oficial de impacto. Se implementa en \filepath{src/neo_ange/risk/scoring.py} y usa constantes de \filepath{src/neo_ange/risk/schemas.py}. La versión actual verificada es \code{risk-score-v0.1.0}.
 
 \section{Fórmula}
 
@@ -386,7 +387,7 @@ Componente & Peso & Variables usadas\\
 
 Las categorías son: \code{low} para score menor a 20; \code{moderate} desde 20 hasta menor que 40; \code{elevated} desde 40 hasta menor que 60; \code{high} desde 60 hasta menor que 80; \code{critical} desde 80.
 
-\begin{lstlisting}[language=Python,caption={Pesos exactos en src/neo_ange/risk/schemas.py}]
+\begin{lstlisting}[language=Python,caption={Pesos exactos del score}]
 DEFAULT_COMPONENT_WEIGHTS: dict[str, float] = {
     "physical_risk_component": 0.22,
     "orbital_risk_component": 0.25,
@@ -399,13 +400,13 @@ DEFAULT_COMPONENT_WEIGHTS: dict[str, float] = {
 
 \chapter{Score Simulation y Monte Carlo}
 
-El Monte Carlo del score se implementa en \codepath{src/neo\_ange/simulation}. Monte Carlo significa muestrear valores aleatorios bajo supuestos de incertidumbre y observar cómo cambia una salida; MCMC es una familia distinta orientada a construir cadenas de Markov para aproximar distribuciones posteriores. Este proyecto no usa MCMC.
+El Monte Carlo del score se implementa en \filepath{src/neo_ange/simulation}. Monte Carlo significa muestrear valores aleatorios bajo supuestos de incertidumbre y observar cómo cambia una salida; MCMC es una familia distinta orientada a construir cadenas de Markov para aproximar distribuciones posteriores. Este proyecto no usa MCMC.
 
 \code{MonteCarloEngine.simulate\_object()} toma una fila base, construye \code{PerturbationConfig}, perturba variables base, recalcula features derivadas y vuelve a ejecutar \code{RiskScorer}. Las variables base verificadas en \code{BASE\_SCORE\_VARIABLES} incluyen \code{h}, \code{diameter}, \code{albedo}, \code{moid}, \code{moid\_ld}, distancias de acercamiento, velocidad, campos Sentry, \code{condition\_code}, \code{rms}, \code{arc\_length} y \code{n\_obs\_used}.
 
 El motor distingue incertidumbre reportada, escala empírica desde el dataset y fallback heurístico. El resumen incluye media, desviación estándar, mínimo, percentiles 5/25/50/75/95, máximo, probabilidad de superar 60, probabilidad de superar 80, probabilidad de cambio de categoría, categoría base y categoría del percentil 95.
 
-\begin{lstlisting}[language=Python,caption={Variables base en src/neo_ange/simulation/uncertainty.py}]
+\begin{lstlisting}[language=Python,caption={Variables base de incertidumbre}]
 BASE_SCORE_VARIABLES = [
     "h",
     "diameter",
@@ -426,11 +427,11 @@ BASE_SCORE_VARIABLES = [
 ]
 \end{lstlisting}
 
-En el snapshot verificado, \codepath{data/gold/simulation\_results/score\_uncertainty\_results.parquet} contiene 221 filas y 107 objetos únicos. El resumen JSON reporta \code{fallback\_used\_count=10} y \code{formal\_uncertainty\_count=0}, lo cual confirma que las simulaciones no deben presentarse como incertidumbre física calibrada.
+En el snapshot verificado, \filepath{data/gold/simulation_results/score_uncertainty_results.parquet} contiene 221 filas y 107 objetos únicos. El resumen JSON reporta \code{fallback\_used\_count=10} y \code{formal\_uncertainty\_count=0}, lo cual confirma que las simulaciones no deben presentarse como incertidumbre física calibrada.
 
 \chapter{Simulación Orbital Monte Carlo}
 
-La simulación orbital se implementa en \codepath{src/neo\_ange/orbital\_simulation}. El servicio usa \code{n\_clones=300}, \code{horizon\_days=3650}, \code{time\_step\_days=10} y \code{random\_state=42} por defecto. Esos valores equilibran costo, resolución temporal y rapidez para API/frontend: diez años de horizonte con pasos de diez días da una exploración suficiente para visualización experimental, pero no sustituye efemérides oficiales.
+La simulación orbital se implementa en \filepath{src/neo_ange/orbital_simulation}. El servicio usa \code{n\_clones=300}, \code{horizon\_days=3650}, \code{time\_step\_days=10} y \code{random\_state=42} por defecto. Esos valores equilibran costo, resolución temporal y rapidez para API/frontend: diez años de horizonte con pasos de diez días da una exploración suficiente para visualización experimental, pero no sustituye efemérides oficiales.
 
 \section{Covarianza y Fallback}
 
@@ -438,7 +439,7 @@ Una varianza mide dispersión de una variable. Una covarianza mide cómo dos var
 
 Cuando no hay covarianza usable, \code{OrbitalMonteCarloEngine} usa \code{heuristic\_fallback}. El score de incertidumbre combina \code{condition\_code}, \code{rms}, \code{arc\_length} y \code{n\_obs\_used} con pesos exactos 0.35, 0.25, 0.20 y 0.20.
 
-\begin{lstlisting}[language=Python,caption={Fallback y parámetros en src/neo_ange/orbital_simulation/monte_carlo.py}]
+\begin{lstlisting}[language=Python,caption={Fallback y parámetros orbitales}]
 def simulate_object(
     self,
     row: dict[str, Any],
@@ -449,7 +450,7 @@ def simulate_object(
 ) -> dict[str, Any]:
 \end{lstlisting}
 
-\begin{lstlisting}[language=Python,caption={Peso de incertidumbre orbital en src/neo_ange/orbital_simulation/perturbation.py}]
+\begin{lstlisting}[language=Python,caption={Peso de incertidumbre orbital}]
 return float(
     np.clip(0.35 * condition_part + 0.25 * rms_part + 0.2 * arc_part + 0.2 * obs_part, 0, 1)
 )
@@ -478,17 +479,17 @@ La limitación física es deliberada: no hay modelo N-body, no hay efemérides o
 
 \chapter{Machine Learning Tabular}
 
-Los modelos tabulares se implementan en \codepath{src/neo\_ange/ml}. El objetivo verificado es \code{pha}. Los modelos disponibles son \code{DummyClassifier}, \code{LogisticRegression}, \code{RandomForestClassifier}, \code{HistGradientBoostingClassifier} y \code{RuleBasedPHABaseline}. La documentación y los reportes siguen las prácticas de scikit-learn \cite{sklearn_docs}.
+Los modelos tabulares se implementan en \filepath{src/neo_ange/ml}. El objetivo verificado es \code{pha}. Los modelos disponibles son \code{DummyClassifier}, \code{LogisticRegression}, \code{RandomForestClassifier}, \code{HistGradientBoostingClassifier} y \code{RuleBasedPHABaseline}. La documentación y los reportes siguen las prácticas de scikit-learn \cite{sklearn_docs}.
 
 El DummyClassifier con estrategia \code{most\_frequent} establece una línea base ingenua. La regresión logística modela:
 
 \[
-p(y=1\mid x)=\frac{1}{1+e^{-z}}, \qquad z=w^T x+b.
+p(y=1\mid x)=\frac{1}{1+e^{-z}}, \qquad z=w^\top x+b.
 \]
 
-En el código usa \code{class\_weight="balanced"}, \code{max\_iter=1000} y \code{random\_state=42}. Random Forest combina árboles entrenados con bagging; el código usa \code{n\_estimators=100}, \code{min\_samples\_leaf=2}, \code{class\_weight="balanced"} y \code{n\_jobs=-1}. HistGradientBoosting usa boosting con \code{learning\_rate=0.08}, \code{max\_iter=100} y \code{random\_state=42}. El baseline rule-based marca PHA aproximado cuando \code{moid <= 0.05} y \code{h <= 22.0}.
+En el código usa \code{class\_weight="balanced"}, \code{max\_iter=1000} y \code{random\_state=42}. Random Forest combina árboles entrenados con bagging; el código usa \code{n\_estimators=100}, \code{min\_samples\_leaf=2}, \code{class\_weight="balanced"} y \code{n\_jobs=-1}. HistGradientBoosting usa boosting con \code{learning\_rate=0.08}, \code{max\_iter=100} y \code{random\_state=42}. El baseline rule-based marca PHA aproximado cuando \(\mathrm{moid} \le 0.05\) y \(h \le 22.0\).
 
-\begin{lstlisting}[language=Python,caption={Parámetros exactos en src/neo_ange/ml/baselines.py}]
+\begin{lstlisting}[language=Python,caption={Parámetros exactos de modelos}]
 if model_name == LOGISTIC_MODEL:
     return LogisticRegression(class_weight="balanced", max_iter=1000, random_state=random_state)
 if model_name == RANDOM_FOREST_MODEL:
@@ -507,7 +508,7 @@ Los feature sets verificados son \code{full\_features}, \code{definition\_featur
 
 La matriz de confusión contiene verdaderos positivos (TP), falsos positivos (FP), verdaderos negativos (TN) y falsos negativos (FN). Accuracy mide proporción total correcta, pero puede ocultar mal desempeño en clases minoritarias. Precision mide \(TP/(TP+FP)\), recall mide \(TP/(TP+FN)\), F1 combina precision y recall. ROC-AUC resume separación entre clases sobre umbrales; PR-AUC es especialmente útil con desbalance porque se enfoca en positivos.
 
-El reporte \codepath{reports/model\_evidence/model\_evidence\_summary.json} registra como mejor evidencia defensible a \code{graphsage} con feature set \code{graph}, PR-AUC 0.9760233191710436, F1 0.9316455696202532 y ROC-AUC 0.9923131504257332. Sin embargo, el reporte GNN actual \codepath{reports/gnn/gnn\_summary.md} indica que \code{torch-geometric} no estuvo instalado y que GraphSAGE/GCN se omitieron en esa corrida. Esta diferencia se documenta como desalineación entre artefactos de evidencia y corrida GNN local. La conclusión honesta es que ML/GNN proporciona evidencia secundaria y debe interpretarse por snapshot.
+El reporte \filepath{reports/model_evidence/model_evidence_summary.json} registra como mejor evidencia defensible a \code{graphsage} con feature set \code{graph}, PR-AUC 0.9760233191710436, F1 0.9316455696202532 y ROC-AUC 0.9923131504257332. Sin embargo, el reporte GNN actual \filepath{reports/gnn/gnn_summary.md} indica que \code{torch-geometric} no estuvo instalado y que GraphSAGE/GCN se omitieron en esa corrida. Esta diferencia se documenta como desalineación entre artefactos de evidencia y corrida GNN local. La conclusión honesta es que ML/GNN proporciona evidencia secundaria y debe interpretarse por snapshot.
 
 \chapter{Grafo Orbital, GNN y Deep Learning}
 
@@ -517,13 +518,13 @@ Un grafo tiene nodos y aristas. En este proyecto cada nodo representa un objeto 
 \operatorname{similarity} = \frac{1}{1+\operatorname{distance}}.
 \]
 
-El parámetro real por defecto es \code{k=10}. En el snapshot actual, \codepath{data/gold/gnn\_graph/nodes.parquet} contiene 1,000 nodos y \codepath{edges.parquet} contiene 6,955 aristas. El reporte \codepath{reports/findings/findings\_summary.json} conserva una corrida de 4,000 nodos y 27,829 aristas; se mantiene como reporte existente, pero no se mezcla con el grafo actual.
+El parámetro real por defecto es \code{k=10}. En el snapshot actual, \filepath{data/gold/gnn_graph/nodes.parquet} contiene 1,000 nodos y \filepath{edges.parquet} contiene 6,955 aristas. El reporte \filepath{reports/findings/findings_summary.json} conserva una corrida de 4,000 nodos y 27,829 aristas; se mantiene como reporte existente, pero no se mezcla con el grafo actual.
 
 Una red neuronal aprende representaciones a partir de entradas numéricas. Un embedding es una representación vectorial aprendida. Una GNN extiende esta idea a grafos mediante \emph{message passing}: cada nodo actualiza su representación usando información de sus vecinos. La analogía con CNN es que ambas explotan estructura local; la CNN usa vecindarios espaciales en una grilla, la GNN usa vecindarios definidos por aristas.
 
-\codepath{src/neo\_ange/gnn/models.py} define \code{GraphSAGEModel} y \code{GCNModel} si \code{torch-geometric} está disponible \cite{pytorch_geometric_docs}. Ambos usan \code{hidden\_channels=32}, \code{out\_channels=2} y \code{dropout=0.2}. \code{GNNTrainer} usa \code{epochs=100}, \code{patience=10}, optimizador Adam, \code{lr=0.01}, \code{weight\_decay=5e-4} y \code{random\_state=42}. Label Propagation aparece como baseline de grafo, no como deep learning; MLP aparece como baseline neuronal tabular o de features de grafo.
+\filepath{src/neo_ange/gnn/models.py} define \code{GraphSAGEModel} y \code{GCNModel} si \code{torch-geometric} está disponible \cite{pytorch_geometric_docs}. Ambos usan \code{hidden\_channels=32}, \code{out\_channels=2} y \code{dropout=0.2}. \code{GNNTrainer} usa \code{epochs=100}, \code{patience=10}, optimizador Adam, \code{lr=0.01}, \code{weight\_decay=5e-4} y \code{random\_state=42}. Label Propagation aparece como baseline de grafo, no como deep learning; MLP aparece como baseline neuronal tabular o de features de grafo.
 
-\begin{lstlisting}[language=Python,caption={Parámetros GNN en src/neo_ange/gnn/models.py y training.py}]
+\begin{lstlisting}[language=Python,caption={Parámetros GNN}]
 hidden_channels: int = 32,
 out_channels: int = 2,
 dropout: float = 0.2,
@@ -539,13 +540,13 @@ El mejor modelo no se elige solamente por métrica bruta. El reporte identifica 
 
 \chapter{Findings}
 
-Los findings convierten artefactos analíticos en conclusiones legibles. Se generan desde \codepath{src/neo\_ange/findings} y leen risk scores, simulaciones, grafo, evidencia de modelos y dataset. El archivo \codepath{reports/findings/findings\_summary.json} contiene 19 hallazgos y reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 18 objetos con señal Sentry, 37 objetos elevados o superiores, 335 filas de simulación de score, 10 filas de simulación orbital, 4,000 nodos de grafo y 27,829 aristas.
+Los findings convierten artefactos analíticos en conclusiones legibles. Se generan desde \filepath{src/neo_ange/findings} y leen risk scores, simulaciones, grafo, evidencia de modelos y dataset. El archivo \filepath{reports/findings/findings_summary.json} contiene 19 hallazgos y reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 18 objetos con señal Sentry, 37 objetos elevados o superiores, 335 filas de simulación de score, 10 filas de simulación orbital, 4,000 nodos de grafo y 27,829 aristas.
 
-Ese reporte no coincide por completo con los Parquet actuales de \codepath{data/gold}, que tienen 1,000 filas en gold/risk y 1,000 nodos de grafo. Por tanto, los findings se documentan como resultado generado existente, no como descripción única del estado actual de todas las capas. Esta limitación es importante para reproducibilidad: antes de presentar métricas definitivas, debe regenerarse el pipeline completo o congelarse un snapshot consistente.
+Ese reporte no coincide por completo con los Parquet actuales de \filepath{data/gold}, que tienen 1,000 filas en gold/risk y 1,000 nodos de grafo. Por tanto, los findings se documentan como resultado generado existente, no como descripción única del estado actual de todas las capas. Esta limitación es importante para reproducibilidad: antes de presentar métricas definitivas, debe regenerarse el pipeline completo o congelarse un snapshot consistente.
 
 \chapter{API FastAPI}
 
-FastAPI permite exponer rutas HTTP con validación Pydantic \cite{fastapi_docs}. La aplicación vive en \codepath{src/neo\_ange/api/main.py}. Los routers verificados incluyen:
+FastAPI permite exponer rutas HTTP con validación Pydantic \cite{fastapi_docs}. La aplicación vive en \filepath{src/neo_ange/api/main.py}. Los routers verificados incluyen:
 
 \begin{itemize}
   \item \code{health}: salud y estado de artefactos.
@@ -560,17 +561,17 @@ FastAPI permite exponer rutas HTTP con validación Pydantic \cite{fastapi_docs}.
   \item \code{domain}: objeto en representación de agregado de dominio.
 \end{itemize}
 
-El backend se ejecuta en el puerto 8000 dentro de \codepath{docker-compose.yml} con \code{uvicorn neo\_ange.api.main:app --host 0.0.0.0 --port 8000}. El frontend consume la API mediante \code{VITE\_API\_BASE\_URL=http://127.0.0.1:8000}.
+El backend se ejecuta en el puerto 8000 dentro de \filepath{docker-compose.yml} con \code{uvicorn neo\_ange.api.main:app --host 0.0.0.0 --port 8000}. El frontend consume la API mediante \code{VITE\_API\_BASE\_URL=http://127.0.0.1:8000}.
 
 \chapter{Frontend React/Vite}
 
-El frontend vive en \codepath{frontend}. Usa React, TypeScript y Vite \cite{react_docs,vite_docs}. Las páginas verificadas por rutas y archivos son \code{MissionControlPage}, \code{RiskRankingPage}, \code{AsteroidProfilePage}, \code{MonteCarloLabPage}, \code{OrbitalSimulationPage}, \code{GNNResearchLabPage}, \code{FindingsPage}, \code{MethodologyPage}, \code{ModelAndLeakageLabPage}, \code{PipelineMonitorPage} y \code{DomainExplorerPage}.
+El frontend vive en \filepath{frontend}. Usa React, TypeScript y Vite \cite{react_docs,vite_docs}. Las páginas verificadas por rutas y archivos son \code{MissionControlPage}, \code{RiskRankingPage}, \code{AsteroidProfilePage}, \code{MonteCarloLabPage}, \code{OrbitalSimulationPage}, \code{GNNResearchLabPage}, \code{FindingsPage}, \code{MethodologyPage}, \code{ModelAndLeakageLabPage}, \code{PipelineMonitorPage} y \code{DomainExplorerPage}.
 
 La consigna menciona páginas con nombres funcionales como Control Panel, Risk Ranking, Object Profile, Score Simulation, Orbital Simulation, Orbital Graph, Findings y Methodology. En el código actual esos conceptos existen con nombres de página equivalentes. El valor de la interfaz está en hacer navegables rankings, perfiles, simulaciones, evidencia, grafo y metodología sin obligar al usuario a leer Parquet o JSON directamente.
 
 \chapter{Docker y Ejecución}
 
-Docker empaqueta dependencias y servicios; Docker Compose levanta múltiples servicios desde un solo archivo \cite{docker_ubuntu,docker_debian,docker_compose}. El \codepath{docker-compose.yml} define:
+Docker empaqueta dependencias y servicios; Docker Compose levanta múltiples servicios desde un solo archivo \cite{docker_ubuntu,docker_debian,docker_compose}. El \filepath{docker-compose.yml} define:
 
 \begin{itemize}
   \item \code{app}: backend FastAPI en \code{http://127.0.0.1:8000}, con volúmenes \code{data}, \code{reports} y \code{artifacts}.
@@ -594,7 +595,7 @@ La Tabla \ref{tab:results} resume resultados leídos localmente con Pandas y arc
 
 \section{Interpretación}
 
-El ranking actual de \codepath{data/gold/risk\_scores} contiene 1,000 objetos. El objeto con score máximo es \code{20152637}, designación \code{152637}, nombre completo \code{152637 (1997 NC1)}, con score 47.271572 y categoría \code{elevated}. El score promedio verificado en \codepath{reports/risk/risk\_scores\_summary.json} es 28.766259561, con mediana 29.164740000000002, mínimo 14.389905 y máximo 47.271572.
+El ranking actual de \filepath{data/gold/risk_scores} contiene 1,000 objetos. El objeto con score máximo es \code{20152637}, designación \code{152637}, nombre completo \code{152637 (1997 NC1)}, con score 47.271572 y categoría \code{elevated}. El score promedio verificado en \filepath{reports/risk/risk_scores_summary.json} es 28.766259561, con mediana 29.164740000000002, mínimo 14.389905 y máximo 47.271572.
 
 Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene resumen JSON de 10 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Esta situación no invalida el proyecto, pero sí exige documentar que los artefactos no provienen todos del mismo snapshot.
 
@@ -668,7 +669,7 @@ Permisos de Docker & Ejecutar \code{sudo usermod -aG docker "\$USER"} y luego \c
 Solo levantó frontend y no backend & \code{docker compose ps -a}; \code{docker compose logs -f app}; \code{docker compose up -d app frontend}.\\
 Se canceló \code{docker compose build} & Repetir \code{docker compose build app frontend} y luego \code{docker compose up -d app frontend}.\\
 \code{image not found} & Reconstruir con \code{docker compose build --no-cache app frontend}.\\
-Puerto ocupado & Revisar procesos con \code{sudo ss -ltnp | grep ':8000\|:5174'} o cambiar puertos en \code{docker-compose.yml}.\\
+Puerto ocupado & Revisar procesos con \codepath{sudo ss -ltnp | grep ':8000|:5174'} o cambiar puertos en \code{docker-compose.yml}.\\
 Backend no responde & \code{docker compose logs -f app}; validar \code{curl http://127.0.0.1:8000/health}.\\
 \code{model\_predictions\_full.parquet} no existe & Ejecutar \code{docker compose exec -T app python -m neo\_ange.cli model-evidence build}.\\
 Evidence no cubre 4,000 \code{object\_key} & Verificar \code{reports/model\_evidence/model\_evidence\_summary.json} y regenerar evidencia después de regenerar gold/risk.\\
@@ -766,7 +767,7 @@ python -m neo_ange.cli findings build
 
 \chapter{Apéndice B: Diagramas Mermaid Fuente}
 
-El repositorio contiene los siguientes diagramas fuente: \codepath{docs/diagrams/system\_architecture.mmd}, \codepath{docs/diagrams/data\_pipeline\_bronze\_silver\_gold.mmd}, \codepath{docs/diagrams/class\_diagram\_entities.mmd}, \codepath{docs/diagrams/class\_diagram\_system.mmd}, \codepath{docs/diagrams/risk\_scoring\_flow.mmd}, \codepath{docs/diagrams/score\_monte\_carlo\_flow.mmd}, \codepath{docs/diagrams/orbital\_simulation\_flow.mmd}, \codepath{docs/diagrams/ml\_model\_evidence\_flow.mmd}, \codepath{docs/diagrams/gnn\_orbital\_graph\_flow.mmd}, \codepath{docs/diagrams/api\_frontend\_sequence.mmd} y \codepath{docs/diagrams/final\_app\_navigation.mmd}. Este documento incluye la imagen UML disponible y referencia los Mermaid como fuentes auditables.
+El repositorio contiene los siguientes diagramas fuente: \filepath{docs/diagrams/system_architecture.mmd}, \filepath{docs/diagrams/data_pipeline_bronze_silver_gold.mmd}, \filepath{docs/diagrams/class_diagram_entities.mmd}, \filepath{docs/diagrams/class_diagram_system.mmd}, \filepath{docs/diagrams/risk_scoring_flow.mmd}, \filepath{docs/diagrams/score_monte_carlo_flow.mmd}, \filepath{docs/diagrams/orbital_simulation_flow.mmd}, \filepath{docs/diagrams/ml_model_evidence_flow.mmd}, \filepath{docs/diagrams/gnn_orbital_graph_flow.mmd}, \filepath{docs/diagrams/api_frontend_sequence.mmd} y \filepath{docs/diagrams/final_app_navigation.mmd}. Este documento incluye la imagen UML disponible y referencia los Mermaid como fuentes auditables.
 
 \cleardoublepage
 \phantomsection

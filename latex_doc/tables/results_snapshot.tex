@@ -4,15 +4,15 @@
 \toprule
 Artefacto verificado & Resultado observado & Interpretación\\
 \midrule
-\codepath{data/gold/neo\_risk\_features} & 1,000 filas; 1,000 \code{object\_key}; 280 PHA; 720 non-PHA; 2 con \code{sentry\_flag} & Snapshot gold tabular actual leído con \code{pandas.read\_parquet}.\\
-\codepath{data/gold/risk\_scores} & 1,000 filas; categorías: 70 \code{low}, 909 \code{moderate}, 21 \code{elevated} & Ranking actual de score local; máximo 47.271572 para \code{20152637}.\\
-\codepath{reports/model\_evidence/model\_predictions\_full.parquet} & 20,000 filas; 4,000 \code{object\_key} únicos & Inferencia completa de evidencia de modelos; no coincide en cobertura con el gold actual de 1,000 filas.\\
-\codepath{reports/model\_evidence/model\_predictions\_eval.parquet} & 5,000 filas; 1,000 \code{object\_key} únicos & Predicciones de evaluación sobre 1,000 objetos.\\
-\codepath{data/gold/simulation\_results/score\_uncertainty\_results.parquet} & 221 filas; 107 \code{object\_key} únicos; versión \code{risk-score-uncertainty-v0.2.0} & Resultados persistidos de Monte Carlo del score; no todos los objetos tienen simulación guardada.\\
-\codepath{reports/orbital\_simulation/orbital\_simulation\_summary.json} & 10 filas reportadas; categorías: 1 \code{stable}, 1 \code{variable}, 5 \code{uncertain}, 3 \code{needs\_review} & Resumen generado previamente.\\
-\codepath{data/gold/orbital\_simulation/orbital\_monte\_carlo\_results.parquet} & 1 fila actual; objeto \code{20089958}; categoría orbital \code{variable} & Parquet actual más reducido que el resumen JSON; se documenta como desalineación de artefactos.\\
-\codepath{data/gold/gnn\_graph/nodes.parquet} y \codepath{edges.parquet} & 1,000 nodos; 6,955 aristas & Grafo kNN actual construido con \code{k=10}.\\
-\codepath{reports/findings/findings\_summary.json} & Reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 27,829 aristas y 37 \code{elevated} & Hallazgos generados contra un snapshot anterior o ampliado; se conservan como reporte existente, no como estado único del gold actual.\\
+\filepath{data/gold/neo_risk_features} & 1,000 filas; 1,000 \code{object\_key}; 280 PHA; 720 non-PHA; 2 con \code{sentry\_flag} & Snapshot gold tabular actual leído con \code{pandas.read\_parquet}.\\
+\filepath{data/gold/risk_scores} & 1,000 filas; categorías: 70 \code{low}, 909 \code{moderate}, 21 \code{elevated} & Ranking actual de score local; máximo 47.271572 para \code{20152637}.\\
+\filepath{reports/model_evidence/model_predictions_full.parquet} & 20,000 filas; 4,000 \code{object\_key} únicos & Inferencia completa de evidencia de modelos; no coincide en cobertura con el gold actual de 1,000 filas.\\
+\filepath{reports/model_evidence/model_predictions_eval.parquet} & 5,000 filas; 1,000 \code{object\_key} únicos & Predicciones de evaluación sobre 1,000 objetos.\\
+\filepath{data/gold/simulation_results/score_uncertainty_results.parquet} & 221 filas; 107 \code{object\_key} únicos; versión \code{risk-score-uncertainty-v0.2.0} & Resultados persistidos de Monte Carlo del score; no todos los objetos tienen simulación guardada.\\
+\filepath{reports/orbital_simulation/orbital_simulation_summary.json} & 10 filas reportadas; categorías: 1 \code{stable}, 1 \code{variable}, 5 \code{uncertain}, 3 \code{needs\_review} & Resumen generado previamente.\\
+\filepath{data/gold/orbital_simulation/orbital_monte_carlo_results.parquet} & 1 fila actual; objeto \code{20089958}; categoría orbital \code{variable} & Parquet actual más reducido que el resumen JSON; se documenta como desalineación de artefactos.\\
+\filepath{data/gold/gnn_graph/nodes.parquet} y \filepath{edges.parquet} & 1,000 nodos; 6,955 aristas & Grafo kNN actual construido con \code{k=10}.\\
+\filepath{reports/findings/findings_summary.json} & Reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 27,829 aristas y 37 \code{elevated} & Hallazgos generados contra un snapshot anterior o ampliado; se conservan como reporte existente, no como estado único del gold actual.\\
 \bottomrule
 \end{tabularx}
 }
