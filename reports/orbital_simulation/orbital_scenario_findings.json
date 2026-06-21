@@ -4,10 +4,10 @@
       "importance": "medium",
       "related_objects": [
         "50092141",
-        "20530520",
         "50092158",
-        "50005900",
-        "50092127"
+        "50092174",
+        "50092146",
+        "20152637"
       ],
       "short_text": "These objects show the widest clone spread in approximate orbital simulations.",
       "source_module": "orbital_simulation",
@@ -18,11 +18,11 @@
       "caveat": "Approximate orbital scenario analysis based on available orbital elements.",
       "importance": "medium",
       "related_objects": [
-        "20530520",
-        "20443104",
-        "50008051",
+        "50092158",
         "50092141",
-        "20031669"
+        "50092174",
+        "50092146",
+        "20152637"
       ],
       "short_text": "These objects have the smallest lower-tail simulated minimum distances.",
       "source_module": "orbital_simulation",

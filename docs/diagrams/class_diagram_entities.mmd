@@ -1,12 +1,9 @@
 classDiagram
-    %% Pure NEO domain model only.
-    %% This diagram excludes analytical results, factories, repositories, services,
-    %% builders, pipelines, API clients, ML/GNN classes, trainers, and reporters.
-
     class Asteroid {
         +AsteroidIdentity identity
         +Orbit orbit
         +PhysicalProperties physical
+        +CloseApproachHistory close_approach_history
         +CloseApproachSummary close_approach_summary
         +SentryRiskSignal sentry_signal
         +bool neo
@@ -60,8 +57,8 @@ classDiagram
         +float diameter
         +float albedo
         +float log_diameter
-        +size_indicator() float
         +has_size_information() bool
+        +size_indicator() float
         +to_dict() dict
     }
 
@@ -75,6 +72,17 @@ classDiagram
         +str body
         +distance_indicator() float
         +velocity_indicator() float
+        +to_dict() dict
+    }
+
+    class CloseApproachHistory {
+        +tuple approaches
+        +count() int
+        +has_approaches() bool
+        +closest() CloseApproach
+        +fastest() CloseApproach
+        +next_approach() CloseApproach
+        +summarize() CloseApproachSummary
         +to_dict() dict
     }
 
@@ -104,7 +112,8 @@ classDiagram
     Asteroid *-- AsteroidIdentity : identity
     Asteroid *-- Orbit : orbit
     Asteroid *-- PhysicalProperties : physical
-    Asteroid o-- CloseApproachSummary : close_approach_summary
-    Asteroid o-- SentryRiskSignal : sentry_signal
-
-    CloseApproachSummary ..> CloseApproach : summarizes CAD records
+    Asteroid o-- CloseApproachHistory : close approach history
+    CloseApproachHistory *-- CloseApproach : approaches
+    CloseApproachHistory --> CloseApproachSummary : summarizes
+    Asteroid o-- CloseApproachSummary : close approach summary
+    Asteroid o-- SentryRiskSignal : sentry signal

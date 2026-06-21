@@ -85,6 +85,9 @@ class Orbit:
         return asdict(self)
 
 
+OrbitalElements = Orbit
+
+
 def _to_float(value: object) -> float | None:
     if value is None:
         return None

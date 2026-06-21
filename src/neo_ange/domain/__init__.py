@@ -1,6 +1,6 @@
 """Domain entities and metadata models for Neo Angele Risk Lab."""
 
-from neo_ange.domain.approach import CloseApproach, CloseApproachSummary
+from neo_ange.domain.approach import CloseApproach, CloseApproachHistory, CloseApproachSummary
 from neo_ange.domain.asteroid import Asteroid
 from neo_ange.domain.factories import AsteroidFactory
 from neo_ange.domain.graph import (
@@ -11,7 +11,7 @@ from neo_ange.domain.graph import (
 )
 from neo_ange.domain.identity import AsteroidIdentity
 from neo_ange.domain.models import APIRequestInfo, BronzeRecord, IngestionMetadata
-from neo_ange.domain.orbit import Orbit
+from neo_ange.domain.orbit import Orbit, OrbitalElements
 from neo_ange.domain.physical import PhysicalProperties
 from neo_ange.domain.repositories import (
     GoldFeatureRepository,
@@ -29,12 +29,14 @@ __all__ = [
     "AsteroidIdentity",
     "BronzeRecord",
     "CloseApproach",
+    "CloseApproachHistory",
     "CloseApproachSummary",
     "GNNExperimentResult",
     "GoldFeatureRepository",
     "IngestionMetadata",
     "MonteCarloResult",
     "Orbit",
+    "OrbitalElements",
     "OrbitalGraph",
     "OrbitalGraphNode",
     "OrbitalSimilarityEdge",

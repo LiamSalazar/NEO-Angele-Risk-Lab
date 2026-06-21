@@ -58,37 +58,37 @@
     "target": "pha"
   },
   "best_no_definition_feature_model": {
-    "feature_set": "orbital_only",
+    "feature_set": "no_definition_features",
     "interpretation": "This model is useful as secondary evidence because it avoids direct definition-heavy features and focuses on orbital or contextual signals.",
     "leakage_risk": "low",
     "limitations": [
       "May understate patterns that depend on physical-size or MOID definition fields."
     ],
     "metrics": {
-      "accuracy": 0.824,
-      "brier_score": 0.11567938194920833,
+      "accuracy": 0.8,
+      "brier_score": 0.12842650307688872,
       "confusion_matrix": [
         [
-          684,
-          71
+          620,
+          135
         ],
         [
-          105,
-          140
+          65,
+          180
         ]
       ],
-      "f1": 0.6140350877192983,
-      "false_negative_rate": 0.42857142857142855,
+      "f1": 0.6428571428571429,
+      "false_negative_rate": 0.2653061224489796,
       "n_samples": 1000,
       "negative_support": 755,
       "positive_support": 245,
-      "pr_auc": 0.7011729603996197,
-      "precision": 0.6635071090047393,
-      "recall": 0.5714285714285714,
-      "roc_auc": 0.8898553858629544,
+      "pr_auc": 0.7063369751407491,
+      "precision": 0.5714285714285714,
+      "recall": 0.7346938775510204,
+      "roc_auc": 0.8816975266927963,
       "top_k_recall": {
         "10": 0.04081632653061224,
-        "25": 0.09795918367346938,
+        "25": 0.09387755102040816,
         "50": 0.17551020408163265
       },
       "warnings": []
@@ -97,7 +97,7 @@
     "model_name": "random_forest",
     "not_recommended_use": "Do not treat this as an official impact-risk or alerting model.",
     "recommended_use": "Defensible support for pattern consistency without PHA definition variables.",
-    "selection_metric": 0.7011729603996197,
+    "selection_metric": 0.7063369751407491,
     "status": "success",
     "strengths": [
       "Produces probabilistic ranking evidence.",
@@ -107,7 +107,7 @@
     "target": "pha"
   },
   "best_overall_metric": {
-    "feature_set": "full_features",
+    "feature_set": "definition_features_only",
     "interpretation": "High scores here validate that definition-related variables encode the label, but this is not the best user-facing evidence.",
     "leakage_risk": "high",
     "limitations": [
@@ -115,7 +115,7 @@
     ],
     "metrics": {
       "accuracy": 0.996,
-      "brier_score": 0.0028024268932087654,
+      "brier_score": 0.0028707101831065753,
       "confusion_matrix": [
         [
           751,
@@ -155,7 +155,7 @@
     "target": "pha"
   },
   "coverage_ratio": 1.0,
-  "disagreement_count": 1367,
+  "disagreement_count": 1363,
   "eval_predictions_path": "reports/model_evidence/model_predictions_eval.parquet",
   "full_inference_available": true,
   "full_predictions_path": "reports/model_evidence/model_predictions_full.parquet",
@@ -191,7 +191,7 @@
       "model_name": "label_propagation"
     }
   ],
-  "main_evidence_conclusion": "graphsage on graph provides secondary evidence for pattern consistency; disagreements remain an inspection queue (1367 rows).",
+  "main_evidence_conclusion": "graphsage on graph provides secondary evidence for pattern consistency; disagreements remain an inspection queue (1363 rows).",
   "models_used": [
     {
       "feature_set": "no_definition_features",
