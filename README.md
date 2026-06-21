@@ -1,3 +1,239 @@
+# INSTALACIÓN
+
+Esta sección instala Neo Angele Risk Lab desde cero en Ubuntu, Debian o Linux Mint. La primera construcción puede tardar porque Docker descarga imágenes, instala dependencias de Python, PySpark, scikit-learn, Node, paquetes del frontend y porque algunos artefactos de datos o reportes pueden generarse por primera vez. Ese tiempo inicial es normal.
+
+URLs del proyecto levantado:
+
+- Frontend: http://127.0.0.1:5174
+- API: http://127.0.0.1:8000
+
+## Instalación completa en Linux
+
+Copiar y pegar este bloque en una terminal. En Linux Mint se usa el repositorio de Docker para Ubuntu con el codename de Ubuntu subyacente.
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get install -y git curl ca-certificates gnupg lsb-release
+
+sudo install -m 0755 -d /etc/apt/keyrings
+
+if [ -f /etc/linuxmint/info ]; then
+  . /etc/os-release
+  UBUNTU_CODENAME="${UBUNTU_CODENAME:-$(. /etc/linuxmint/info && echo "$UBUNTU_CODENAME")}"
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+elif . /etc/os-release && [ "$ID" = "debian" ]; then
+  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+else
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+fi
+
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+sudo usermod -aG docker "$USER"
+newgrp docker
+
+docker --version
+docker compose version
+docker run --rm hello-world
+
+git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
+cd NEO-Angele-Risk-Lab
+
+docker compose up -d --build app frontend
+docker compose ps
+
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
+```
+
+Abrir en el navegador:
+
+- http://127.0.0.1:5174
+- http://127.0.0.1:8000
+
+Para bajar servicios:
+
+```bash
+docker compose down
+```
+
+## Comandos rápidos si Docker ya está instalado
+
+```bash
+git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
+cd NEO-Angele-Risk-Lab
+docker compose up -d --build app frontend
+docker compose ps
+curl http://127.0.0.1:8000/health
+```
+
+Para iniciar sin reconstruir:
+
+```bash
+docker compose up -d --no-build app frontend
+```
+
+Para reconstruir:
+
+```bash
+docker compose build app frontend
+docker compose up -d app frontend
+```
+
+## Validación de API y frontend
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
+curl -I http://127.0.0.1:5174
+docker compose ps
+```
+
+## Solución de problemas comunes
+
+### Permisos de Docker
+
+Error típico: `permission denied while trying to connect to the Docker daemon socket`.
+
+```bash
+sudo usermod -aG docker "$USER"
+newgrp docker
+docker run --rm hello-world
+```
+
+Si el error continúa, cerrar sesión y volver a entrar.
+
+### Solo levantó frontend y no backend
+
+```bash
+docker compose ps -a
+docker compose logs -f app
+docker compose up -d app frontend
+curl http://127.0.0.1:8000/health
+```
+
+### Se canceló `docker compose build`
+
+```bash
+docker compose build app frontend
+docker compose up -d app frontend
+```
+
+### `image not found`
+
+```bash
+docker compose build --no-cache app frontend
+docker compose up -d app frontend
+```
+
+### Puerto ocupado
+
+```bash
+sudo ss -ltnp | grep ':8000\|:5174'
+docker compose down
+docker compose up -d app frontend
+```
+
+Si otro programa usa el puerto, detener ese programa o cambiar el mapeo de puertos en `docker-compose.yml`.
+
+### Backend no responde
+
+```bash
+docker compose ps -a
+docker compose logs -f app
+docker compose restart app
+curl http://127.0.0.1:8000/health
+```
+
+### `model_predictions_full.parquet` no existe
+
+```bash
+docker compose exec -T app python -m neo_ange.cli model-evidence build
+ls -lah reports/model_evidence/
+```
+
+### Evidence no cubre 4,000 `object_key`
+
+Validar cobertura real antes de interpretar la evidencia:
+
+```bash
+docker compose exec -T app python - <<'EOF'
+import pandas as pd
+from pathlib import Path
+
+path = Path("reports/model_evidence/model_predictions_full.parquet")
+print("exists:", path.exists())
+if path.exists():
+    df = pd.read_parquet(path)
+    print("rows:", len(df))
+    print("unique_object_key:", df["object_key"].astype(str).nunique())
+    print(df["model_name"].value_counts(dropna=False))
+EOF
+```
+
+### Reports viejos
+
+Regenerar reportes principales:
+
+```bash
+docker compose exec -T app python -m neo_ange.cli risk build
+docker compose exec -T app python -m neo_ange.cli model-evidence build
+docker compose exec -T app python -m neo_ange.cli findings build
+```
+
+### Logs del backend y frontend
+
+```bash
+docker compose logs -f app
+docker compose logs -f frontend
+```
+
+### Reconstrucción de app
+
+```bash
+docker compose build app
+docker compose build frontend
+docker compose up -d app frontend
+```
+
+### Validación de `data/gold` y `reports/model_evidence`
+
+```bash
+docker compose exec -T app python - <<'EOF'
+import pandas as pd
+from pathlib import Path
+
+paths = [
+    "data/gold/neo_risk_features",
+    "data/gold/risk_scores",
+    "reports/model_evidence/model_predictions_full.parquet",
+]
+
+for p in paths:
+    path = Path(p)
+    print("\n===", p, "===")
+    print("exists:", path.exists())
+    if path.exists():
+        df = pd.read_parquet(path)
+        print("rows:", len(df))
+        if "object_key" in df.columns:
+            print("unique_object_key:", df["object_key"].astype(str).nunique())
+        print("columns:", list(df.columns)[:30])
+EOF
+```
+
+### Primera ejecución lenta
+
+La primera ejecución puede tardar por descarga de imágenes, instalación de dependencias científicas, construcción del frontend, PySpark, PyTorch opcional, lectura de Parquet, ingesta, generación de reportes o creación de artefactos. Una vez construidas las imágenes, los siguientes arranques suelen ser más rápidos.
+
+# DOCUMENTATION
+
 # Neo Angele Risk Lab
 
 Neo Angele Risk Lab is a data engineering, experimental risk analytics, and visualization lab for studying Near-Earth Objects, or NEOs, using public NASA/JPL data.

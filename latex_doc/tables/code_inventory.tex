@@ -1,0 +1,26 @@
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.24\linewidth}>{\RaggedRight\arraybackslash}p{0.24\linewidth}>{\RaggedRight\arraybackslash}p{0.44\linewidth}}
+\caption{Inventario sintético de paquetes Python relevantes.}
+\label{tab:inventory}\\
+\toprule
+Paquete o ruta & Clases o funciones principales & Responsabilidad técnica\\
+\midrule
+\endfirsthead
+\toprule
+Paquete o ruta & Clases o funciones principales & Responsabilidad técnica\\
+\midrule
+\endhead
+\codepath{src/neo\_ange/clients} & \code{BaseJPLClient}, \code{SBDBObjectClient}, \code{SBDBQueryClient}, \code{CloseApproachClient}, \code{SentryClient} & Encapsula las llamadas HTTP a las API públicas SBDB Object, SBDB Query, CAD y Sentry.\\
+\codepath{src/neo\_ange/services} & \code{BronzeStorage}, \code{SilverStorage}, \code{GoldStorage} & Resuelve rutas y persistencia local para capas bronze, silver y gold.\\
+\codepath{src/neo\_ange/etl} & \code{BronzeReader}, \code{SilverTransformers}, \code{GoldBuilder} & Normaliza JSON crudo, construye tablas silver y une features analíticas en gold.\\
+\codepath{src/neo\_ange/domain} & \code{Asteroid}, \code{Orbit}, \code{PhysicalProperties}, \code{CloseApproachSummary}, \code{SentryRiskSignal}, \code{AsteroidFactory}, repositorios & Modelo POO del dominio, mapeo desde filas gold y lectura orientada a objetos de artefactos Parquet.\\
+\codepath{src/neo\_ange/risk} & \code{RiskScorer}, \code{RiskCategoryAssigner}, \code{RiskExplanationService}, \code{RiskRankingService} & Calcula el Risk Priority Score, asigna categorías, genera explicaciones y rankings.\\
+\codepath{src/neo\_ange/simulation} & \code{MonteCarloEngine}, \code{PerturbationEngine}, \code{UncertaintySpec}, \code{SensitivityAnalyzer} & Propaga incertidumbre aproximada del score, recalcula escenarios y resume percentiles.\\
+\codepath{src/neo\_ange/orbital\_simulation} & \code{OrbitalMonteCarloEngine}, \code{parse\_covariance\_payload}, \code{sample\_orbital\_clones}, \code{solve\_kepler} & Simula clones orbitales con covarianza o fallback heurístico y propagación kepleriana aproximada.\\
+\codepath{src/neo\_ange/ml} & \code{FeatureSetRegistry}, \code{RuleBasedPHABaseline}, \code{build\_estimator}, \code{run\_baseline\_experiments} & Entrena modelos tabulares, separa conjuntos de features y calcula métricas con auditoría de leakage.\\
+\codepath{src/neo\_ange/gnn} & \code{OrbitalGraphBuilder}, \code{OrbitalSimilarityCalculator}, \code{GraphBaselineRunner}, \code{GraphSAGEModel}, \code{GCNModel}, \code{GNNTrainer} & Construye grafo kNN, ejecuta baselines de grafo y entrena GNN si \code{torch-geometric} está disponible.\\
+\codepath{src/neo\_ange/evidence} & \code{ModelEvidenceBuilder}, predicciones, disagreement, model cards & Integra evidencia secundaria de modelos, tarjetas, inferencia completa/evaluación y desacuerdos.\\
+\codepath{src/neo\_ange/findings} & \code{FindingsBuilder} y generadores por módulo & Convierte artefactos analíticos en hallazgos interpretables para API y frontend.\\
+\codepath{src/neo\_ange/api} & \code{FastAPI}, routers de \code{health}, \code{risk}, \code{rankings}, \code{objects}, \code{simulations}, \code{orbital\_simulation}, \code{gnn}, \code{model\_evidence}, \code{findings}, \code{domain} & Expone resultados y ejecuciones bajo HTTP para el frontend React/Vite.\\
+\codepath{src/neo\_ange/pipelines} & \code{IngestionPipeline}, \code{ETLPipeline}, \code{RiskPipeline}, \code{SimulationPipeline}, \code{MLPipeline} & Orquesta flujos completos y manifiestos de ejecución.\\
+\bottomrule
+\end{longtable}
