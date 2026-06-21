@@ -753,27 +753,26 @@ Local ports with Docker Compose:
 
 ## Current results
 
-The following results were checked or regenerated in Docker on June 16, 2026 using the current checkout.
+The current checkout contains a mixed set of artifacts. The Parquet files in `data/gold` were inspected directly on June 21, 2026 with `pandas.read_parquet`; some JSON and model-evidence files preserve outputs from a larger 4,000-object run. Treat the counts below by scope rather than as one single frozen snapshot.
 
-| Output | Current value |
-| --- | --- |
-| Gold features | `data/gold/neo_risk_features`: 4,000 rows, 4,000 unique `object_key` values. |
-| Risk scores | `data/gold/risk_scores/risk_scores.parquet`: 4,000 rows, 4,000 unique `object_key` values. |
-| Risk category distribution | `moderate`: 3,743; `low`: 220; `elevated`: 37. No `high` or `critical` objects in the current snapshot. |
-| Score range | Minimum 14.389905, maximum 55.381062, mean 27.6671392995, median 27.411882. |
-| Top object by current score | `50012416` / `(1979 XB)`, score 55.381062, category `elevated`. |
-| Score simulation | `reports/findings` summary reports 335 score-simulation rows. Latest documented batch command uses 20 objects with 100 simulations per object. |
-| Orbital simulation | `reports/findings` summary reports 10 current orbital-simulation rows after the latest findings build. |
-| GNN graph | `reports/gnn/graph_summary.json`: 4,000 nodes, 27,829 edges, one connected component, average degree 13.9145. |
-| Model evidence full inference | `reports/model_evidence/model_predictions_full.parquet`: 20,000 prediction rows over 4,000 unique objects. |
-| Model evidence eval inference | `reports/model_evidence/model_predictions_eval.parquet`: 5,000 prediction rows over 1,000 unique objects. |
-| Best defensible model evidence | `reports/model_evidence/model_evidence_summary.json`: GraphSAGE, feature set `graph`, PR AUC 0.9760233191710436, marked as secondary evidence. |
-| Findings | `reports/findings/findings_summary.json`: 19 findings; summary shows 4,000 risk rows, 335 score-simulation rows, 10 orbital-simulation rows, 4,000 graph nodes, 27,829 graph edges. |
+| Output | Scope | Current value |
+| --- | --- | --- |
+| Gold features | Directly verified Parquet | `data/gold/neo_risk_features`: 1,000 rows, 1,000 unique `object_key` values, 280 PHA, 720 non-PHA, 2 `sentry_flag=true`. |
+| Risk scores | Directly verified Parquet | `data/gold/risk_scores/risk_scores.parquet`: 1,000 rows; `low`: 70, `moderate`: 909, `elevated`: 21. |
+| Score range | Directly verified JSON/Parquet | Minimum 14.389905, maximum 47.271572, mean 28.766259561, median 29.164740000000002. |
+| Top object by current risk score | Directly verified JSON/Parquet | `20152637` / `152637 (1997 NC1)`, score 47.271572, category `elevated`. |
+| Score simulation | Directly verified Parquet | `data/gold/simulation_results/score_uncertainty_results.parquet`: 221 rows, 107 unique objects. |
+| Orbital simulation | Mixed artifacts | `reports/orbital_simulation/orbital_simulation_summary.json` reports 10 rows; `data/gold/orbital_simulation/orbital_monte_carlo_results.parquet` currently contains 1 row. |
+| GNN graph | Directly verified Parquet/JSON | `data/gold/gnn_graph`: 1,000 nodes, 6,955 edges, one connected component, average degree 13.91. |
+| Model evidence full inference | Directly verified Parquet | `reports/model_evidence/model_predictions_full.parquet`: 20,000 prediction rows over 4,000 unique objects. |
+| Model evidence eval inference | Directly verified Parquet | `reports/model_evidence/model_predictions_eval.parquet`: 5,000 prediction rows over 1,000 unique objects. |
+| Best defensible model evidence | Existing report | `reports/model_evidence/model_evidence_summary.json`: GraphSAGE, feature set `graph`, PR AUC 0.9760233191710436, marked as secondary evidence. |
+| Findings | Existing 4,000-object report | `reports/findings/findings_summary.json`: 19 findings; reports 4,000 objects, 982 PHA, 3,018 non-PHA, 18 Sentry, 37 elevated or above, and 27,829 graph edges. |
 
 Notes:
 
 - `data/gold/simulation_results/` and `data/gold/orbital_simulation/` contain both CSV and Parquet files. Read the specific `.parquet` files rather than treating the whole directory as one Parquet dataset.
-- Some older manifests and reports remain in `reports/manifests/`; the current regenerated risk manifest is `reports/manifests/risk_20260616T010708094044Z.json`.
+- Some reports describe an earlier or expanded 4,000-object run while the current `data/gold` Parquet snapshot contains 1,000 objects. Regenerate ETL, risk, graph, model evidence, and findings in one run before presenting a single definitive numeric snapshot.
 - `reports/data_quality/dataset_readiness.json` can become stale if run against test or temporary roots; regenerate it with `docker compose exec app python -m neo_ange.cli expand coverage` before using it as a current readiness snapshot.
 
 ## How to run
@@ -882,21 +881,11 @@ curl http://127.0.0.1:8000/status
 curl -I http://127.0.0.1:5174
 ```
 
-Validation already performed during the final documentation pass:
+Validation status for the final documentation pass:
 
-- `docker compose ps`: API and frontend containers were running.
-- `curl http://127.0.0.1:8000/health`: returned `status: ok`.
-- `curl http://127.0.0.1:8000/status`: returned `status: ok` with current data/report availability.
-- `curl -I http://127.0.0.1:5174`: returned `HTTP/1.1 200 OK`.
-- `docker compose exec app python -m neo_ange.cli risk build`: succeeded.
-- `docker compose exec app python -m neo_ange.cli model-evidence build`: succeeded.
-- `docker compose exec app python -m neo_ange.cli findings build`: succeeded.
-- `docker compose exec app python -m ruff check .`: passed after installing the `dev` extra in the running container.
-- `docker compose exec app python -m black --check .`: passed after installing the `dev` extra in the running container.
-- `docker compose exec app python -m pytest`: did not execute tests in the production image because `/app/tests` is not copied into the Docker image; pytest reported zero collected tests.
-- Frontend `npm install`, `npm run lint`, `npm run test`, and `npm run build`: passed locally. Vitest ran 4 test files and 9 tests. Vite reported a non-failing large chunk warning.
-
-Host note: this Linux host did not expose `python` or `pandas` outside Docker during inspection, so data-count checks were run inside the `app` container.
+- Python, pandas, and pyarrow were available locally for data-count inspection.
+- Docker was not available in the local PATH during the June 21, 2026 documentation pass, so API/frontend container checks were not rerun in that environment.
+- LaTeX compilation is documented in `latex_doc/README.md`; the document is intended for Overleaf with pdfLaTeX and BibTeX.
 
 ## Limitations
 

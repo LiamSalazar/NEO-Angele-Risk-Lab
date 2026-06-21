@@ -1,6 +1,6 @@
-{\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.22\linewidth}>{\RaggedRight\arraybackslash}p{0.26\linewidth}>{\RaggedRight\arraybackslash}p{0.42\linewidth}}
+{\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.22\linewidth}>{\RaggedRight\arraybackslash}p{0.31\linewidth}>{\RaggedRight\arraybackslash}p{0.37\linewidth}}
 \caption{Inventario sintético de paquetes Python relevantes.}
 \label{tab:inventory}\\
 \toprule
@@ -20,7 +20,7 @@ Paquete o ruta & Clases o funciones principales & Responsabilidad técnica\\
 \filepath{src/neo_ange/orbital_simulation} & \code{OrbitalMonteCarloEngine}, \code{parse\_covariance\_payload}, \code{sample\_orbital\_clones}, \code{solve\_kepler} & Simula clones orbitales con covarianza o fallback heurístico y propagación kepleriana aproximada.\\
 \filepath{src/neo_ange/ml} & \code{FeatureSetRegistry}, \code{RuleBasedPHABaseline}, \code{build\_estimator}, \code{run\_baseline\_experiments} & Entrena modelos tabulares, separa conjuntos de features y calcula métricas con auditoría de leakage.\\
 \filepath{src/neo_ange/gnn} & \code{OrbitalGraphBuilder}, \code{OrbitalSimilarityCalculator}, \code{GraphBaselineRunner}, \code{GraphSAGEModel}, \code{GCNModel}, \code{GNNTrainer} & Construye grafo kNN, ejecuta baselines de grafo y entrena GNN si \code{torch-geometric} está disponible.\\
-\filepath{src/neo_ange/evidence} & \code{ModelEvidenceBuilder}, predicciones, disagreement, model cards & Integra evidencia secundaria de modelos, tarjetas, inferencia completa/evaluación y desacuerdos.\\
+\filepath{src/neo_ange/evidence} & \code{ModelEvidenceBuilder}, predicciones, desacuerdos, tarjetas de modelo & Integra evidencia secundaria de modelos, tarjetas, inferencia completa/evaluación y desacuerdos.\\
 \filepath{src/neo_ange/findings} & \code{FindingsBuilder} y generadores por módulo & Convierte artefactos analíticos en hallazgos interpretables para API y frontend.\\
 \filepath{src/neo_ange/api} & \code{FastAPI}, routers de \code{health}, \code{risk}, \code{rankings}, \code{objects}, \code{simulations}, \code{orbital\_simulation}, \code{gnn}, \code{model\_evidence}, \code{findings}, \code{domain} & Expone resultados y ejecuciones bajo HTTP para el frontend React/Vite.\\
 \filepath{src/neo_ange/pipelines} & \code{IngestionPipeline}, \code{ETLPipeline}, \code{RiskPipeline}, \code{SimulationPipeline}, \code{MLPipeline} & Orquesta flujos completos y manifiestos de ejecución.\\

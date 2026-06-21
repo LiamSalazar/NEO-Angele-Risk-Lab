@@ -102,7 +102,7 @@ Neo Angele Risk Lab es una plataforma académica de ingeniería de datos, analí
 
 El problema que resuelve no es la predicción oficial de impactos. El sistema organiza fuentes públicas heterogéneas, hace trazable el flujo de datos, convierte campos astronómicos técnicos en indicadores interpretables y ofrece una interfaz para priorizar revisión experimental. El score principal es un ranking analítico interno de 0 a 100. La evidencia de machine learning y GNN se trata como evidencia secundaria, no como criterio oficial de riesgo ni como sustituto de NASA/JPL, CNEOS o Sentry.
 
-La inspección del repositorio actual verificó código Python, pruebas, documentación, reportes, artefactos Parquet, diagramas Mermaid, una figura UML en \filepath{artifacts/figures/class_diagram_entities.png}, backend FastAPI, frontend React/TypeScript/Vite y configuración Docker Compose. La validación local encontró que Docker no está disponible en la computadora usada para preparar esta entrega, por lo que no se compiló PDF ni se levantaron servicios; el repositorio sí contiene \filepath{docker-compose.yml}, \filepath{Dockerfile} y \filepath{Dockerfile.frontend}.
+La inspección del repositorio actual verificó código Python, pruebas, documentación, reportes, artefactos Parquet, diagramas Mermaid, una figura UML autocontenida en \filepath{latex_doc/figures}, backend FastAPI, frontend React/TypeScript/Vite y configuración Docker Compose. El documento fue preparado en LaTeX y está diseñado para compilar en Overleaf con pdfLaTeX y BibTeX. La carpeta \filepath{latex_doc} contiene los archivos necesarios para su compilación. La validación local de ejecución se trata por separado: Docker no está disponible en la computadora usada para preparar esta revisión, por lo que no se levantaron servicios con Docker en ese entorno.
 
 \chapter{Introducción}
 
@@ -185,7 +185,9 @@ Sentry API & Señales de riesgo Sentry, probabilidades y campos Palermo/Torino c
 
 El diccionario siguiente agrupa los campos principales que aparecen en el dataset gold y en los reportes. No inventa columnas: los nombres fueron verificados en \filepath{data/gold/neo_risk_features}, \filepath{data/gold/risk_scores}, \filepath{reports/model_evidence} y módulos de código.
 
-\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.18\linewidth}>{\RaggedRight\arraybackslash}p{0.27\linewidth}>{\RaggedRight\arraybackslash}p{0.17\linewidth}>{\RaggedRight\arraybackslash}p{0.28\linewidth}}
+{\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.20\linewidth}>{\RaggedRight\arraybackslash}p{0.30\linewidth}>{\RaggedRight\arraybackslash}p{0.14\linewidth}>{\RaggedRight\arraybackslash}p{0.26\linewidth}}
 \caption{Diccionario de datos resumido por grupo.}\\
 \toprule
 Campo & Significado & Fuente & Uso en el sistema\\
@@ -208,6 +210,7 @@ Campo & Significado & Fuente & Uso en el sistema\\
 \code{model\_name}, \code{feature\_set}, \code{predicted\_probability}, \code{confidence\_bucket}, \code{leakage\_risk}, \code{evidence\_role} & Evidencia ML/GNN por objeto. & \code{ModelEvidenceBuilder} & Model evidence, desacuerdos, frontend.\\
 \bottomrule
 \end{longtable}
+}
 
 \chapter{Arquitectura General del Sistema}
 
@@ -231,7 +234,9 @@ El diagrama fuente está en \filepath{docs/diagrams/system_architecture.mmd}. El
 
 \section{Estructura del Repositorio}
 
-\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.31\linewidth}Y}
+{\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.33\linewidth}Y}
 \toprule
 Ruta & Propósito\\
 \midrule
@@ -253,6 +258,7 @@ Ruta & Propósito\\
 \filepath{artifacts} & Figuras, capturas y exportaciones.\\
 \bottomrule
 \end{tabularx}
+}
 
 \chapter{Pipeline ETL, PySpark y Parquet}
 
@@ -284,15 +290,17 @@ El polimorfismo aparece en servicios que aceptan filas, diccionarios o entidades
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/class-diagram-entities.png}
-\caption{Diagrama UML de entidades puras del dominio incluido dentro de \filepath{latex_doc/figures}.}
+\includegraphics[width=0.95\textwidth]{figures/class-diagram-entities.png}
+\caption{Diagrama UML de entidades puras del dominio.}
 \end{figure}
 
-El diagrama muestra \code{Asteroid} como agregado y sus componentes. \code{AsteroidIdentity} está separado porque los identificadores tienen reglas propias de selección: \code{object\_key}, \code{spkid}, \code{des}, \code{full\_name} y \code{name} no tienen la misma estabilidad. \code{CloseApproachHistory} y \code{CloseApproachSummary} coexisten conceptualmente porque un acercamiento individual y un resumen agregado responden a necesidades distintas; el código actual usa \code{CloseApproach} para un registro y \code{CloseApproachSummary} para el resumen usado en score y frontend. \code{SentryRiskSignal} es opcional porque la mayoría de objetos no tiene señal Sentry en el snapshot local.
+El diagrama muestra \code{Asteroid} como agregado raíz y no como una división mecánica de columnas CSV. \code{AsteroidIdentity} concentra reglas de identificación porque \code{object\_key}, \code{spkid}, \code{des}, \code{full\_name} y \code{name} no tienen la misma estabilidad. \code{Orbit} encapsula elementos orbitales y señales de calidad; \code{PhysicalProperties} agrupa magnitud absoluta, diámetro, albedo y proxies de tamaño; \code{CloseApproach} representa un evento individual y \code{CloseApproachSummary} resume señales CAD útiles para score y frontend. \code{SentryRiskSignal} es opcional porque la mayoría de objetos no tiene señal Sentry en el snapshot local. La elección de composición sobre herencia profunda evita una taxonomía artificial: órbita, propiedades físicas, acercamientos y señal Sentry son partes del agregado, no subtipos de asteroide.
 
 \section{Clases Principales}
 
-\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.17\linewidth}>{\RaggedRight\arraybackslash}p{0.21\linewidth}>{\RaggedRight\arraybackslash}p{0.32\linewidth}>{\RaggedRight\arraybackslash}p{0.20\linewidth}}
+{\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.17\linewidth}>{\RaggedRight\arraybackslash}p{0.23\linewidth}>{\RaggedRight\arraybackslash}p{0.31\linewidth}>{\RaggedRight\arraybackslash}p{0.19\linewidth}}
 \caption{Clases de dominio verificadas.}\\
 \toprule
 Clase & Archivo & Responsabilidad & Métodos principales\\
@@ -313,6 +321,7 @@ Clase & Archivo & Responsabilidad & Métodos principales\\
 \code{GoldFeatureRepository}, \code{RiskScoreRepository}, \code{SimulationResultRepository} & \filepath{src/neo_ange/domain/repositories.py} & Aíslan lectura de Parquet y devuelven entidades. & \code{load\_dataframe}, \code{load\_asteroids}, \code{get\_by\_object\_key}, \code{top}.\\
 \bottomrule
 \end{longtable}
+}
 
 \section{Extractos Exactos}
 
@@ -372,7 +381,9 @@ S = 100 \cdot \operatorname{clip}_{[0,1]}\left(
 \right).
 \]
 
-\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.28\linewidth}>{\RaggedRight\arraybackslash}p{0.16\linewidth}Y}
+{\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{>{\RaggedRight\arraybackslash}p{0.30\linewidth}>{\centering\arraybackslash}p{0.11\linewidth}Y}
 \toprule
 Componente & Peso & Variables usadas\\
 \midrule
@@ -384,6 +395,7 @@ Componente & Peso & Variables usadas\\
 \code{data\_quality\_component} & 0.05 & Incompletitud, arco corto y baja cantidad de observaciones.\\
 \bottomrule
 \end{tabularx}
+}
 
 Las categorías son: \code{low} para score menor a 20; \code{moderate} desde 20 hasta menor que 40; \code{elevated} desde 40 hasta menor que 60; \code{high} desde 60 hasta menor que 80; \code{critical} desde 80.
 
@@ -508,7 +520,7 @@ Los feature sets verificados son \code{full\_features}, \code{definition\_featur
 
 La matriz de confusión contiene verdaderos positivos (TP), falsos positivos (FP), verdaderos negativos (TN) y falsos negativos (FN). Accuracy mide proporción total correcta, pero puede ocultar mal desempeño en clases minoritarias. Precision mide \(TP/(TP+FP)\), recall mide \(TP/(TP+FN)\), F1 combina precision y recall. ROC-AUC resume separación entre clases sobre umbrales; PR-AUC es especialmente útil con desbalance porque se enfoca en positivos.
 
-El reporte \filepath{reports/model_evidence/model_evidence_summary.json} registra como mejor evidencia defensible a \code{graphsage} con feature set \code{graph}, PR-AUC 0.9760233191710436, F1 0.9316455696202532 y ROC-AUC 0.9923131504257332. Sin embargo, el reporte GNN actual \filepath{reports/gnn/gnn_summary.md} indica que \code{torch-geometric} no estuvo instalado y que GraphSAGE/GCN se omitieron en esa corrida. Esta diferencia se documenta como desalineación entre artefactos de evidencia y corrida GNN local. La conclusión honesta es que ML/GNN proporciona evidencia secundaria y debe interpretarse por snapshot.
+El reporte \filepath{reports/model_evidence/model_evidence_summary.json} registra como mejor evidencia defensible a \code{graphsage} con feature set \code{graph}, PR-AUC 0.9760233191710436, F1 0.9316455696202532 y ROC-AUC 0.9923131504257332. Sin embargo, el reporte GNN actual \filepath{reports/gnn/gnn_summary.md} indica que \code{torch-geometric} no estuvo instalado y que GraphSAGE/GCN se omitieron en esa corrida. Esta diferencia se documenta como desalineación entre artefactos de evidencia y corrida GNN local. La conclusión honesta es que ML/GNN proporciona evidencia secundaria y debe interpretarse según el snapshot que produjo cada archivo.
 
 \chapter{Grafo Orbital, GNN y Deep Learning}
 
@@ -582,22 +594,17 @@ La primera construcción puede tardar porque descarga imágenes, instala Python,
 
 \chapter{Resultados Obtenidos}
 
-\section{Snapshot Verificado}
+\section{Consistencia y Alcance del Snapshot Verificado}
 
-La Tabla \ref{tab:results} resume resultados leídos localmente con Pandas y archivos JSON.
+La Tabla \ref{tab:results} separa tres tipos de evidencia: artefactos Parquet verificados directamente en el checkout actual, reportes JSON/Markdown existentes y resultados heredados de corridas ampliadas. Esta separación evita mezclar como si fueran un único estado definitivo los 1,000 objetos presentes en \filepath{data/gold} con los 4,000 objetos que aparecen en algunos reportes de evidencia y findings.
 
-\begin{table}[H]
-\centering
 \input{tables/results_snapshot.tex}
-\caption{Resultados y artefactos verificados en el checkout actual.}
-\label{tab:results}
-\end{table}
 
 \section{Interpretación}
 
 El ranking actual de \filepath{data/gold/risk_scores} contiene 1,000 objetos. El objeto con score máximo es \code{20152637}, designación \code{152637}, nombre completo \code{152637 (1997 NC1)}, con score 47.271572 y categoría \code{elevated}. El score promedio verificado en \filepath{reports/risk/risk_scores_summary.json} es 28.766259561, con mediana 29.164740000000002, mínimo 14.389905 y máximo 47.271572.
 
-Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene resumen JSON de 10 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Esta situación no invalida el proyecto, pero sí exige documentar que los artefactos no provienen todos del mismo snapshot.
+Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene resumen JSON de 10 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Por tanto, el snapshot final documentado para esta revisión es: gold/risk/grafo verificados con 1,000 objetos; model evidence full y findings existentes con cobertura de 4,000 objetos; simulación orbital documentada como resumen existente de 10 filas y Parquet actual de 1 fila. Esta situación no invalida el proyecto, pero sí exige regenerar el pipeline completo en una sola corrida antes de afirmar un único snapshot numérico definitivo.
 
 \chapter{Guía de Instalación Linux Desde Cero}
 
@@ -655,7 +662,9 @@ docker compose down
 
 \chapter{Solución de Problemas Comunes}
 
-\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.30\linewidth}>{\RaggedRight\arraybackslash}p{0.62\linewidth}}
+{\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{0.28\linewidth}>{\RaggedRight\arraybackslash}p{0.64\linewidth}}
 \caption{Problemas comunes y comandos reales.}\\
 \toprule
 Problema & Comando o acción\\
@@ -679,6 +688,7 @@ Reconstrucción de app & \code{docker compose build app}; \code{docker compose u
 Validación de data/gold y reports & Usar el bloque Python de validación incluido en la sección siguiente.\\
 \bottomrule
 \end{longtable}
+}
 
 \begin{lstlisting}[language=bash,caption={Validación rápida dentro del contenedor}]
 docker compose exec -T app python - <<'EOF'
@@ -734,7 +744,7 @@ curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/status
 \end{lstlisting}
 
-En la computadora usada para preparar esta entrega, \code{docker} no está instalado o no está en PATH, por lo que no se pudo ejecutar \code{docker compose up}. Tampoco se compiló PDF porque no se asumió una instalación LaTeX local.
+La validación documental corresponde a Overleaf: este archivo está preparado para pdfLaTeX y BibTeX, sin \code{minted} y sin \code{shell-escape}. La validación de ejecución del sistema es distinta: en la computadora usada para preparar esta revisión, \code{docker} no está instalado o no está en PATH, por lo que no se pudo ejecutar \code{docker compose up}. Si no existe LaTeX local, la compilación debe realizarse en Overleaf con \filepath{latex_doc/main.tex} como archivo principal.
 
 \chapter{Limitaciones}
 

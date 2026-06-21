@@ -23,7 +23,7 @@ Alternativa manual:
   pdflatex -interaction=nonstopmode main.tex
   pdflatex -interaction=nonstopmode main.tex
 
-No se generó PDF en este entorno.
+Este mensaje solo indica que faltó latexmk local; el documento puede compilarse en Overleaf con pdfLaTeX y BibTeX.
 MSG
 
 exit 0
