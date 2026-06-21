@@ -2,7 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[spanish,es-tabla]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{geometry}
@@ -42,9 +42,16 @@
 
 \definecolor{codegray}{RGB}{245,245,245}
 \definecolor{codeborder}{RGB}{210,210,210}
+\lstdefinelanguage{bash}{
+  morekeywords={sudo,apt-get,install,update,upgrade,curl,echo,tee,git,cd,docker,compose,python,bash,if,then,elif,else,fi,for,do,done},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]'
+}
 \lstdefinestyle{neoange}{
   backgroundcolor=\color{codegray},
-  basicstyle=\ttfamily\small,
+  basicstyle=\ttfamily\footnotesize,
   breakatwhitespace=false,
   breaklines=true,
   captionpos=b,
@@ -452,7 +459,7 @@ Los clones válidos son muestras con elementos finitos, semieje mayor positivo y
 
 \section{Modelo Físico}
 
-La propagación usa un modelo heliocéntrico aproximado de dos cuerpos. Para cada clon, se avanza la anomalía media con \(M(t)=M_0+n t\). La ecuación de Kepler es:
+La propagación usa un modelo heliocéntrico aproximado de dos cuerpos, basado en elementos keplerianos clásicos \cite{bate1971fundamentals}. Para cada clon, se avanza la anomalía media con \(M(t)=M_0+n t\). La ecuación de Kepler es:
 
 \[
 M = E - e\sin(E).
@@ -526,13 +533,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
 \chapter{Model Evidence}
 
-Model evidence integra predicciones, tarjetas de modelo, desacuerdos y conclusiones. La diferencia entre \code{model\_predictions\_eval} y \code{model\_predictions\_full} es central: eval corresponde a evaluación y full inference corresponde a inferencia extendida. El resumen verificado indica \code{prediction\_rows\_eval=5000}, \code{unique\_eval\_object\_keys=1000}, \code{prediction\_rows\_full=20000}, \code{unique\_full\_object\_keys=4000}, \code{coverage\_ratio=1.0} y \code{disagreement\_count=1367}.
+Model evidence integra predicciones, tarjetas de modelo, desacuerdos y conclusiones. La diferencia entre \code{model\_predictions\_eval} y \code{model\_predictions\_full} es central: eval corresponde a evaluación y full inference corresponde a inferencia extendida. El resumen verificado indica \code{prediction\_rows\_eval=5000}, \code{unique\_eval\_object\_keys=1000}, \code{prediction\_rows\_full=20000}, \code{unique\_full\_object\_keys=4000}, \code{coverage\_ratio=1.0} y \code{disagreement\_count=1363}.
 
 El mejor modelo no se elige solamente por métrica bruta. El reporte identifica modelos con leakage sensible, por ejemplo \code{full\_features}, \code{definition\_features\_only} y \code{graph\_node\_features}. La mejor evidencia defensible evita variables demasiado cercanas a la definición PHA. En una entrega académica, esta separación demuestra criterio: una métrica perfecta puede ser menos útil si aprende una definición codificada en sus entradas.
 
 \chapter{Findings}
 
-Los findings convierten artefactos analíticos en conclusiones legibles. Se generan desde \codepath{src/neo\_ange/findings} y leen risk scores, simulaciones, grafo, evidencia de modelos y dataset. El archivo \codepath{reports/findings/findings\_summary.json} contiene 19 hallazgos y reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 18 objetos con señal Sentry, 37 objetos elevados o superiores, 315 filas de simulación de score, 50 filas de simulación orbital, 4,000 nodos de grafo y 27,829 aristas.
+Los findings convierten artefactos analíticos en conclusiones legibles. Se generan desde \codepath{src/neo\_ange/findings} y leen risk scores, simulaciones, grafo, evidencia de modelos y dataset. El archivo \codepath{reports/findings/findings\_summary.json} contiene 19 hallazgos y reporta 4,000 objetos, 982 PHA, 3,018 non-PHA, 18 objetos con señal Sentry, 37 objetos elevados o superiores, 335 filas de simulación de score, 10 filas de simulación orbital, 4,000 nodos de grafo y 27,829 aristas.
 
 Ese reporte no coincide por completo con los Parquet actuales de \codepath{data/gold}, que tienen 1,000 filas en gold/risk y 1,000 nodos de grafo. Por tanto, los findings se documentan como resultado generado existente, no como descripción única del estado actual de todas las capas. Esta limitación es importante para reproducibilidad: antes de presentar métricas definitivas, debe regenerarse el pipeline completo o congelarse un snapshot consistente.
 
@@ -589,7 +596,7 @@ La Tabla \ref{tab:results} resume resultados leídos localmente con Pandas y arc
 
 El ranking actual de \codepath{data/gold/risk\_scores} contiene 1,000 objetos. El objeto con score máximo es \code{20152637}, designación \code{152637}, nombre completo \code{152637 (1997 NC1)}, con score 47.271572 y categoría \code{elevated}. El score promedio verificado en \codepath{reports/risk/risk\_scores\_summary.json} es 28.766259561, con mediana 29.164740000000002, mínimo 14.389905 y máximo 47.271572.
 
-Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene reportes de 50 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Esta situación no invalida el proyecto, pero sí exige documentar que los artefactos no provienen todos del mismo snapshot.
+Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene resumen JSON de 10 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Esta situación no invalida el proyecto, pero sí exige documentar que los artefactos no provienen todos del mismo snapshot.
 
 \chapter{Guía de Instalación Linux Desde Cero}
 
@@ -764,7 +771,7 @@ El repositorio contiene los siguientes diagramas fuente: \codepath{docs/diagrams
 \cleardoublepage
 \phantomsection
 \addcontentsline{toc}{chapter}{Bibliografía}
-\bibliographystyle{plain}
+\bibliographystyle{apalike}
 \bibliography{references}
 
 \end{document}

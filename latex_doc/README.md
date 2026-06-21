@@ -1,20 +1,35 @@
-# Documento LaTeX
+# Neo Angele Risk Lab: documento LaTeX
 
-Esta carpeta contiene la entrega académica final de Neo Angele Risk Lab.
+Esta carpeta contiene la entrega académica en LaTeX lista para subirse a Overleaf. Es autocontenida: las figuras usadas por el documento están en `figures/`, las tablas externas están en `tables/`, la bibliografía está en `references.bib` y el archivo principal es `main.tex`.
 
-Archivos principales:
+## Compilar en Overleaf
 
-- `main.tex`: documento técnico académico.
-- `references.bib`: bibliografía BibTeX.
-- `figures/`: figuras locales necesarias para compilar.
-- `tables/`: tablas auxiliares incluidas desde `main.tex`.
-- `build_pdf.sh`: script de compilación tolerante a entornos sin LaTeX.
+1. Comprimir la carpeta `latex_doc/` como archivo ZIP.
+2. Crear un proyecto nuevo en Overleaf.
+3. Subir el ZIP al proyecto.
+4. Seleccionar `main.tex` como archivo principal.
+5. Usar `pdfLaTeX` como compilador.
+6. Compilar.
 
-Compilación recomendada en una máquina con LaTeX:
+Si Overleaf no detecta `main.tex` automáticamente, abrir el menú del proyecto, entrar a la configuración del documento principal y seleccionar `main.tex`.
+
+## Compatibilidad
+
+- Compilador recomendado: `pdfLaTeX`.
+- Bibliografía: BibTeX tradicional con `references.bib`.
+- No requiere `shell-escape`.
+- No usa `minted`.
+- Usa `listings` para bloques de código.
+- Todas las figuras y tablas necesarias están dentro de esta carpeta.
+- No depende de rutas absolutas ni de archivos externos al ZIP.
+
+## Compilación local opcional
+
+En una máquina con LaTeX instalado:
 
 ```bash
 cd latex_doc
 bash build_pdf.sh
 ```
 
-Si `latexmk` no está instalado, el script muestra la secuencia alternativa con `pdflatex` y `bibtex`.
+El script intenta usar `latexmk`. Si no existe, muestra la secuencia equivalente con `pdflatex` y `bibtex`.
