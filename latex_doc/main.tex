@@ -96,21 +96,20 @@
 \tableofcontents
 \clearpage
 
-\chapter{Resumen Ejecutivo}
+\chapter{Resumen}
 
 Neo Angele Risk Lab es una plataforma académica de ingeniería de datos, analítica explicable, simulación experimental y visualización para estudiar objetos cercanos a la Tierra, conocidos como NEO por sus siglas en inglés. El proyecto integra datos públicos de NASA/JPL, los preserva en una capa bronze, los normaliza con PySpark hacia silver, construye un dataset gold, calcula un \emph{Risk Priority Score} explicable, ejecuta simulaciones Monte Carlo del score, produce simulaciones orbitales aproximadas, construye un grafo orbital de similitud, entrena modelos tabulares y baselines de grafo, expone resultados mediante FastAPI y los presenta en un frontend React/Vite.
 
 El problema que resuelve no es la predicción oficial de impactos. El sistema organiza fuentes públicas heterogéneas, hace trazable el flujo de datos, convierte campos astronómicos técnicos en indicadores interpretables y ofrece una interfaz para priorizar revisión experimental. El score principal es un ranking analítico interno de 0 a 100. La evidencia de machine learning y GNN se trata como evidencia secundaria, no como criterio oficial de riesgo ni como sustituto de NASA/JPL, CNEOS o Sentry.
 
-La inspección del repositorio actual verificó código Python, pruebas, documentación, reportes, artefactos Parquet, diagramas Mermaid, una figura UML autocontenida en \filepath{latex_doc/figures}, backend FastAPI, frontend React/TypeScript/Vite y configuración Docker Compose. El documento fue preparado en LaTeX y está diseñado para compilar en Overleaf con pdfLaTeX y BibTeX. La carpeta \filepath{latex_doc} contiene los archivos necesarios para su compilación. La validación local de ejecución se trata por separado: Docker no está disponible en la computadora usada para preparar esta revisión, por lo que no se levantaron servicios con Docker en ese entorno.
 
 \chapter{Introducción}
 
 Los NEO son objetos pequeños del Sistema Solar cuyas órbitas se acercan a la región orbital terrestre. Su análisis combina identificación, propiedades físicas, elementos orbitales, acercamientos cercanos, calidad observacional y señales de sistemas especializados como Sentry. Aunque NASA/JPL ofrece interfaces públicas, los datos aparecen repartidos entre API con formatos, granularidades y finalidades distintas: SBDB Object describe objetos individuales, SBDB Query permite consultas tabulares, CAD aporta acercamientos cercanos y Sentry resume objetos con señales de impacto potencial dentro del sistema oficial.
 
-Esta dispersión dificulta que estudiantes o usuarios técnicos sin experiencia previa construyan una lectura integrada. Una fila puede contener magnitud absoluta \code{h}, MOID, elementos orbitales, conteos de observaciones, fechas de acercamiento y campos Sentry; sin contexto, esos campos son difíciles de interpretar. Neo Angele Risk Lab surge para centralizar esas fuentes, preservar trazabilidad, construir features reproducibles, priorizar objetos de manera explicable, simular sensibilidad y mostrar resultados en una aplicación web.
+Esta dispersión dificulta que estudiantes o usuarios técnicos sin experiencia previa construyan una lectura integrada. Una fila puede contener magnitud absoluta \code{h}, MOID, elementos orbitales, conteos de observaciones, fechas de acercamiento y campos Sentry, sin contexto, esos campos son difíciles de interpretar, entonces Neo Angele Risk Lab surge para centralizar esas fuentes, preservar trazabilidad, construir features reproducibles, priorizar objetos de manera explicable, simular sensibilidad y mostrar resultados en una aplicación web.
 
-El proyecto se ubica en la asignatura Desarrollo de Aplicaciones para Análisis de Datos porque combina adquisición de datos, almacenamiento por capas, procesamiento con Spark, programación orientada a objetos, diseño de API, frontend, modelos de machine learning, grafo orbital, pruebas automatizadas, documentación técnica y empaquetamiento con Docker.
+El proyecto se ubica en la asignatura Desarrollo de Aplicaciones para Análisis de Datos porque combina adquisición de datos, almacenamiento por capas, procesamiento con Spark, programación orientada a objetos, diseño de API, frontend, modelos de machine learning, grafo orbital, pruebas automatizadas y empaquetamiento con Docker.
 
 \chapter{Objetivos}
 
@@ -136,11 +135,11 @@ Diseñar, implementar y documentar una plataforma analítica reproducible para i
 
 \chapter{Justificación y Motivación}
 
-El dominio NEO tiene valor académico porque conecta física orbital, ingeniería de datos, APIs públicas, incertidumbre, machine learning e interfaces explicables. La motivación principal es convertir datos dispersos en un laboratorio reproducible que pueda ser inspeccionado de extremo a extremo. El proyecto no intenta reemplazar cálculos profesionales; su utilidad está en enseñar cómo se diseña una aplicación analítica completa que mantiene separación de responsabilidades y explica sus límites.
+El dominio NEO tiene valor académico porque conecta física orbital, ingeniería de datos, APIs públicas, incertidumbre, machine learning e interfaces explicables. La motivación principal es convertir datos dispersos en un laboratorio reproducible que pueda ser inspeccionado de extremo a extremo. El proyecto no intenta reemplazar cálculos profesionales, su utilidad está en unificar y hacer entendibles los datos sobre los riesgos asociados a los NEOs para gente fuera del área de datos o del dominio (astrofísica).
 
 La justificación de PySpark y Parquet proviene del patrón de datos por capas. Aunque el dataset local no es masivo, Spark permite practicar un modelo de procesamiento distribuible, con esquemas y transformaciones declarativas. Parquet ofrece almacenamiento columnar eficiente y compatible con Pandas, Spark y herramientas analíticas.
 
-La justificación del score explicable proviene de la necesidad de ordenar objetos para revisión. Una probabilidad oficial de impacto requiere efemérides, observación profesional y sistemas especializados; el proyecto no posee ni reclama esa capacidad. En cambio, calcula un score experimental que combina tamaño, proximidad orbital, acercamientos, señal Sentry, incertidumbre y calidad de datos.
+La justificación del score explicable proviene de la necesidad de ordenar objetos para revisión, ya que una probabilidad oficial de impacto requiere efemérides, observación profesional y sistemas especializados, el proyecto no posee ni reclama esa capacidad, sin embargo, calcula un score experimental que combina tamaño, proximidad orbital, acercamientos, señal Sentry, incertidumbre y calidad de datos.
 
 La justificación de ML/GNN es secundaria. Los modelos ayudan a comparar patrones, detectar desacuerdos y mostrar cómo cambia el desempeño según conjuntos de features con o sin variables cercanas a la definición PHA. Por esa razón se documenta el leakage y se separa el score principal de la evidencia aprendida.
 
@@ -599,12 +598,6 @@ La primera construcción puede tardar porque descarga imágenes, instala Python,
 La Tabla \ref{tab:results} separa tres tipos de evidencia: artefactos Parquet verificados directamente en el checkout actual, reportes JSON/Markdown existentes y resultados heredados de corridas ampliadas. Esta separación evita mezclar como si fueran un único estado definitivo los 1,000 objetos presentes en \filepath{data/gold} con los 4,000 objetos que aparecen en algunos reportes de evidencia y findings.
 
 \input{tables/results_snapshot.tex}
-
-\section{Interpretación}
-
-El ranking actual de \filepath{data/gold/risk_scores} contiene 1,000 objetos. El objeto con score máximo es \code{20152637}, designación \code{152637}, nombre completo \code{152637 (1997 NC1)}, con score 47.271572 y categoría \code{elevated}. El score promedio verificado en \filepath{reports/risk/risk_scores_summary.json} es 28.766259561, con mediana 29.164740000000002, mínimo 14.389905 y máximo 47.271572.
-
-Los resultados de simulación de score muestran que no hay incertidumbre formal completa: \code{formal\_uncertainty\_count=0}. La simulación orbital tiene resumen JSON de 10 filas, pero el Parquet actual contiene una fila. El grafo actual tiene 1,000 nodos y 6,955 aristas; el reporte de findings conserva una corrida de 4,000 nodos y 27,829 aristas. Por tanto, el snapshot final documentado para esta revisión es: gold/risk/grafo verificados con 1,000 objetos; model evidence full y findings existentes con cobertura de 4,000 objetos; simulación orbital documentada como resumen existente de 10 filas y Parquet actual de 1 fila. Esta situación no invalida el proyecto, pero sí exige regenerar el pipeline completo en una sola corrida antes de afirmar un único snapshot numérico definitivo.
 
 \chapter{Guía de Instalación Linux Desde Cero}
 
