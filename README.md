@@ -1,105 +1,105 @@
 # INSTALACIÓN
 
-Esta sección instala Neo Angele Risk Lab desde cero en Ubuntu, Debian o Linux Mint. La primera construcción puede tardar porque Docker descarga imágenes, instala dependencias de Python, PySpark, scikit-learn, Node, paquetes del frontend y porque algunos artefactos de datos o reportes pueden generarse por primera vez. Ese tiempo inicial es normal.
+Esta guía cubre una instalación limpia en Ubuntu, Debian y Linux Mint.
 
-URLs del proyecto levantado:
+URLs finales:
 
-- Frontend: http://127.0.0.1:5174
-- API: http://127.0.0.1:8000
+- Frontend: `http://127.0.0.1:5174`
+- API: `http://127.0.0.1:8000`
 
-## Instalación completa en Linux
+Nota importante: en una instalación limpia, primero se deben generar datos y reportes locales. El frontend puede abrir aunque no existan datos, pero si se omite la generación puede verse vacío o incompleto. Eso no significa que el frontend falló. La generación de datos en `data/` y reportes en `reports/` es parte normal del primer arranque limpio.
 
-Copiar y pegar este bloque en una terminal. En Linux Mint se usa el repositorio de Docker para Ubuntu con el codename de Ubuntu subyacente.
+## 1. Requisitos
+
+- Linux compatible: Ubuntu, Debian o Linux Mint.
+- Conexión a internet.
+- Permisos `sudo`.
+- Git.
+- Docker.
+- Docker Compose.
+
+## 2. Instalación completa de Git, Docker y Docker Compose
+
+Primero actualice el sistema e instale utilidades base:
 
 ```bash
 sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install -y git curl ca-certificates gnupg lsb-release
+```
 
+Si existen paquetes conflictivos de Docker instalados desde los repositorios de la distribución, elimínelos antes de instalar Docker Engine desde el repositorio oficial:
+
+```bash
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt-get remove -y "$pkg"
+done
+```
+
+### Ubuntu
+
+```bash
 sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-if [ -f /etc/linuxmint/info ]; then
-  . /etc/os-release
-  UBUNTU_CODENAME="${UBUNTU_CODENAME:-$(. /etc/linuxmint/info && echo "$UBUNTU_CODENAME")}"
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-elif . /etc/os-release && [ "$ID" = "debian" ]; then
-  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-else
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-fi
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
 
-sudo usermod -aG docker "$USER"
-newgrp docker
+### Debian
 
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+### Linux Mint
+
+Linux Mint usa una base Ubuntu. Para Docker se debe usar el codename de Ubuntu subyacente, no el codename propio de Mint.
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+UBUNTU_CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-}")
+if [ -z "$UBUNTU_CODENAME" ] && [ -r /etc/upstream-release/lsb-release ]; then
+  UBUNTU_CODENAME=$(. /etc/upstream-release/lsb-release && echo "$DISTRIB_CODENAME")
+fi
+echo "$UBUNTU_CODENAME"
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $UBUNTU_CODENAME stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+## 3. Validar Docker
+
+```bash
 docker --version
 docker compose version
-docker run --rm hello-world
-
-git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
-cd NEO-Angele-Risk-Lab
-
-docker compose up -d --build app frontend
-docker compose ps
-
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/status
 ```
 
-Abrir en el navegador:
-
-- http://127.0.0.1:5174
-- http://127.0.0.1:8000
-
-Para bajar servicios:
-
-```bash
-docker compose down
-```
-
-## Comandos rápidos si Docker ya está instalado
-
-```bash
-git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
-cd NEO-Angele-Risk-Lab
-docker compose up -d --build app frontend
-docker compose ps
-curl http://127.0.0.1:8000/health
-```
-
-Para iniciar sin reconstruir:
-
-```bash
-docker compose up -d --no-build app frontend
-```
-
-Para reconstruir:
-
-```bash
-docker compose build app frontend
-docker compose up -d app frontend
-```
-
-## Validación de API y frontend
-
-```bash
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/status
-curl -I http://127.0.0.1:5174
-docker compose ps
-```
-
-## Solución de problemas comunes
-
-### Permisos de Docker
-
-Error típico: `permission denied while trying to connect to the Docker daemon socket`.
+Agregue su usuario al grupo `docker` para ejecutar Docker sin `sudo`:
 
 ```bash
 sudo usermod -aG docker "$USER"
@@ -107,102 +107,81 @@ newgrp docker
 docker run --rm hello-world
 ```
 
-Si el error continúa, cerrar sesión y volver a entrar.
-
-### Solo levantó frontend y no backend
+Si `newgrp docker` falla, no continúe todavía. Valide que Docker quedó instalado y que existe el grupo `docker`:
 
 ```bash
-docker compose ps -a
-docker compose logs -f app
-docker compose up -d app frontend
+getent group docker
+sudo systemctl status docker --no-pager
+```
+
+## 4. Clonar el proyecto
+
+```bash
+git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
+cd NEO-Angele-Risk-Lab
+```
+
+## 5. Levantar backend y frontend
+
+```bash
+docker compose up -d --build app frontend
+docker compose ps
+```
+
+`app` es el backend FastAPI. `frontend` es la interfaz React/Vite. La primera construcción puede tardar porque descarga y prepara imágenes Docker, Python, PySpark, PyTorch, scikit-learn, Node y el frontend.
+
+## 6. Validar que la API responde
+
+Antes de abrir el navegador, valide la API:
+
+```bash
 curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
 ```
 
-### Se canceló `docker compose build`
+`/health` indica si la API está viva. Debe responder con `status: ok`.
+
+`/status` indica si existen datos y reportes locales. Si muestra `gold_features_available: false` o `risk_scores_available: false`, falta generar datos.
+
+## 7. Generar datos y reportes principales
+
+Este paso es parte del flujo principal de instalación limpia. Genera datos en `data/` y reportes en `reports/`.
+
+Para una prueba rápida:
 
 ```bash
-docker compose build app frontend
-docker compose up -d app frontend
+docker compose exec app python -m neo_ange.cli expand max --target 100 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
 ```
 
-### `image not found`
+La prueba rápida sirve para validar el proyecto en menos tiempo. Puede no producir exactamente el snapshot completo de la entrega, pero es útil para comprobar que el flujo corre.
+
+En la prueba rápida puede aparecer `partial_success` durante `etl run-all` si no hay fuentes opcionales CAD o Sentry en el subconjunto descargado. Si `data/gold/neo_risk_features` se escribe con filas y `risk build`, `model-evidence build` y `findings build` terminan con `status: success`, el flujo de instalación rápida es válido.
+
+Para el dataset completo:
 
 ```bash
-docker compose build --no-cache app frontend
-docker compose up -d app frontend
+docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
 ```
 
-### Puerto ocupado
+Esta es la ruta completa del proyecto. Puede tardar porque consulta APIs públicas NASA/JPL y construye artefactos locales. Requiere conexión a internet. Las opciones `--skip-existing` y `--resume` ayudan a continuar si ya se habían descargado datos.
+
+## 8. Validar que ya existen datos
+
+Después de generar datos, revise el estado de la API:
 
 ```bash
-sudo ss -ltnp | grep ':8000\|:5174'
-docker compose down
-docker compose up -d app frontend
+curl http://127.0.0.1:8000/status
 ```
 
-Si otro programa usa el puerto, detener ese programa o cambiar el mapeo de puertos en `docker-compose.yml`.
-
-### Backend no responde
-
-```bash
-docker compose ps -a
-docker compose logs -f app
-docker compose restart app
-curl http://127.0.0.1:8000/health
-```
-
-### `model_predictions_full.parquet` no existe
-
-```bash
-docker compose exec -T app python -m neo_ange.cli model-evidence build
-ls -lah reports/model_evidence/
-```
-
-### Evidence no cubre 4,000 `object_key`
-
-Validar cobertura real antes de interpretar la evidencia:
-
-```bash
-docker compose exec -T app python - <<'EOF'
-import pandas as pd
-from pathlib import Path
-
-path = Path("reports/model_evidence/model_predictions_full.parquet")
-print("exists:", path.exists())
-if path.exists():
-    df = pd.read_parquet(path)
-    print("rows:", len(df))
-    print("unique_object_key:", df["object_key"].astype(str).nunique())
-    print(df["model_name"].value_counts(dropna=False))
-EOF
-```
-
-### Reports viejos
-
-Regenerar reportes principales:
-
-```bash
-docker compose exec -T app python -m neo_ange.cli risk build
-docker compose exec -T app python -m neo_ange.cli model-evidence build
-docker compose exec -T app python -m neo_ange.cli findings build
-```
-
-### Logs del backend y frontend
-
-```bash
-docker compose logs -f app
-docker compose logs -f frontend
-```
-
-### Reconstrucción de app
-
-```bash
-docker compose build app
-docker compose build frontend
-docker compose up -d app frontend
-```
-
-### Validación de `data/gold` y `reports/model_evidence`
+Valide también los archivos principales:
 
 ```bash
 docker compose exec -T app python - <<'EOF'
@@ -224,13 +203,300 @@ for p in paths:
         print("rows:", len(df))
         if "object_key" in df.columns:
             print("unique_object_key:", df["object_key"].astype(str).nunique())
-        print("columns:", list(df.columns)[:30])
+        print("columns:", list(df.columns)[:20])
 EOF
 ```
 
-### Primera ejecución lenta
+Si `data/gold/neo_risk_features` y `data/gold/risk_scores` existen y tienen filas, el ranking y los perfiles pueden poblarse. Si `reports/model_evidence/model_predictions_full.parquet` existe, model evidence puede poblarse. Si algún archivo falta, ejecute la sección de generación correspondiente.
 
-La primera ejecución puede tardar por descarga de imágenes, instalación de dependencias científicas, construcción del frontend, PySpark, PyTorch opcional, lectura de Parquet, ingesta, generación de reportes o creación de artefactos. Una vez construidas las imágenes, los siguientes arranques suelen ser más rápidos.
+## 9. Abrir la aplicación
+
+Abra el frontend solo después de validar datos:
+
+```text
+http://127.0.0.1:5174
+```
+
+API:
+
+```text
+http://127.0.0.1:8000
+```
+
+## 10. Comandos rápidos si Docker ya está instalado
+
+```bash
+git clone https://github.com/LiamSalazar/NEO-Angele-Risk-Lab.git
+cd NEO-Angele-Risk-Lab
+
+docker compose up -d --build app frontend
+
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
+
+docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
+
+curl http://127.0.0.1:8000/status
+```
+
+Después abra:
+
+```text
+http://127.0.0.1:5174
+```
+
+## 11. Iniciar sin reconstruir
+
+```bash
+docker compose up -d --no-build app frontend
+```
+
+## 12. Reconstruir
+
+```bash
+docker compose build app frontend
+docker compose up -d app frontend
+```
+
+## 13. Apagar servicios
+
+```bash
+docker compose down
+```
+
+## 14. Solución de problemas comunes
+
+### Docker no se encuentra
+
+```bash
+docker --version
+docker compose version
+```
+
+Si esos comandos fallan, instale Docker y Docker Compose con la sección 2.
+
+### No existe el grupo `docker`
+
+```bash
+getent group docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+newgrp docker
+```
+
+Si `newgrp docker` vuelve a fallar, cierre sesión y vuelva a entrar antes de continuar.
+
+### No se encuentran paquetes de Docker
+
+Valide que el repositorio correcto quedó configurado:
+
+```bash
+cat /etc/apt/sources.list.d/docker.list
+sudo apt-get update
+apt-cache policy docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+En Linux Mint, confirme que `docker.list` usa un codename Ubuntu subyacente.
+
+### Permisos de Docker
+
+```bash
+docker run --rm hello-world
+```
+
+Si aparece `permission denied`, agregue el usuario al grupo `docker` y recargue el grupo:
+
+```bash
+sudo usermod -aG docker "$USER"
+newgrp docker
+docker run --rm hello-world
+```
+
+### Solo levantó frontend y no backend
+
+Levante ambos servicios explícitamente:
+
+```bash
+docker compose up -d --build app frontend
+docker compose ps
+```
+
+### Se canceló `docker compose build`
+
+Ejecute de nuevo:
+
+```bash
+docker compose build app frontend
+docker compose up -d app frontend
+```
+
+### `image not found`
+
+Reconstruya las imágenes locales:
+
+```bash
+docker compose build app frontend
+docker compose up -d app frontend
+```
+
+### Puerto ocupado
+
+Revise qué proceso usa los puertos:
+
+```bash
+sudo ss -ltnp | grep -E ':8000|:5174'
+```
+
+Detenga el proceso que ocupa el puerto o cambie el mapeo en `docker-compose.yml`.
+
+### Backend no responde
+
+```bash
+docker compose ps
+docker compose logs app --tail=200
+curl http://127.0.0.1:8000/health
+```
+
+Si `/health` no responde, el problema está en el backend, el contenedor o el puerto `8000`.
+
+Si el contenedor acaba de iniciar y `curl` devuelve `Connection reset by peer`, espere unos segundos y revise que Uvicorn haya terminado el arranque:
+
+```bash
+docker compose logs app --tail=50
+curl http://127.0.0.1:8000/health
+```
+
+### Frontend abre pero no muestra información
+
+Valide la API:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/status
+```
+
+Si `/status` muestra `gold_features_available: false` o `risk_scores_available: false`, faltan datos locales. Ejecute la generación:
+
+```bash
+docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
+```
+
+Después recargue `http://127.0.0.1:5174`.
+
+### `model_predictions_full.parquet` no existe
+
+```bash
+docker compose exec app python -m neo_ange.cli model-evidence build
+```
+
+Después valide:
+
+```bash
+docker compose exec -T app python - <<'EOF'
+from pathlib import Path
+path = Path("reports/model_evidence/model_predictions_full.parquet")
+print("exists:", path.exists())
+EOF
+```
+
+### Evidence no cubre 4,000 `object_key`
+
+Ejecute la ruta completa y vuelva a validar:
+
+```bash
+docker compose exec app python -m neo_ange.cli expand max --target 4000 --skip-existing --resume
+docker compose exec app python -m neo_ange.cli etl run-all
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+```
+
+```bash
+docker compose exec -T app python - <<'EOF'
+import pandas as pd
+df = pd.read_parquet("reports/model_evidence/model_predictions_full.parquet")
+print("rows:", len(df))
+print("unique_object_key:", df["object_key"].astype(str).nunique() if "object_key" in df.columns else "missing column")
+EOF
+```
+
+### Reports viejos
+
+Regenerar reportes principales:
+
+```bash
+docker compose exec app python -m neo_ange.cli risk build
+docker compose exec app python -m neo_ange.cli model-evidence build
+docker compose exec app python -m neo_ange.cli findings build
+```
+
+### Logs del backend y frontend
+
+```bash
+docker compose logs app --tail=200
+docker compose logs frontend --tail=200
+```
+
+### Reconstrucción de app
+
+```bash
+docker compose build app
+docker compose up -d app frontend
+```
+
+### Problemas al descargar datos por conectividad
+
+Valide conectividad general y acceso a NASA/JPL:
+
+```bash
+curl -I https://www.google.com
+curl -I https://ssd-api.jpl.nasa.gov/sbdb.api
+```
+
+Si esos comandos fallan, el problema es de red del entorno, no del backend ni del frontend.
+
+### `No route to host`
+
+Valide red, DNS, proxy o firewall del entorno:
+
+```bash
+curl -I https://www.google.com
+curl -I https://ssd-api.jpl.nasa.gov/sbdb.api
+```
+
+### `Could not connect to server`
+
+Si ocurre contra `127.0.0.1:8000`, revise el backend:
+
+```bash
+docker compose ps
+docker compose logs app --tail=200
+curl http://127.0.0.1:8000/health
+```
+
+Si ocurre contra NASA/JPL, revise conectividad:
+
+```bash
+curl -I https://ssd-api.jpl.nasa.gov/sbdb.api
+```
+
+### `Failed to connect to ssd-api.jpl.nasa.gov`
+
+Valide conectividad:
+
+```bash
+curl -I https://www.google.com
+curl -I https://ssd-api.jpl.nasa.gov/sbdb.api
+```
+
+Si esos comandos fallan, el problema es de red del entorno o de disponibilidad externa de NASA/JPL. Reintente cuando haya conectividad y use `--skip-existing --resume` para continuar sin repetir descargas ya guardadas.
 
 # DOCUMENTATION
 

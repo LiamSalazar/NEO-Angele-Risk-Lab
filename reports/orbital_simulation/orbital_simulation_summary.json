@@ -1,29 +1,17 @@
 {
   "covariance_available_count": 0,
-  "heuristic_fallback_count": 10,
+  "heuristic_fallback_count": 1,
   "horizon_days_median": 3650.0,
-  "max_dispersion_index": 2.1240115933089267,
-  "mean_dispersion_index": 0.6985238622602992,
-  "min_p05_distance_au": 0.043028289885468,
-  "n_clones_median": 50.0,
-  "row_count": 10,
+  "max_dispersion_index": 0.2730902434217302,
+  "mean_dispersion_index": 0.2730902434217302,
+  "min_p05_distance_au": 0.3039535166440984,
+  "n_clones_median": 300.0,
+  "row_count": 1,
   "scenario_category_counts": {
-    "needs_review": 3,
-    "stable": 1,
-    "uncertain": 5,
-    "variable": 1
+    "uncertain": 1
   },
   "status": "success",
   "top_uncertainty_objects": [
-    "50092141",
-    "50092158",
-    "50092174",
-    "50092146",
-    "20152637",
-    "50092148",
-    "50092184",
-    "50012416",
-    "20620100",
-    "50092186"
+    "50092148"
   ]
 }

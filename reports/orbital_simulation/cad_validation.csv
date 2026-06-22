@@ -1,11 +1,2 @@
 object_key,cad_validation_available,baseline_min_distance_au,cad_validation_error_au,simulation_method
-50012416,False,0.4843667948605376,,heuristic_fallback
-50092146,False,0.21743625376839232,,heuristic_fallback
-50092158,False,0.24348117644367126,,heuristic_fallback
-50092174,False,0.20963648627129775,,heuristic_fallback
-50092184,False,0.39309113021302117,,heuristic_fallback
-50092186,False,0.6616003833931283,,heuristic_fallback
 50092148,False,0.345990080970911,,heuristic_fallback
-50092141,False,0.2640902925589511,,heuristic_fallback
-20152637,True,0.2777590832725761,0.26060750756361617,heuristic_fallback
-20620100,False,0.27941764851412654,,heuristic_fallback

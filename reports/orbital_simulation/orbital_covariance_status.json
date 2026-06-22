@@ -1,12 +1,12 @@
 {
   "covariance_available_count": 0,
-  "covariance_unavailable_count": 10,
+  "covariance_unavailable_count": 1,
   "interpretation": "Rows with covariance_available=false use heuristic_fallback scenario analysis and are not presented as formal covariance propagation.",
   "invalid_clone_count_total": 0,
   "method_counts": {
-    "heuristic_fallback": 10
+    "heuristic_fallback": 1
   },
-  "row_count": 10,
+  "row_count": 1,
   "status": "success",
-  "valid_clone_count_total": 500
+  "valid_clone_count_total": 300
 }
